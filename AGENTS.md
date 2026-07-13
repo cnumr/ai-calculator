@@ -10,7 +10,7 @@ Voir [README.md](README.md) pour le cahier des charges complet.
 
 ## Conventions
 
-- Tous les fichiers générés par le framework **superpowers** doivent être créés dans `.superpowers/`, jamais à la racine ni ailleurs.
+- Tous les fichiers générés par le framework **superpowers** doivent être créés dans `.superpowers/`, jamais à la racine ni ailleurs. Cela inclut notamment les specs de design (`.superpowers/specs/`), même si le skill `brainstorming` propose par défaut `docs/superpowers/specs/`.
 - Le back s'appuie sur la librairie Python [EcoLogits](https://github.com/genai-impact/ecologits) (mlco2/genai-impact) pour convertir un nombre de tokens en impacts (GWP, Eau, ADPe, Énergie, PE).
 - Pour l'ergonomie du front, s'appuyer sur le skill Claude Code `frontend-design`.
 - Le front doit être bilingue (FR/EN).
