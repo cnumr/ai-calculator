@@ -9,6 +9,7 @@ import {
   fetchProviders,
 } from "../api/client";
 import { RangeGauge } from "../components/RangeGauge";
+import { Co2Equivalents } from "../components/Co2Equivalents";
 
 const CRITERIA: Array<{ key: keyof Impacts; unit: string }> = [
   { key: "gwp", unit: "kgCO2eq" },
@@ -120,6 +121,7 @@ export function CalculatorPage() {
             impacts={result.individualAnnual}
             title={t("calculator.resultIndividualAnnual")}
           />
+          <Co2Equivalents gwpKgCo2eq={result.individualAnnual.gwp.max} />
           <ImpactsGrid
             impacts={result.enterpriseAnnual}
             title={t("calculator.resultEnterpriseAnnual")}

@@ -54,6 +54,34 @@ describe("CalculatorPage", () => {
     expect(gauges).toHaveLength(15); // 3 sections (unit, individual, enterprise) × 5 criteria each
   });
 
+  it("displays Co2Equivalents after successful calculation using individualAnnual gwp max", async () => {
+    mockedFetchProviders.mockResolvedValue([
+      { provider: "openai", name: "gpt-4o-mini" },
+    ]);
+    mockedCalculate.mockResolvedValue({
+      unit: ZERO_IMPACTS,
+      individualAnnual: {
+        ...ZERO_IMPACTS,
+        gwp: { min: 10, max: 21.8 }, // max=21.8 gives ~100 km by car (21.8 / 0.218)
+      },
+      enterpriseAnnual: ZERO_IMPACTS,
+    });
+
+    render(<CalculatorPage />);
+
+    await waitFor(() => expect(mockedFetchProviders).toHaveBeenCalled());
+    await userEvent.click(
+      screen.getByRole("button", { name: /calculer|calculate/i }),
+    );
+
+    // Assert Co2Equivalents is rendered with one of its comparison lines visible
+    await waitFor(() =>
+      expect(
+        screen.getByText(/^100 km by car$|^100 km en voiture$/),
+      ).toBeInTheDocument(),
+    );
+  });
+
   it("shows a localized error message when the model is not found", async () => {
     mockedFetchProviders.mockResolvedValue([
       { provider: "openai", name: "gpt-4o-mini" },
