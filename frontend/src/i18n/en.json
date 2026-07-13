@@ -26,5 +26,23 @@
       "beef_burger": "{{count}} beef burgers",
       "laptop_hour": "{{count}} hours of laptop use"
     }
+  },
+  "methodology": {
+    "title": "Methodology",
+    "body": "Impacts are computed from EcoLogits, which models generative AI model inference..."
+  },
+  "about": {
+    "title": "About",
+    "body": "AI Calculator is a project by Collectif Conception Numérique Responsable (cnumr)."
+  },
+  "legal": {
+    "title": "Legal notice",
+    "body": "Publisher: cnumr. Hosting: TBD."
+  },
+  "nav": {
+    "calculator": "Calculator",
+    "methodology": "Methodology",
+    "about": "About",
+    "legal": "Legal notice"
   }
 }

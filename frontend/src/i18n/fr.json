@@ -26,5 +26,23 @@
       "beef_burger": "{{count}} burgers au bœuf",
       "laptop_hour": "{{count}} heures d'utilisation d'un ordinateur portable"
     }
+  },
+  "methodology": {
+    "title": "Méthodologie",
+    "body": "Les impacts sont calculés à partir d'EcoLogits, qui modélise l'inférence des modèles d'IA générative..."
+  },
+  "about": {
+    "title": "À propos",
+    "body": "AI Calculator est un projet du Collectif Conception Numérique Responsable (cnumr)."
+  },
+  "legal": {
+    "title": "Mentions légales",
+    "body": "Éditeur : cnumr. Hébergement : à préciser."
+  },
+  "nav": {
+    "calculator": "Calculateur",
+    "methodology": "Méthodologie",
+    "about": "À propos",
+    "legal": "Mentions légales"
   }
 }
