@@ -47,6 +47,15 @@ Permettre aux utilisateurs d'évaluer les impacts environnementaux (GWP, Eau, AD
 
 L'extrapolation (jours ouvrés, facteur voiture, etc.) est calculée côté back, pas dans le front, pour que toute la logique métier soit couverte par les tests Python.
 
+## Affichage des résultats (fourchettes min-max)
+
+Contrairement au POC (qui affiche une valeur unique par impact), chaque impact est affiché comme une **fourchette min–max**, jamais comme une valeur unique — il existe une incertitude irréductible (notamment sur la région/mix énergétique du datacenter) qu'une valeur ponctuelle masquerait. On reprend le principe visuel du composant `footprint-card` d'[ai-footprint](https://github.com/hrenaud/ai-footprint) : jauge (`range-track` / `range-fill` / `range-tick`), bornes min/max affichées en dessous, valeur centrale mise en avant.
+
+- **Tous les 5 impacts EcoLogits sont affichés avec la même importance** (GWP, Eau, ADPe, Énergie, PE) — contrairement au POC qui ne montrait que le CO2. Pas de hiérarchie hero/tuiles comme sur la card ai-footprint : les 5 impacts sont présentés côte à côte dans le calculateur, chacun avec sa propre jauge min-max.
+- **Back** : `POST /api/calculate` retourne `min` et `max` (pas de valeur unique) pour chacun des 5 impacts, à chacun des 3 niveaux d'agrégation (unitaire, individuel annuel, entreprise annuel). EcoLogits fournit nativement ces bornes (`Impact.value.min` / `.max` par critère).
+- **Composant front `RangeGauge`** (React, réutilisable pour les 5 impacts) : piste (track) horizontale, remplissage (fill) entre min et max, repère (tick) sur la valeur centrale ((min+max)/2), bornes min/max affichées en texte sous la jauge. Échelle de la jauge : `0 → max × 1.1` (le max ne colle pas au bord, marge visuelle de 10 %), logique reprise d'ai-footprint (`_gauge()` dans `card/cli.py`) et portée en TypeScript côté front.
+- Formatage : unité adaptée à l'ordre de grandeur (ex. g/kg pour GWP, mL/L pour l'eau), valeur centrale arrondie à 3 chiffres significatifs, séparateur décimal localisé (`,` en FR, `.` en EN).
+
 ## Comparaisons concrètes (ImpactCO2)
 
 Pour rendre le résultat GWP (CO2) parlant, on affiche des équivalences concrètes (ex. "= X km en voiture", "= Y burgers") à partir des données ouvertes d'[ImpactCO2](https://impactco2.fr/) (ADEME, [repo MIT](https://github.com/incubateur-ademe/impactco2)).
