@@ -1,4 +1,4 @@
-import { Link, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { CalculatorPage } from "./pages/CalculatorPage";
 import { MethodologyPage } from "./pages/MethodologyPage";
@@ -9,7 +9,7 @@ import { LanguageSwitcher } from "./components/LanguageSwitcher";
 export function App() {
   const { t } = useTranslation();
   return (
-    <>
+    <BrowserRouter>
       <nav>
         <Link to="/">{t("nav.calculator")}</Link>
         <Link to="/methodologie">{t("nav.methodology")}</Link>
@@ -23,6 +23,6 @@ export function App() {
         <Route path="/a-propos" element={<AboutPage />} />
         <Route path="/mentions-legales" element={<LegalNoticePage />} />
       </Routes>
-    </>
+    </BrowserRouter>
   );
 }
