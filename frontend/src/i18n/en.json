@@ -20,6 +20,11 @@
       "water": "Water"
     },
     "errorModelNotFound": "This model is not (yet) available in the referential.",
-    "errorGeneric": "An error occurred during the calculation."
+    "errorGeneric": "An error occurred during the calculation.",
+    "co2Equivalent": {
+      "car_km": "{{count}} km by car",
+      "beef_burger": "{{count}} beef burgers",
+      "laptop_hour": "{{count}} hours of laptop use"
+    }
   }
 }

@@ -1,0 +1,5 @@
+[
+  { "id": "car_km", "kgCo2eqPerUnit": 0.218 },
+  { "id": "beef_burger", "kgCo2eqPerUnit": 3.3 },
+  { "id": "laptop_hour", "kgCo2eqPerUnit": 0.02 }
+]

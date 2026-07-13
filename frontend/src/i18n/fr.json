@@ -20,6 +20,11 @@
       "water": "Eau"
     },
     "errorModelNotFound": "Ce modèle n'est pas (encore) disponible dans le référentiel.",
-    "errorGeneric": "Une erreur est survenue lors du calcul."
+    "errorGeneric": "Une erreur est survenue lors du calcul.",
+    "co2Equivalent": {
+      "car_km": "{{count}} km en voiture",
+      "beef_burger": "{{count}} burgers au bœuf",
+      "laptop_hour": "{{count}} heures d'utilisation d'un ordinateur portable"
+    }
   }
 }
