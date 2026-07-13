@@ -1,0 +1,25 @@
+{
+  "common": {
+    "appName": "AI Calculator"
+  },
+  "calculator": {
+    "title": "Impact calculator",
+    "provider": "Provider",
+    "model": "Model",
+    "outputTokens": "Generated tokens per request",
+    "requestsPerDay": "Requests per day",
+    "submit": "Calculate",
+    "resultUnit": "Per request",
+    "resultIndividualAnnual": "Per person, per year",
+    "resultEnterpriseAnnual": "For the company, per year",
+    "criterion": {
+      "gwp": "Greenhouse gases",
+      "energy": "Energy",
+      "adpe": "Mineral resources",
+      "pe": "Primary energy",
+      "water": "Water"
+    },
+    "errorModelNotFound": "This model is not (yet) available in the referential.",
+    "errorGeneric": "An error occurred during the calculation."
+  }
+}

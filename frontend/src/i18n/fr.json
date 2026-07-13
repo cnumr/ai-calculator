@@ -1,0 +1,25 @@
+{
+  "common": {
+    "appName": "AI Calculator"
+  },
+  "calculator": {
+    "title": "Calculateur d'impacts",
+    "provider": "Fournisseur",
+    "model": "Modèle",
+    "outputTokens": "Tokens générés par requête",
+    "requestsPerDay": "Requêtes par jour",
+    "submit": "Calculer",
+    "resultUnit": "Par requête",
+    "resultIndividualAnnual": "Par personne et par an",
+    "resultEnterpriseAnnual": "Pour l'entreprise et par an",
+    "criterion": {
+      "gwp": "Gaz à effet de serre",
+      "energy": "Énergie",
+      "adpe": "Ressources minérales",
+      "pe": "Énergie primaire",
+      "water": "Eau"
+    },
+    "errorModelNotFound": "Ce modèle n'est pas (encore) disponible dans le référentiel.",
+    "errorGeneric": "Une erreur est survenue lors du calcul."
+  }
+}
