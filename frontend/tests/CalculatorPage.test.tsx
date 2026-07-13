@@ -37,7 +37,7 @@ describe("CalculatorPage", () => {
       enterpriseAnnual: ZERO_IMPACTS,
     });
 
-    render(<CalculatorPage />);
+    const { container } = render(<CalculatorPage />);
 
     await waitFor(() => expect(mockedFetchProviders).toHaveBeenCalled());
 
@@ -48,6 +48,10 @@ describe("CalculatorPage", () => {
     await waitFor(() => expect(mockedCalculate).toHaveBeenCalled());
     expect(screen.getByText(/1.1/)).toBeInTheDocument();
     expect(screen.getByText(/2.2/)).toBeInTheDocument();
+
+    // Assert exactly 5 RangeGauge components rendered in the unit result section
+    const gauges = container.querySelectorAll(".range-gauge");
+    expect(gauges).toHaveLength(15); // 3 sections (unit, individual, enterprise) × 5 criteria each
   });
 
   it("shows a localized error message when the model is not found", async () => {
