@@ -47,6 +47,15 @@ Permettre aux utilisateurs d'évaluer les impacts environnementaux (GWP, Eau, AD
 
 L'extrapolation (jours ouvrés, facteur voiture, etc.) est calculée côté back, pas dans le front, pour que toute la logique métier soit couverte par les tests Python.
 
+## Comparaisons concrètes (ImpactCO2)
+
+Pour rendre le résultat GWP (CO2) parlant, on affiche des équivalences concrètes (ex. "= X km en voiture", "= Y burgers") à partir des données ouvertes d'[ImpactCO2](https://impactco2.fr/) (ADEME, [repo MIT](https://github.com/incubateur-ademe/impactco2)).
+
+- Composant React maison (pas d'embed du widget `<script>` tiers) : cohérent avec le design system du projet (skill `frontend-design`), pas de dépendance runtime à un domaine externe, pas de poids JS ajouté par un tiers (cohérent avec l'esprit écoconception du projet).
+- Données d'équivalences (liste "equivalents.csv" ou API publique ImpactCO2) importées et versionnées dans le repo (`frontend/src/data/co2-equivalents.json` ou équivalent back), avec une procédure de mise à jour manuelle documentée (pas de fetch runtime vers impactco2.fr).
+- Périmètre : uniquement pour l'impact **GWP**. Les impacts Eau, ADPe, Énergie, PE n'ont pas d'équivalent ImpactCO2 et restent affichés sous forme de valeur brute + unité en V1.
+- Sélection des comparaisons affichées : un sous-ensemble pertinent et sobre (2-3 équivalences), pas la liste exhaustive des 250+ équivalents.
+
 ## Gestion des erreurs
 
 - **Validation d'entrée** : schémas Pydantic sur `POST /api/calculate` (provider/model doivent exister dans le catalogue EcoLogits, tokens/requêtes positifs) → `422` avec message clair si invalide.
@@ -80,7 +89,7 @@ ai-calculator/
 │   │   └── i18n/            # fr.json, en.json
 │   ├── tests/                # tests de composants clés (Vitest + Testing Library)
 │   └── package.json          # dépendances en dernières versions stables (react, vite, ...)
-├── docs/superpowers/specs/
+├── .superpowers/specs/
 ├── AGENTS.md / CLAUDE.md
 └── README.md
 ```
