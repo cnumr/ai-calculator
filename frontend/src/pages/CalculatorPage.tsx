@@ -75,35 +75,36 @@ export function CalculatorPage() {
     <div>
       <h1>{t("calculator.title")}</h1>
       <form onSubmit={handleSubmit}>
-        <label>
-          {t("calculator.model")}
-          <select
-            value={selectedIndex}
-            onChange={(e) => setSelectedIndex(Number(e.target.value))}
-          >
-            {providers.map((p, index) => (
-              <option key={`${p.provider}-${p.name}`} value={index}>
-                {p.provider} — {p.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
+        <label htmlFor="calculator-model">{t("calculator.model")}</label>
+        <select
+          id="calculator-model"
+          value={selectedIndex}
+          onChange={(e) => setSelectedIndex(Number(e.target.value))}
+        >
+          {providers.map((p, index) => (
+            <option key={`${p.provider}-${p.name}`} value={index}>
+              {p.provider} — {p.name}
+            </option>
+          ))}
+        </select>
+        <label htmlFor="calculator-output-tokens">
           {t("calculator.outputTokens")}
-          <input
-            type="number"
-            value={outputTokens}
-            onChange={(e) => setOutputTokens(Number(e.target.value))}
-          />
         </label>
-        <label>
+        <input
+          id="calculator-output-tokens"
+          type="number"
+          value={outputTokens}
+          onChange={(e) => setOutputTokens(Number(e.target.value))}
+        />
+        <label htmlFor="calculator-requests-per-day">
           {t("calculator.requestsPerDay")}
-          <input
-            type="number"
-            value={requestsPerDay}
-            onChange={(e) => setRequestsPerDay(Number(e.target.value))}
-          />
         </label>
+        <input
+          id="calculator-requests-per-day"
+          type="number"
+          value={requestsPerDay}
+          onChange={(e) => setRequestsPerDay(Number(e.target.value))}
+        />
         <button type="submit">{t("calculator.submit")}</button>
       </form>
 
