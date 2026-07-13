@@ -31,3 +31,19 @@ def test_calculate_enterprise_annual_scales_up_from_unit():
 
     body = response.json()
     assert body["enterprise_annual"]["gwp"]["max"] > body["unit"]["gwp"]["max"]
+
+
+def test_calculate_returns_404_for_unknown_model():
+    payload = {**VALID_PAYLOAD, "model": "does-not-exist"}
+
+    response = client.post("/api/calculate", json=payload)
+
+    assert response.status_code == 404
+
+
+def test_calculate_returns_422_for_non_positive_output_tokens():
+    payload = {**VALID_PAYLOAD, "output_tokens": 0}
+
+    response = client.post("/api/calculate", json=payload)
+
+    assert response.status_code == 422

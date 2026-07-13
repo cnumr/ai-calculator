@@ -1,7 +1,12 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from ai_calculator.domain.extrapolation import AggregatedImpacts, extrapolate
-from ai_calculator.domain.impacts import UnitImpacts, compute_unit_impacts
+from ai_calculator.domain.impacts import (
+    EcologitsComputationError,
+    ModelNotFoundError,
+    UnitImpacts,
+    compute_unit_impacts,
+)
 from ai_calculator.schemas.calculate import (
     CalculateRequest,
     CalculateResponse,
@@ -24,11 +29,17 @@ def _to_impacts_out(impacts: UnitImpacts | AggregatedImpacts) -> ImpactsOut:
 
 @router.post("/api/calculate", response_model=CalculateResponse)
 def calculate(payload: CalculateRequest) -> CalculateResponse:
-    unit = compute_unit_impacts(
-        provider=payload.provider,
-        model_name=payload.model,
-        output_tokens=payload.output_tokens,
-    )
+    try:
+        unit = compute_unit_impacts(
+            provider=payload.provider,
+            model_name=payload.model,
+            output_tokens=payload.output_tokens,
+        )
+    except ModelNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except EcologitsComputationError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
     individual_annual, enterprise_annual = extrapolate(
         unit,
         requests_per_day=payload.requests_per_day,
