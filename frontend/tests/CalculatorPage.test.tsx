@@ -152,7 +152,6 @@ describe("CalculatorPage", () => {
     );
 
     // Default frequency is 1/day, 220 working days/year, gwp max = 2 -> 440
-    // RangeGauge components render the max value in a <span class="range-gauge__value">
     const gauges = container.querySelectorAll(".range-gauge");
     const found = Array.from(gauges).some((gauge) =>
       gauge.textContent?.includes("440"),

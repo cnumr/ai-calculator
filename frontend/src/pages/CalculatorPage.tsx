@@ -156,14 +156,13 @@ export function CalculatorPage() {
     return null;
   }
 
-  const individualAnnual = Object.values(cardImpacts).reduce(
-    (total, entry) =>
+  const individualAnnual = Object.entries(cardImpacts).reduce(
+    (total, [useCaseId, entry]) =>
       sumImpacts(
         total,
         scaleImpacts(
           entry.impacts,
-          (cardStates[entry.providerId]?.frequencyPerDay ?? 0) *
-            WORKING_DAYS_PER_YEAR,
+          (cardStates[useCaseId]?.frequencyPerDay ?? 0) * WORKING_DAYS_PER_YEAR,
         ),
       ),
     zeroImpacts(),
