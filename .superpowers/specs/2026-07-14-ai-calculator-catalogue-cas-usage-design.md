@@ -91,6 +91,7 @@ La config ne porte que des **identifiants stables** (`meeting_summary`, `eco`, `
 
 - **Carte de cas d'usage** : select fournisseur → select profil (cascade identique au POC, lecture seule si combinaison absente de la config) + fréquence/jour. Les 5 indicateurs (GWP, Eau, ADPe, Énergie, PE) sont affichés en lignes compactes (icône + libellé + valeur min-max), **repliées par défaut** dans un `<details>/<summary>` natif, libellé : _"Voir/Masquer le détail de vos impacts pour cette tâche"_.
 - **Chips fournisseurs "écosystème IA"** : état initial = `selected_by_default` de la config, togglable librement ensuite. Filtrent les fournisseurs proposés sur les cartes.
+- **Logos fournisseurs** : un fichier statique par fournisseur dans `frontend/src/assets/providers/<id>.svg` (ex. `openai.svg`, `microsoft_copilot.svg`), résolu directement depuis l'`id` déjà présent dans `use_cases.yaml` — pas de champ logo dans la config, pas de dépendance réseau externe. Affiché sur les chips "écosystème IA" et dans le select fournisseur de chaque carte. Si un logo manque pour un `id` (asset non fourni), affichage d'un fallback textuel (initiale du fournisseur) plutôt qu'une image cassée.
 - **`RangeGauge`** (existant) : conservé pour les panneaux de synthèse (impact individuel/entreprise), pas utilisé dans le détail replié de la carte (lignes compactes, pas de jauge).
 - **`Co2Equivalents`** (existant) : inchangé, branché uniquement sur le GWP.
 - **Répartition par fournisseur** : affiche le GWP par défaut ; les 4 autres indicateurs sont accessibles via un `<details>/<summary>` du même type que celui des cartes, même libellé d'interaction.
@@ -111,6 +112,7 @@ La config ne porte que des **identifiants stables** (`meeting_summary`, `eco`, `
   - Tests de composants sur la cascade fournisseur→profil (sélection, désactivation si non supporté).
   - Tests sur l'état replié/déplié des `<details>` (carte de cas d'usage, répartition par fournisseur).
   - Test sur l'état initial des chips fournisseurs piloté par `selected_by_default`, et leur toggle par l'utilisateur.
+  - Test sur le fallback textuel affiché quand le logo d'un fournisseur est absent.
 - **E2E (Playwright)** : un scénario couvrant le parcours complet du calculateur catalogue-driven — chargement de la page, toggle d'un fournisseur "écosystème IA", changement fournisseur→profil sur une carte, ouverture du détail des 5 indicateurs, vérification que les panneaux impact individuel/entreprise se mettent à jour en cohérence.
 
 ## Dépendances
