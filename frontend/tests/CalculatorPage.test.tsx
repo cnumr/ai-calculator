@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import "../src/i18n";
 import { CalculatorPage } from "../src/pages/CalculatorPage";
 import * as apiClient from "../src/api/client";
@@ -9,13 +9,15 @@ vi.mock("../src/api/client", async () => {
   const actual = await vi.importActual<typeof apiClient>("../src/api/client");
   return {
     ...actual,
-    fetchProviders: vi.fn(),
-    calculate: vi.fn(),
+    fetchUseCases: vi.fn(),
   };
 });
 
-const mockedFetchProviders = vi.mocked(apiClient.fetchProviders);
-const mockedCalculate = vi.mocked(apiClient.calculate);
+const mockedFetchUseCases = vi.mocked(apiClient.fetchUseCases);
+
+afterEach(() => {
+  vi.clearAllMocks();
+});
 
 const ZERO_RANGE = { min: 0, max: 0 };
 const ZERO_IMPACTS = {
@@ -26,80 +28,146 @@ const ZERO_IMPACTS = {
   water: ZERO_RANGE,
 };
 
+const CATALOG: apiClient.UseCasesCatalog = {
+  providers: [
+    { id: "openai", selectedByDefault: true },
+    { id: "anthropic", selectedByDefault: false },
+  ],
+  useCases: [
+    {
+      id: "email",
+      providers: [
+        {
+          providerId: "openai",
+          profiles: [
+            {
+              id: "eco",
+              impacts: { ...ZERO_IMPACTS, gwp: { min: 1, max: 2 } },
+            },
+          ],
+        },
+        {
+          providerId: "anthropic",
+          profiles: [
+            {
+              id: "eco",
+              impacts: { ...ZERO_IMPACTS, gwp: { min: 3, max: 4 } },
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
 describe("CalculatorPage", () => {
-  it("submits the form and displays 5 range gauges for the unit result", async () => {
-    mockedFetchProviders.mockResolvedValue([
-      { provider: "openai", name: "gpt-4o-mini" },
-    ]);
-    mockedCalculate.mockResolvedValue({
-      unit: { ...ZERO_IMPACTS, gwp: { min: 1.1, max: 2.2 } },
-      individualAnnual: ZERO_IMPACTS,
-      enterpriseAnnual: ZERO_IMPACTS,
-    });
-
-    const { container } = render(<CalculatorPage />);
-
-    await waitFor(() => expect(mockedFetchProviders).toHaveBeenCalled());
-
-    await userEvent.click(
-      screen.getByRole("button", { name: /calculer|calculate/i }),
-    );
-
-    await waitFor(() => expect(mockedCalculate).toHaveBeenCalled());
-    expect(screen.getByText(/1.1/)).toBeInTheDocument();
-    expect(screen.getByText(/2.2/)).toBeInTheDocument();
-
-    // Assert exactly 5 RangeGauge components rendered in the unit result section
-    const gauges = container.querySelectorAll(".range-gauge");
-    expect(gauges).toHaveLength(15); // 3 sections (unit, individual, enterprise) × 5 criteria each
-  });
-
-  it("displays Co2Equivalents after successful calculation using individualAnnual gwp max", async () => {
-    mockedFetchProviders.mockResolvedValue([
-      { provider: "openai", name: "gpt-4o-mini" },
-    ]);
-    mockedCalculate.mockResolvedValue({
-      unit: ZERO_IMPACTS,
-      individualAnnual: {
-        ...ZERO_IMPACTS,
-        gwp: { min: 10, max: 21.8 }, // max=21.8 gives ~100 km by car (21.8 / 0.218)
-      },
-      enterpriseAnnual: ZERO_IMPACTS,
-    });
+  it("loads the catalogue once and renders one card per use case", async () => {
+    mockedFetchUseCases.mockResolvedValue(CATALOG);
 
     render(<CalculatorPage />);
 
-    await waitFor(() => expect(mockedFetchProviders).toHaveBeenCalled());
-    await userEvent.click(
-      screen.getByRole("button", { name: /calculer|calculate/i }),
-    );
-
-    // Assert Co2Equivalents is rendered with one of its comparison lines visible
     await waitFor(() =>
       expect(
-        screen.getByText(/^100 km by car$|^100 km en voiture$/),
+        screen.getByText(/rédaction d'un email|writing an email/i),
       ).toBeInTheDocument(),
     );
+    expect(mockedFetchUseCases).toHaveBeenCalledTimes(1);
   });
 
-  it("shows a localized error message when the model is not found", async () => {
-    mockedFetchProviders.mockResolvedValue([
-      { provider: "openai", name: "gpt-4o-mini" },
-    ]);
-    mockedCalculate.mockRejectedValue(new apiClient.ApiError(404, "not found"));
+  it("renders a chip per provider, initialised from selectedByDefault", async () => {
+    mockedFetchUseCases.mockResolvedValue(CATALOG);
 
     render(<CalculatorPage />);
 
-    await waitFor(() => expect(mockedFetchProviders).toHaveBeenCalled());
-    await userEvent.click(
-      screen.getByRole("button", { name: /calculer|calculate/i }),
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: /openai/i }),
+      ).toBeInTheDocument(),
     );
+    expect(screen.getByRole("button", { name: /openai/i })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: /anthropic/i })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  it("switches a card's provider away from a deselected chip", async () => {
+    mockedFetchUseCases.mockResolvedValue(CATALOG);
+
+    render(<CalculatorPage />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: /openai/i }),
+      ).toBeInTheDocument(),
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /anthropic/i }));
+    await userEvent.click(screen.getByRole("button", { name: /openai/i }));
+
+    const providerSelect = screen.getByLabelText(/fournisseur|provider/i);
+    expect(providerSelect).toHaveValue("anthropic");
+  });
+
+  it("shows a full-page error with retry when the catalogue fails to load", async () => {
+    mockedFetchUseCases.mockRejectedValueOnce(
+      new apiClient.ApiError(500, "boom"),
+    );
+    mockedFetchUseCases.mockResolvedValueOnce(CATALOG);
+
+    render(<CalculatorPage />);
 
     await waitFor(() =>
       expect(
         screen.getByText(
-          /n'est pas \(encore\) disponible|not \(yet\) available/i,
+          /impossible de charger le catalogue|could not load the use case catalogue/i,
         ),
+      ).toBeInTheDocument(),
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /réessayer|retry/i }),
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(/rédaction d'un email|writing an email/i),
+      ).toBeInTheDocument(),
+    );
+    expect(mockedFetchUseCases).toHaveBeenCalledTimes(2);
+  });
+
+  it("aggregates individual annual impact from the card's gwp and frequency", async () => {
+    mockedFetchUseCases.mockResolvedValue(CATALOG);
+
+    const { container } = render(<CalculatorPage />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(/rédaction d'un email|writing an email/i),
+      ).toBeInTheDocument(),
+    );
+
+    // Default frequency is 1/day, 220 working days/year, gwp max = 2 -> 440
+    // RangeGauge components render the max value in a <span class="range-gauge__value">
+    const gauges = container.querySelectorAll(".range-gauge");
+    const found = Array.from(gauges).some((gauge) =>
+      gauge.textContent?.includes("440"),
+    );
+    expect(found).toBe(true);
+  });
+
+  it("shows the breakdown by provider with details for the other 4 indicators", async () => {
+    mockedFetchUseCases.mockResolvedValue(CATALOG);
+
+    render(<CalculatorPage />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(/répartition par fournisseur|breakdown by provider/i),
       ).toBeInTheDocument(),
     );
   });
