@@ -1,0 +1,545 @@
+providers:
+  - id: openai
+    selected_by_default: true
+  - id: anthropic
+    selected_by_default: false
+  - id: mistral
+    selected_by_default: false
+  - id: google
+    selected_by_default: true
+  - id: microsoft_copilot
+    selected_by_default: true
+use_cases:
+  - id: video
+    default_provider: google
+    recommended_tier: video
+    providers:
+      - provider_id: google
+        profiles:
+          - id: video
+            static_impacts:
+              gwp:
+                min: 0.377061
+                max: 0.377061
+              adpe:
+                min: 8.102e-06
+                max: 8.102e-06
+              energy:
+                min: 0.0
+                max: 0.0
+              water:
+                min: 0.0
+                max: 0.0
+              pe:
+                min: 0.0
+                max: 0.0
+  - id: image
+    default_provider: google
+    recommended_tier: image
+    providers:
+      - provider_id: google
+        profiles:
+          - id: image
+            static_impacts:
+              gwp:
+                min: 0.012568
+                max: 0.012568
+              adpe:
+                min: 2.7e-07
+                max: 2.7e-07
+              energy:
+                min: 0.0
+                max: 0.0
+              water:
+                min: 0.0
+                max: 0.0
+              pe:
+                min: 0.0
+                max: 0.0
+      - provider_id: openai
+        profiles:
+          - id: image
+            static_impacts:
+              gwp:
+                min: 0.0125
+                max: 0.0125
+              adpe:
+                min: 2.68e-07
+                max: 2.68e-07
+              energy:
+                min: 0.0
+                max: 0.0
+              water:
+                min: 0.0
+                max: 0.0
+              pe:
+                min: 0.0
+                max: 0.0
+  - id: deep_research
+    default_provider: openai
+    recommended_tier: research
+    providers:
+      - provider_id: openai
+        profiles:
+          - id: eco
+            ecologits_provider: openai
+            ecologits_model: gpt-4o-mini
+            output_tokens: 200000
+          - id: balanced
+            ecologits_provider: openai
+            ecologits_model: gpt-4o
+            output_tokens: 200000
+          - id: powerful
+            ecologits_provider: openai
+            ecologits_model: gpt-4.1
+            output_tokens: 200000
+          - id: research
+            ecologits_provider: openai
+            ecologits_model: o4-mini-deep-research
+            output_tokens: 200000
+      - provider_id: anthropic
+        profiles:
+          - id: eco
+            ecologits_provider: anthropic
+            ecologits_model: claude-haiku-4-5
+            output_tokens: 200000
+          - id: balanced
+            ecologits_provider: anthropic
+            ecologits_model: claude-sonnet-4-5
+            output_tokens: 200000
+          - id: powerful
+            ecologits_provider: anthropic
+            ecologits_model: claude-opus-4-0
+            output_tokens: 200000
+      - provider_id: mistral
+        profiles:
+          - id: eco
+            ecologits_provider: mistralai
+            ecologits_model: ministral-8b-latest
+            output_tokens: 200000
+          - id: balanced
+            ecologits_provider: mistralai
+            ecologits_model: mistral-small-latest
+            output_tokens: 200000
+          - id: powerful
+            ecologits_provider: mistralai
+            ecologits_model: mistral-large-latest
+            output_tokens: 200000
+      - provider_id: google
+        profiles:
+          - id: eco
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.0-flash-lite
+            output_tokens: 200000
+          - id: balanced
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.0-flash
+            output_tokens: 200000
+          - id: powerful
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.5-pro
+            output_tokens: 200000
+      - provider_id: microsoft_copilot
+        profiles:
+          - id: eco
+            ecologits_provider: openai
+            ecologits_model: gpt-4o-mini
+            output_tokens: 200000
+          - id: balanced
+            ecologits_provider: openai
+            ecologits_model: gpt-4o
+            output_tokens: 200000
+          - id: powerful
+            ecologits_provider: anthropic
+            ecologits_model: claude-sonnet-4-5
+            output_tokens: 200000
+  - id: meet_summary
+    default_provider: microsoft_copilot
+    recommended_tier: eco
+    providers:
+      - provider_id: openai
+        profiles:
+          - id: eco
+            ecologits_provider: openai
+            ecologits_model: gpt-4o-mini
+            output_tokens: 8000
+          - id: balanced
+            ecologits_provider: openai
+            ecologits_model: gpt-4o
+            output_tokens: 8000
+          - id: powerful
+            ecologits_provider: openai
+            ecologits_model: gpt-4.1
+            output_tokens: 8000
+          - id: research
+            ecologits_provider: openai
+            ecologits_model: o4-mini-deep-research
+            output_tokens: 8000
+      - provider_id: anthropic
+        profiles:
+          - id: eco
+            ecologits_provider: anthropic
+            ecologits_model: claude-haiku-4-5
+            output_tokens: 8000
+          - id: balanced
+            ecologits_provider: anthropic
+            ecologits_model: claude-sonnet-4-5
+            output_tokens: 8000
+          - id: powerful
+            ecologits_provider: anthropic
+            ecologits_model: claude-opus-4-0
+            output_tokens: 8000
+      - provider_id: mistral
+        profiles:
+          - id: eco
+            ecologits_provider: mistralai
+            ecologits_model: ministral-8b-latest
+            output_tokens: 8000
+          - id: balanced
+            ecologits_provider: mistralai
+            ecologits_model: mistral-small-latest
+            output_tokens: 8000
+          - id: powerful
+            ecologits_provider: mistralai
+            ecologits_model: mistral-large-latest
+            output_tokens: 8000
+      - provider_id: google
+        profiles:
+          - id: eco
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.0-flash-lite
+            output_tokens: 8000
+          - id: balanced
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.0-flash
+            output_tokens: 8000
+          - id: powerful
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.5-pro
+            output_tokens: 8000
+      - provider_id: microsoft_copilot
+        profiles:
+          - id: eco
+            ecologits_provider: openai
+            ecologits_model: gpt-4o-mini
+            output_tokens: 8000
+          - id: balanced
+            ecologits_provider: openai
+            ecologits_model: gpt-4o
+            output_tokens: 8000
+          - id: powerful
+            ecologits_provider: anthropic
+            ecologits_model: claude-sonnet-4-5
+            output_tokens: 8000
+  - id: doc_small
+    default_provider: openai
+    recommended_tier: eco
+    providers:
+      - provider_id: openai
+        profiles:
+          - id: eco
+            ecologits_provider: openai
+            ecologits_model: gpt-4o-mini
+            output_tokens: 3000
+          - id: balanced
+            ecologits_provider: openai
+            ecologits_model: gpt-4o
+            output_tokens: 3000
+          - id: powerful
+            ecologits_provider: openai
+            ecologits_model: gpt-4.1
+            output_tokens: 3000
+          - id: research
+            ecologits_provider: openai
+            ecologits_model: o4-mini-deep-research
+            output_tokens: 3000
+      - provider_id: anthropic
+        profiles:
+          - id: eco
+            ecologits_provider: anthropic
+            ecologits_model: claude-haiku-4-5
+            output_tokens: 3000
+          - id: balanced
+            ecologits_provider: anthropic
+            ecologits_model: claude-sonnet-4-5
+            output_tokens: 3000
+          - id: powerful
+            ecologits_provider: anthropic
+            ecologits_model: claude-opus-4-0
+            output_tokens: 3000
+      - provider_id: mistral
+        profiles:
+          - id: eco
+            ecologits_provider: mistralai
+            ecologits_model: ministral-8b-latest
+            output_tokens: 3000
+          - id: balanced
+            ecologits_provider: mistralai
+            ecologits_model: mistral-small-latest
+            output_tokens: 3000
+          - id: powerful
+            ecologits_provider: mistralai
+            ecologits_model: mistral-large-latest
+            output_tokens: 3000
+      - provider_id: google
+        profiles:
+          - id: eco
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.0-flash-lite
+            output_tokens: 3000
+          - id: balanced
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.0-flash
+            output_tokens: 3000
+          - id: powerful
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.5-pro
+            output_tokens: 3000
+      - provider_id: microsoft_copilot
+        profiles:
+          - id: eco
+            ecologits_provider: openai
+            ecologits_model: gpt-4o-mini
+            output_tokens: 3000
+          - id: balanced
+            ecologits_provider: openai
+            ecologits_model: gpt-4o
+            output_tokens: 3000
+          - id: powerful
+            ecologits_provider: anthropic
+            ecologits_model: claude-sonnet-4-5
+            output_tokens: 3000
+  - id: doc_large
+    default_provider: openai
+    recommended_tier: balanced
+    providers:
+      - provider_id: openai
+        profiles:
+          - id: eco
+            ecologits_provider: openai
+            ecologits_model: gpt-4o-mini
+            output_tokens: 15000
+          - id: balanced
+            ecologits_provider: openai
+            ecologits_model: gpt-4o
+            output_tokens: 15000
+          - id: powerful
+            ecologits_provider: openai
+            ecologits_model: gpt-4.1
+            output_tokens: 15000
+          - id: research
+            ecologits_provider: openai
+            ecologits_model: o4-mini-deep-research
+            output_tokens: 15000
+      - provider_id: anthropic
+        profiles:
+          - id: eco
+            ecologits_provider: anthropic
+            ecologits_model: claude-haiku-4-5
+            output_tokens: 15000
+          - id: balanced
+            ecologits_provider: anthropic
+            ecologits_model: claude-sonnet-4-5
+            output_tokens: 15000
+          - id: powerful
+            ecologits_provider: anthropic
+            ecologits_model: claude-opus-4-0
+            output_tokens: 15000
+      - provider_id: mistral
+        profiles:
+          - id: eco
+            ecologits_provider: mistralai
+            ecologits_model: ministral-8b-latest
+            output_tokens: 15000
+          - id: balanced
+            ecologits_provider: mistralai
+            ecologits_model: mistral-small-latest
+            output_tokens: 15000
+          - id: powerful
+            ecologits_provider: mistralai
+            ecologits_model: mistral-large-latest
+            output_tokens: 15000
+      - provider_id: google
+        profiles:
+          - id: eco
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.0-flash-lite
+            output_tokens: 15000
+          - id: balanced
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.0-flash
+            output_tokens: 15000
+          - id: powerful
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.5-pro
+            output_tokens: 15000
+      - provider_id: microsoft_copilot
+        profiles:
+          - id: eco
+            ecologits_provider: openai
+            ecologits_model: gpt-4o-mini
+            output_tokens: 15000
+          - id: balanced
+            ecologits_provider: openai
+            ecologits_model: gpt-4o
+            output_tokens: 15000
+          - id: powerful
+            ecologits_provider: anthropic
+            ecologits_model: claude-sonnet-4-5
+            output_tokens: 15000
+  - id: ai_query
+    default_provider: google
+    recommended_tier: eco
+    providers:
+      - provider_id: openai
+        profiles:
+          - id: eco
+            ecologits_provider: openai
+            ecologits_model: gpt-4o-mini
+            output_tokens: 1000
+          - id: balanced
+            ecologits_provider: openai
+            ecologits_model: gpt-4o
+            output_tokens: 1000
+          - id: powerful
+            ecologits_provider: openai
+            ecologits_model: gpt-4.1
+            output_tokens: 1000
+          - id: research
+            ecologits_provider: openai
+            ecologits_model: o4-mini-deep-research
+            output_tokens: 1000
+      - provider_id: anthropic
+        profiles:
+          - id: eco
+            ecologits_provider: anthropic
+            ecologits_model: claude-haiku-4-5
+            output_tokens: 1000
+          - id: balanced
+            ecologits_provider: anthropic
+            ecologits_model: claude-sonnet-4-5
+            output_tokens: 1000
+          - id: powerful
+            ecologits_provider: anthropic
+            ecologits_model: claude-opus-4-0
+            output_tokens: 1000
+      - provider_id: mistral
+        profiles:
+          - id: eco
+            ecologits_provider: mistralai
+            ecologits_model: ministral-8b-latest
+            output_tokens: 1000
+          - id: balanced
+            ecologits_provider: mistralai
+            ecologits_model: mistral-small-latest
+            output_tokens: 1000
+          - id: powerful
+            ecologits_provider: mistralai
+            ecologits_model: mistral-large-latest
+            output_tokens: 1000
+      - provider_id: google
+        profiles:
+          - id: eco
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.0-flash-lite
+            output_tokens: 1000
+          - id: balanced
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.0-flash
+            output_tokens: 1000
+          - id: powerful
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.5-pro
+            output_tokens: 1000
+      - provider_id: microsoft_copilot
+        profiles:
+          - id: eco
+            ecologits_provider: openai
+            ecologits_model: gpt-4o-mini
+            output_tokens: 1000
+          - id: balanced
+            ecologits_provider: openai
+            ecologits_model: gpt-4o
+            output_tokens: 1000
+          - id: powerful
+            ecologits_provider: anthropic
+            ecologits_model: claude-sonnet-4-5
+            output_tokens: 1000
+  - id: email
+    default_provider: microsoft_copilot
+    recommended_tier: eco
+    providers:
+      - provider_id: openai
+        profiles:
+          - id: eco
+            ecologits_provider: openai
+            ecologits_model: gpt-4o-mini
+            output_tokens: 300
+          - id: balanced
+            ecologits_provider: openai
+            ecologits_model: gpt-4o
+            output_tokens: 300
+          - id: powerful
+            ecologits_provider: openai
+            ecologits_model: gpt-4.1
+            output_tokens: 300
+          - id: research
+            ecologits_provider: openai
+            ecologits_model: o4-mini-deep-research
+            output_tokens: 300
+      - provider_id: anthropic
+        profiles:
+          - id: eco
+            ecologits_provider: anthropic
+            ecologits_model: claude-haiku-4-5
+            output_tokens: 300
+          - id: balanced
+            ecologits_provider: anthropic
+            ecologits_model: claude-sonnet-4-5
+            output_tokens: 300
+          - id: powerful
+            ecologits_provider: anthropic
+            ecologits_model: claude-opus-4-0
+            output_tokens: 300
+      - provider_id: mistral
+        profiles:
+          - id: eco
+            ecologits_provider: mistralai
+            ecologits_model: ministral-8b-latest
+            output_tokens: 300
+          - id: balanced
+            ecologits_provider: mistralai
+            ecologits_model: mistral-small-latest
+            output_tokens: 300
+          - id: powerful
+            ecologits_provider: mistralai
+            ecologits_model: mistral-large-latest
+            output_tokens: 300
+      - provider_id: google
+        profiles:
+          - id: eco
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.0-flash-lite
+            output_tokens: 300
+          - id: balanced
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.0-flash
+            output_tokens: 300
+          - id: powerful
+            ecologits_provider: google_genai
+            ecologits_model: gemini-2.5-pro
+            output_tokens: 300
+      - provider_id: microsoft_copilot
+        profiles:
+          - id: eco
+            ecologits_provider: openai
+            ecologits_model: gpt-4o-mini
+            output_tokens: 300
+          - id: balanced
+            ecologits_provider: openai
+            ecologits_model: gpt-4o
+            output_tokens: 300
+          - id: powerful
+            ecologits_provider: anthropic
+            ecologits_model: claude-sonnet-4-5
+            output_tokens: 300
