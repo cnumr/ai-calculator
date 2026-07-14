@@ -42,6 +42,10 @@ Un premier [POC](https://ia-calculator.greenit.eco/) a été réalisé sous form
 - **Référentiel de modèles enrichi via Hugging Face** : aller chercher sur Hugging Face les caractéristiques nécessaires (nombre de paramètres, architecture, etc.) pour construire nos propres fiches modèles et compléter/enrichir celles fournies nativement par EcoLogits, sur le principe utilisé dans le projet [ai-footprint](https://github.com/hrenaud/ai-footprint) (résolution de modèles tiers/locaux non reconnus).
 - Ce référentiel sera un sous-projet à part entière (spec dédiée), consommé ensuite par le back du calculateur.
 
+## Développement
+
+Voir [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) pour lancer le projet (Docker Compose ou manuel), les tests, et les notes devops.
+
 ## Statut
 
 Projet en phase de cadrage / brainstorm.
