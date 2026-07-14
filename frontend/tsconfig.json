@@ -10,7 +10,9 @@
     "noUnusedParameters": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
   },
   "include": ["src", "tests"]
 }
