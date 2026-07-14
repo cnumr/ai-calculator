@@ -2,6 +2,23 @@
   "common": {
     "appName": "AI Calculator"
   },
+  "providers": {
+    "openai": "OpenAI",
+    "anthropic": "Anthropic",
+    "mistral": "Mistral AI",
+    "google": "Google",
+    "microsoft_copilot": "Microsoft Copilot"
+  },
+  "useCases": {
+    "video": { "name": "Génération de vidéos" },
+    "image": { "name": "Génération d'images" },
+    "deep_research": { "name": "Recherche approfondie" },
+    "meet_summary": { "name": "Résumé de réunion" },
+    "doc_small": { "name": "Rédaction d'un document court" },
+    "doc_large": { "name": "Rédaction d'un document long" },
+    "ai_query": { "name": "Question à un assistant IA" },
+    "email": { "name": "Rédaction d'un email" }
+  },
   "calculator": {
     "title": "Calculateur d'impacts",
     "provider": "Fournisseur",
@@ -9,9 +26,25 @@
     "outputTokens": "Tokens générés par requête",
     "requestsPerDay": "Requêtes par jour",
     "submit": "Calculer",
-    "resultUnit": "Par requête",
+    "providersHeading": "Écosystème IA",
+    "providerSelect": "Fournisseur",
+    "profileSelect": "Profil",
+    "profileUnsupported": "Non disponible pour ce fournisseur",
+    "frequencyPerDay": "Fréquence par jour",
+    "detailsToggle": "Voir/Masquer le détail de vos impacts pour cette tâche",
+    "breakdownByProvider": "Répartition par fournisseur",
+    "resultUnit": "Par action",
     "resultIndividualAnnual": "Par personne et par an",
     "resultEnterpriseAnnual": "Pour l'entreprise et par an",
+    "headcount": "Nombre de salariés",
+    "tier": {
+      "eco": "Éco",
+      "balanced": "Équilibré",
+      "powerful": "Puissant",
+      "research": "Recherche approfondie",
+      "image": "Standard",
+      "video": "Standard"
+    },
     "criterion": {
       "gwp": "Gaz à effet de serre",
       "energy": "Énergie",
@@ -21,6 +54,8 @@
     },
     "errorModelNotFound": "Ce modèle n'est pas (encore) disponible dans le référentiel.",
     "errorGeneric": "Une erreur est survenue lors du calcul.",
+    "errorCatalogLoad": "Impossible de charger le catalogue de cas d'usage.",
+    "retry": "Réessayer",
     "co2Equivalent": {
       "car_km": "{{count}} km en voiture",
       "beef_burger": "{{count}} burgers au bœuf",

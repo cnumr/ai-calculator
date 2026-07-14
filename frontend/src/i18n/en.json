@@ -2,6 +2,23 @@
   "common": {
     "appName": "AI Calculator"
   },
+  "providers": {
+    "openai": "OpenAI",
+    "anthropic": "Anthropic",
+    "mistral": "Mistral AI",
+    "google": "Google",
+    "microsoft_copilot": "Microsoft Copilot"
+  },
+  "useCases": {
+    "video": { "name": "Video generation" },
+    "image": { "name": "Image generation" },
+    "deep_research": { "name": "Deep research" },
+    "meet_summary": { "name": "Meeting summary" },
+    "doc_small": { "name": "Writing a short document" },
+    "doc_large": { "name": "Writing a long document" },
+    "ai_query": { "name": "Query to an AI assistant" },
+    "email": { "name": "Writing an email" }
+  },
   "calculator": {
     "title": "Impact calculator",
     "provider": "Provider",
@@ -9,9 +26,25 @@
     "outputTokens": "Generated tokens per request",
     "requestsPerDay": "Requests per day",
     "submit": "Calculate",
-    "resultUnit": "Per request",
+    "providersHeading": "AI ecosystem",
+    "providerSelect": "Provider",
+    "profileSelect": "Profile",
+    "profileUnsupported": "Not available for this provider",
+    "frequencyPerDay": "Frequency per day",
+    "detailsToggle": "Show/hide the impact details for this task",
+    "breakdownByProvider": "Breakdown by provider",
+    "resultUnit": "Per action",
     "resultIndividualAnnual": "Per person, per year",
     "resultEnterpriseAnnual": "For the company, per year",
+    "headcount": "Headcount",
+    "tier": {
+      "eco": "Eco",
+      "balanced": "Balanced",
+      "powerful": "Powerful",
+      "research": "Deep research",
+      "image": "Standard",
+      "video": "Standard"
+    },
     "criterion": {
       "gwp": "Greenhouse gases",
       "energy": "Energy",
@@ -21,6 +54,8 @@
     },
     "errorModelNotFound": "This model is not (yet) available in the referential.",
     "errorGeneric": "An error occurred during the calculation.",
+    "errorCatalogLoad": "Could not load the use case catalogue.",
+    "retry": "Retry",
     "co2Equivalent": {
       "car_km": "{{count}} km by car",
       "beef_burger": "{{count}} beef burgers",
