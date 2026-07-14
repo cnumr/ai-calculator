@@ -82,3 +82,60 @@ export async function calculate(
     enterpriseAnnual: body.enterprise_annual,
   };
 }
+
+export interface CatalogProvider {
+  id: string;
+  selectedByDefault: boolean;
+}
+
+export interface Profile {
+  id: string;
+  impacts: Impacts;
+}
+
+export interface ProviderMapping {
+  providerId: string;
+  profiles: Profile[];
+}
+
+export interface UseCase {
+  id: string;
+  providers: ProviderMapping[];
+}
+
+export interface UseCasesCatalog {
+  providers: CatalogProvider[];
+  useCases: UseCase[];
+}
+
+interface UseCasesResponseBody {
+  providers: Array<{ id: string; selected_by_default: boolean }>;
+  use_cases: Array<{
+    id: string;
+    providers: Array<{
+      provider_id: string;
+      profiles: Array<{ id: string; impacts: Impacts }>;
+    }>;
+  }>;
+}
+
+export async function fetchUseCases(): Promise<UseCasesCatalog> {
+  const response = await fetch(`${API_BASE}/api/use-cases`);
+  if (!response.ok) {
+    throw new ApiError(response.status, "Failed to fetch use cases");
+  }
+  const body: UseCasesResponseBody = await response.json();
+  return {
+    providers: body.providers.map((p) => ({
+      id: p.id,
+      selectedByDefault: p.selected_by_default,
+    })),
+    useCases: body.use_cases.map((uc) => ({
+      id: uc.id,
+      providers: uc.providers.map((pm) => ({
+        providerId: pm.provider_id,
+        profiles: pm.profiles.map((p) => ({ id: p.id, impacts: p.impacts })),
+      })),
+    })),
+  };
+}
