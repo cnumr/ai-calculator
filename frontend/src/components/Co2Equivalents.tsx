@@ -11,7 +11,7 @@ export function Co2Equivalents({ gwpKgCo2eq }: Co2EquivalentsProps) {
   const { t } = useTranslation();
 
   return (
-    <ul>
+    <ul className="co2-equivalents">
       {equivalents.map((eq) => {
         const count = Math.round(gwpKgCo2eq / eq.kgCo2eqPerUnit);
         return (

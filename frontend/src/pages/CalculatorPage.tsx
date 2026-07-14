@@ -22,7 +22,7 @@ const CRITERIA: Array<{ key: keyof Impacts; unit: string }> = [
 function ImpactsGrid({ impacts, title }: { impacts: Impacts; title: string }) {
   const { t } = useTranslation();
   return (
-    <section>
+    <section className="impacts-grid">
       <h3>{title}</h3>
       {CRITERIA.map(({ key, unit }) => (
         <RangeGauge
@@ -74,42 +74,56 @@ export function CalculatorPage() {
 
   return (
     <div>
-      <h1>{t("calculator.title")}</h1>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="calculator-model">{t("calculator.model")}</label>
-        <select
-          id="calculator-model"
-          value={selectedIndex}
-          onChange={(e) => setSelectedIndex(Number(e.target.value))}
-        >
-          {providers.map((p, index) => (
-            <option key={`${p.provider}-${p.name}`} value={index}>
-              {p.provider} — {p.name}
-            </option>
-          ))}
-        </select>
-        <label htmlFor="calculator-output-tokens">
-          {t("calculator.outputTokens")}
-        </label>
-        <input
-          id="calculator-output-tokens"
-          type="number"
-          value={outputTokens}
-          onChange={(e) => setOutputTokens(Number(e.target.value))}
-        />
-        <label htmlFor="calculator-requests-per-day">
-          {t("calculator.requestsPerDay")}
-        </label>
-        <input
-          id="calculator-requests-per-day"
-          type="number"
-          value={requestsPerDay}
-          onChange={(e) => setRequestsPerDay(Number(e.target.value))}
-        />
-        <button type="submit">{t("calculator.submit")}</button>
+      <div className="calculator-hero">
+        <h1>{t("calculator.title")}</h1>
+      </div>
+      <form className="calculator-form" onSubmit={handleSubmit}>
+        <div className="calculator-form__field">
+          <label htmlFor="calculator-model">{t("calculator.model")}</label>
+          <select
+            id="calculator-model"
+            value={selectedIndex}
+            onChange={(e) => setSelectedIndex(Number(e.target.value))}
+          >
+            {providers.map((p, index) => (
+              <option key={`${p.provider}-${p.name}`} value={index}>
+                {p.provider} — {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="calculator-form__field">
+          <label htmlFor="calculator-output-tokens">
+            {t("calculator.outputTokens")}
+          </label>
+          <input
+            id="calculator-output-tokens"
+            type="number"
+            value={outputTokens}
+            onChange={(e) => setOutputTokens(Number(e.target.value))}
+          />
+        </div>
+        <div className="calculator-form__field">
+          <label htmlFor="calculator-requests-per-day">
+            {t("calculator.requestsPerDay")}
+          </label>
+          <input
+            id="calculator-requests-per-day"
+            type="number"
+            value={requestsPerDay}
+            onChange={(e) => setRequestsPerDay(Number(e.target.value))}
+          />
+        </div>
+        <button className="calculator-form__submit" type="submit">
+          {t("calculator.submit")}
+        </button>
       </form>
 
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <p className="calculator-error" role="alert">
+          {error}
+        </p>
+      )}
 
       {result && (
         <>
