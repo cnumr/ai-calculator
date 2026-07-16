@@ -152,11 +152,15 @@ describe("CalculatorPage", () => {
     );
 
     // Default frequency is 1/day, 220 working days/year, gwp max = 2 -> 440
-    const gauges = container.querySelectorAll(".range-gauge");
-    const found = Array.from(gauges).some((gauge) =>
-      gauge.textContent?.includes("440"),
-    );
-    expect(found).toBe(true);
+    // Card impacts populate via a child useEffect after the initial render,
+    // so the gauge text appears asynchronously relative to the catalogue load.
+    await waitFor(() => {
+      const gauges = container.querySelectorAll(".range-gauge");
+      const found = Array.from(gauges).some((gauge) =>
+        gauge.textContent?.includes("440"),
+      );
+      expect(found).toBe(true);
+    });
   });
 
   it("shows the breakdown by provider with details for the other 4 indicators", async () => {
