@@ -181,7 +181,7 @@ export function CalculatorPage() {
   const enterpriseAnnual = scaleImpacts(individualAnnual, headcount);
 
   return (
-    <div>
+    <div className="calculator-page">
       <div className="calculator-hero">
         <h1>{t("calculator.title")}</h1>
       </div>

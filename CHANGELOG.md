@@ -11,10 +11,10 @@ Le format s'inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 - `docker-compose.yml` pour lancer le back et le front en local (hot-reload, dépendances isolées via volumes nommés).
 - `backend/Dockerfile` et `frontend/Dockerfile` (images de développement, non adaptées à la production).
 - `docs/DEVELOPMENT.md` : guide développeur/devops (démarrage Docker Compose ou manuel, variables d'environnement, tests, structure du dépôt, état des lieux CI/CD).
-- Support CORS sur le back (`CORS_ALLOWED_ORIGINS`) pour autoriser les appels du front en développement.
+- Support CORS sur le back (`CORS_ALLOWED_ORIGINS`) pour autoriser les appels du front en développement, y compris depuis l'origine OrbStack (`https://frontend.ai-calculator.orb.local`).
 - Port hôte du frontend variabilisable via `FRONTEND_PORT` dans `docker-compose.yml`.
 - Lien vers `docs/DEVELOPMENT.md` dans le README.
-- Habillage visuel du front (`frontend/src/index.css`) via le skill `frontend-design` : système de tokens couleur/typo (Fraunces pour les titres, Inter pour l'UI, IBM Plex Mono pour les valeurs numériques), palette vert forêt/ambre inspirée du végétal, mise en page carte/nav, et traitement signature des `RangeGauge` (dégradé vert→ambre→rouge avec segment actif en surbrillance).
+- Habillage visuel du front (`frontend/src/index.css`) via le skill `frontend-design` : système de tokens couleur/typo (Fraunces pour les titres, Inter pour l'UI, IBM Plex Mono pour les valeurs numériques), palette vert forêt/ambre inspirée du végétal, mise en page carte/nav, et traitement signature des `RangeGauge` (dégradé vert→ambre→rouge avec segment actif en surbrillance). Complété par le CSS des composants du catalogue de cas d'usage (`.use-case-catalog`, `.use-case-card`, `.provider-chips`, `.provider-breakdown`), absent du premier passage.
 - Calculateur refondu en catalogue de 8 cas d'usage (cascade fournisseur → profil, lecture seule si combinaison non supportée), configurable via `backend/src/ai_calculator/data/use_cases.yaml` (source unique, sans back-office) ; chips fournisseurs togglables et pictos par cas d'usage.
 - Extension de l'affichage des impacts aux 5 indicateurs EcoLogits (GWP, Eau, ADPe, Énergie, PE) au lieu du seul CO2 du POC, sur les panneaux individuel/entreprise et la répartition par fournisseur.
 - Nouvel endpoint `GET /api/use-cases` (additif, `GET /api/providers` et `POST /api/calculate` inchangés) servant le catalogue au chargement de la page.
