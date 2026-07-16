@@ -33,9 +33,9 @@ use_cases:
             static_impacts:
               gwp: {min: 0.0125, max: 0.0125}
               adpe: {min: 2.68e-07, max: 2.68e-07}
-              energy: {min: 0.0, max: 0.0}
-              water: {min: 0.0, max: 0.0}
-              pe: {min: 0.0, max: 0.0}
+              energy: null
+              water: null
+              pe: null
 """
 
 
@@ -59,8 +59,9 @@ def test_load_catalog_resolves_llm_and_static_profiles(tmp_path):
     static_profile = next(p for p in image_google.profiles if p.id == "image")
     assert static_profile.impacts.gwp.min == 0.0125
     assert static_profile.impacts.gwp.max == 0.0125
-    assert static_profile.impacts.energy.min == 0.0
-    assert static_profile.impacts.energy.max == 0.0
+    assert static_profile.impacts.energy is None
+    assert static_profile.impacts.water is None
+    assert static_profile.impacts.pe is None
 
 
 def test_load_catalog_raises_on_unknown_ecologits_model(tmp_path):

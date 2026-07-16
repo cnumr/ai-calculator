@@ -17,13 +17,19 @@ from ai_calculator.schemas.calculate import (
 router = APIRouter()
 
 
+def _to_range_out(range_: object) -> ImpactRangeOut | None:
+    if range_ is None:
+        return None
+    return ImpactRangeOut(min=range_.min, max=range_.max)
+
+
 def _to_impacts_out(impacts: UnitImpacts | AggregatedImpacts) -> ImpactsOut:
     return ImpactsOut(
-        gwp=ImpactRangeOut(min=impacts.gwp.min, max=impacts.gwp.max),
-        energy=ImpactRangeOut(min=impacts.energy.min, max=impacts.energy.max),
-        adpe=ImpactRangeOut(min=impacts.adpe.min, max=impacts.adpe.max),
-        pe=ImpactRangeOut(min=impacts.pe.min, max=impacts.pe.max),
-        water=ImpactRangeOut(min=impacts.water.min, max=impacts.water.max),
+        gwp=_to_range_out(impacts.gwp),
+        energy=_to_range_out(impacts.energy),
+        adpe=_to_range_out(impacts.adpe),
+        pe=_to_range_out(impacts.pe),
+        water=_to_range_out(impacts.water),
     )
 
 

@@ -27,9 +27,22 @@
     "requestsPerDay": "Requests per day",
     "submit": "Calculate",
     "providersHeading": "AI ecosystem",
+    "sectionEcosystem": {
+      "title": "Your organisation's AI ecosystem",
+      "description": "Select the allowed LLM providers — they'll be available in the use cases below"
+    },
+    "sectionUsage": {
+      "title": "Daily usage per user",
+      "description": "Choose the provider and profile, set the daily frequency"
+    },
+    "sectionEnterprise": {
+      "title": "Company-wide impact",
+      "description": "Extrapolate the collective footprint of your teams"
+    },
     "providerSelect": "Provider",
     "profileSelect": "Profile",
     "profileUnsupported": "Not available for this provider",
+    "notAvailable": "Not available",
     "frequencyPerDay": "Frequency per day",
     "detailsToggle": "Show/hide the impact details for this task",
     "breakdownByProvider": "Breakdown by provider",

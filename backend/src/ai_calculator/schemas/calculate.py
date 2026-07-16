@@ -16,11 +16,11 @@ class ImpactRangeOut(BaseModel):
 
 
 class ImpactsOut(BaseModel):
-    gwp: ImpactRangeOut
-    energy: ImpactRangeOut
-    adpe: ImpactRangeOut
-    pe: ImpactRangeOut
-    water: ImpactRangeOut
+    gwp: ImpactRangeOut | None
+    energy: ImpactRangeOut | None
+    adpe: ImpactRangeOut | None
+    pe: ImpactRangeOut | None
+    water: ImpactRangeOut | None
 
 
 class CalculateResponse(BaseModel):

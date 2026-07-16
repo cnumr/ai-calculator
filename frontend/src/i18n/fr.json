@@ -27,9 +27,22 @@
     "requestsPerDay": "Requêtes par jour",
     "submit": "Calculer",
     "providersHeading": "Écosystème IA",
+    "sectionEcosystem": {
+      "title": "Écosystème IA de votre organisation",
+      "description": "Sélectionnez les fournisseurs LLM autorisés — ils seront disponibles dans les cas d'usage ci-dessous"
+    },
+    "sectionUsage": {
+      "title": "Usages quotidiens par utilisateur",
+      "description": "Choisissez le fournisseur et le profil, indiquez la fréquence quotidienne"
+    },
+    "sectionEnterprise": {
+      "title": "Impact à l'échelle de l'entreprise",
+      "description": "Extrapolez l'empreinte collective de vos équipes"
+    },
     "providerSelect": "Fournisseur",
     "profileSelect": "Profil",
     "profileUnsupported": "Non disponible pour ce fournisseur",
+    "notAvailable": "Non disponible",
     "frequencyPerDay": "Fréquence par jour",
     "detailsToggle": "Voir/Masquer le détail de vos impacts pour cette tâche",
     "breakdownByProvider": "Répartition par fournisseur",

@@ -56,18 +56,20 @@ def _require(mapping: dict, key: str, context: str) -> object:
     return mapping[key]
 
 
-def _parse_range(mapping: dict, key: str, context: str) -> ImpactRange:
+def _parse_optional_range(mapping: dict, key: str, context: str) -> ImpactRange | None:
     value = _require(mapping, key, context)
+    if value is None:
+        return None
     return ImpactRange(min=float(_require(value, "min", context)), max=float(_require(value, "max", context)))
 
 
 def _resolve_static_profile(profile_id: str, static_impacts: dict, context: str) -> ResolvedProfile:
     impacts = UnitImpacts(
-        gwp=_parse_range(static_impacts, "gwp", context),
-        energy=_parse_range(static_impacts, "energy", context),
-        adpe=_parse_range(static_impacts, "adpe", context),
-        pe=_parse_range(static_impacts, "pe", context),
-        water=_parse_range(static_impacts, "water", context),
+        gwp=_parse_optional_range(static_impacts, "gwp", context),
+        energy=_parse_optional_range(static_impacts, "energy", context),
+        adpe=_parse_optional_range(static_impacts, "adpe", context),
+        pe=_parse_optional_range(static_impacts, "pe", context),
+        water=_parse_optional_range(static_impacts, "water", context),
     )
     return ResolvedProfile(id=profile_id, impacts=impacts)
 

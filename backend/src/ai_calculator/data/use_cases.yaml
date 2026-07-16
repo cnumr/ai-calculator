@@ -24,15 +24,9 @@ use_cases:
               adpe:
                 min: 8.102e-06
                 max: 8.102e-06
-              energy:
-                min: 0.0
-                max: 0.0
-              water:
-                min: 0.0
-                max: 0.0
-              pe:
-                min: 0.0
-                max: 0.0
+              energy: null
+              water: null
+              pe: null
   - id: image
     default_provider: google
     recommended_tier: image
@@ -47,15 +41,9 @@ use_cases:
               adpe:
                 min: 2.7e-07
                 max: 2.7e-07
-              energy:
-                min: 0.0
-                max: 0.0
-              water:
-                min: 0.0
-                max: 0.0
-              pe:
-                min: 0.0
-                max: 0.0
+              energy: null
+              water: null
+              pe: null
       - provider_id: openai
         profiles:
           - id: image
@@ -66,15 +54,9 @@ use_cases:
               adpe:
                 min: 2.68e-07
                 max: 2.68e-07
-              energy:
-                min: 0.0
-                max: 0.0
-              water:
-                min: 0.0
-                max: 0.0
-              pe:
-                min: 0.0
-                max: 0.0
+              energy: null
+              water: null
+              pe: null
   - id: deep_research
     default_provider: openai
     recommended_tier: research

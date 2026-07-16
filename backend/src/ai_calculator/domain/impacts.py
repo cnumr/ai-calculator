@@ -23,11 +23,11 @@ class ImpactRange:
 
 @dataclass(frozen=True)
 class UnitImpacts:
-    gwp: ImpactRange
-    energy: ImpactRange
-    adpe: ImpactRange
-    pe: ImpactRange
-    water: ImpactRange
+    gwp: ImpactRange | None
+    energy: ImpactRange | None
+    adpe: ImpactRange | None
+    pe: ImpactRange | None
+    water: ImpactRange | None
 
 
 def _to_range(value: float | RangeValue) -> ImpactRange:

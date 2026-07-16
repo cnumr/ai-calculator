@@ -10,11 +10,11 @@ export interface ImpactRange {
 }
 
 export interface Impacts {
-  gwp: ImpactRange;
-  energy: ImpactRange;
-  adpe: ImpactRange;
-  pe: ImpactRange;
-  water: ImpactRange;
+  gwp: ImpactRange | null;
+  energy: ImpactRange | null;
+  adpe: ImpactRange | null;
+  pe: ImpactRange | null;
+  water: ImpactRange | null;
 }
 
 export interface CalculateResult {

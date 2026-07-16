@@ -5,14 +5,16 @@ from ai_calculator.domain.impacts import ImpactRange, UnitImpacts
 
 @dataclass(frozen=True)
 class AggregatedImpacts:
-    gwp: ImpactRange
-    energy: ImpactRange
-    adpe: ImpactRange
-    pe: ImpactRange
-    water: ImpactRange
+    gwp: ImpactRange | None
+    energy: ImpactRange | None
+    adpe: ImpactRange | None
+    pe: ImpactRange | None
+    water: ImpactRange | None
 
 
-def _scale_range(range_: ImpactRange, factor: float) -> ImpactRange:
+def _scale_range(range_: ImpactRange | None, factor: float) -> ImpactRange | None:
+    if range_ is None:
+        return None
     return ImpactRange(min=range_.min * factor, max=range_.max * factor)
 
 
