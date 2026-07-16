@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type { Impacts, UseCase } from "../api/client";
 import { RangeGauge } from "./RangeGauge";
+import { scaleImpacts } from "../domain/aggregate";
 import videoIcon from "../assets/use-cases/video.svg";
 import imageIcon from "../assets/use-cases/image.svg";
 import deepResearchIcon from "../assets/use-cases/deep_research.svg";
@@ -162,20 +163,35 @@ export function UseCaseCard({
             />
           </div>
 
-          {currentProfile && (
-            <details className="use-case-card__details">
-              <summary>{t("calculator.detailsToggle")}</summary>
-              {CRITERIA.map(({ key, unit }) => (
-                <RangeGauge
-                  key={key}
-                  min={currentProfile.impacts[key].min}
-                  max={currentProfile.impacts[key].max}
-                  unit={unit}
-                  label={t(`calculator.criterion.${key}`)}
-                />
-              ))}
-            </details>
-          )}
+          {currentProfile &&
+            (() => {
+              const scaledImpacts = scaleImpacts(
+                currentProfile.impacts,
+                frequencyPerDay,
+              );
+              return (
+                <details className="use-case-card__details">
+                  <summary>{t("calculator.detailsToggle")}</summary>
+                  {CRITERIA.map(({ key, unit }) => {
+                    const value = scaledImpacts[key];
+                    return value === null ? (
+                      <p key={key} className="use-case-card__unavailable">
+                        {t(`calculator.criterion.${key}`)}:{" "}
+                        {t("calculator.notAvailable")}
+                      </p>
+                    ) : (
+                      <RangeGauge
+                        key={key}
+                        min={value.min}
+                        max={value.max}
+                        unit={unit}
+                        label={t(`calculator.criterion.${key}`)}
+                      />
+                    );
+                  })}
+                </details>
+              );
+            })()}
         </>
       )}
     </article>
