@@ -11,6 +11,7 @@ import {
   sumImpacts,
   zeroImpacts,
 } from "../domain/aggregate";
+import { formatNumber, scaleRange } from "../domain/units";
 
 const WORKING_DAYS_PER_YEAR = 220;
 
@@ -28,20 +29,47 @@ interface CardState {
   frequencyPerDay: number;
 }
 
+function SectionHeader({
+  step,
+  title,
+  description,
+}: {
+  step: number;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="calculator-section__header">
+      <span className="calculator-section__badge">{step}</span>
+      <div>
+        <h2>{title}</h2>
+        <p>{description}</p>
+      </div>
+    </div>
+  );
+}
+
 function ImpactsGrid({ impacts, title }: { impacts: Impacts; title: string }) {
   const { t } = useTranslation();
   return (
     <section className="impacts-grid">
       <h3>{title}</h3>
-      {CRITERIA.map(({ key, unit }) => (
-        <RangeGauge
-          key={key}
-          min={impacts[key].min}
-          max={impacts[key].max}
-          unit={unit}
-          label={t(`calculator.criterion.${key}`)}
-        />
-      ))}
+      {CRITERIA.map(({ key, unit }) => {
+        const value = impacts[key];
+        return value === null ? (
+          <p key={key} className="impacts-grid__unavailable">
+            {t(`calculator.criterion.${key}`)}: {t("calculator.notAvailable")}
+          </p>
+        ) : (
+          <RangeGauge
+            key={key}
+            min={value.min}
+            max={value.max}
+            unit={unit}
+            label={t(`calculator.criterion.${key}`)}
+          />
+        );
+      })}
     </section>
   );
 }
@@ -59,15 +87,22 @@ function ProviderBreakdown({
     <section className="provider-breakdown">
       <h3>{t("calculator.breakdownByProvider")}</h3>
       <ul>
-        {entries.map(([providerId, impacts]) => (
-          <li key={providerId}>
-            <strong>
-              {t(`providers.${providerId}`, { defaultValue: providerId })}
-            </strong>{" "}
-            {impacts.gwp.min.toPrecision(3)} – {impacts.gwp.max.toPrecision(3)}{" "}
-            kgCO2eq
-          </li>
-        ))}
+        {entries.map(([providerId, impacts]) => {
+          const scaled = scaleRange(
+            impacts.gwp!.min,
+            impacts.gwp!.max,
+            "kgCO2eq",
+          );
+          return (
+            <li key={providerId}>
+              <strong>
+                {t(`providers.${providerId}`, { defaultValue: providerId })}
+              </strong>{" "}
+              {formatNumber(scaled.min)} – {formatNumber(scaled.max)}{" "}
+              {scaled.unit}
+            </li>
+          );
+        })}
       </ul>
       <details>
         <summary>{t("calculator.detailsToggle")}</summary>
@@ -186,61 +221,91 @@ export function CalculatorPage() {
         <h1>{t("calculator.title")}</h1>
       </div>
 
-      <ProviderChips
-        providers={catalog.providers}
-        selected={selectedProviders}
-        onToggle={toggleProvider}
-      />
-
-      <div className="use-case-catalog">
-        {catalog.useCases.map((useCase) => {
-          const state = cardStates[useCase.id];
-          if (!state) return null;
-          return (
-            <UseCaseCard
-              key={useCase.id}
-              useCase={useCase}
-              availableProviderIds={Array.from(selectedProviders)}
-              providerId={state.providerId}
-              profileId={state.profileId}
-              frequencyPerDay={state.frequencyPerDay}
-              onChange={(next) =>
-                setCardStates((prev) => ({ ...prev, [useCase.id]: next }))
-              }
-              onImpactsChange={(impacts) =>
-                setCardImpacts((prev) => ({
-                  ...prev,
-                  [useCase.id]: { providerId: state.providerId, impacts },
-                }))
-              }
-            />
-          );
-        })}
-      </div>
-
-      <ImpactsGrid
-        impacts={individualAnnual}
-        title={t("calculator.resultIndividualAnnual")}
-      />
-      <Co2Equivalents gwpKgCo2eq={individualAnnual.gwp.max} />
-      <ProviderBreakdown breakdown={providerBreakdown} />
-
-      <div className="calculator-form__field">
-        <label htmlFor="calculator-headcount">
-          {t("calculator.headcount")}
-        </label>
-        <input
-          id="calculator-headcount"
-          type="number"
-          min={1}
-          value={headcount}
-          onChange={(e) => setHeadcount(Number(e.target.value))}
+      <section className="calculator-section">
+        <SectionHeader
+          step={1}
+          title={t("calculator.sectionEcosystem.title")}
+          description={t("calculator.sectionEcosystem.description")}
         />
-      </div>
-      <ImpactsGrid
-        impacts={enterpriseAnnual}
-        title={t("calculator.resultEnterpriseAnnual")}
-      />
+        <ProviderChips
+          providers={catalog.providers}
+          selected={selectedProviders}
+          onToggle={toggleProvider}
+        />
+      </section>
+
+      <section className="calculator-section calculator-section--split">
+        <div className="calculator-section__col calculator-section__col--main">
+          <SectionHeader
+            step={2}
+            title={t("calculator.sectionUsage.title")}
+            description={t("calculator.sectionUsage.description")}
+          />
+          <div className="use-case-catalog">
+            {catalog.useCases.map((useCase) => {
+              const state = cardStates[useCase.id];
+              if (!state) return null;
+              return (
+                <UseCaseCard
+                  key={useCase.id}
+                  useCase={useCase}
+                  availableProviderIds={Array.from(selectedProviders)}
+                  providerId={state.providerId}
+                  profileId={state.profileId}
+                  frequencyPerDay={state.frequencyPerDay}
+                  onChange={(next) =>
+                    setCardStates((prev) => ({ ...prev, [useCase.id]: next }))
+                  }
+                  onImpactsChange={(impacts) =>
+                    setCardImpacts((prev) => ({
+                      ...prev,
+                      [useCase.id]: { providerId: state.providerId, impacts },
+                    }))
+                  }
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="calculator-section__col calculator-section__col--aside">
+          <ImpactsGrid
+            impacts={individualAnnual}
+            title={t("calculator.resultIndividualAnnual")}
+          />
+          <Co2Equivalents gwpKgCo2eq={individualAnnual.gwp!.max} />
+          <ProviderBreakdown breakdown={providerBreakdown} />
+        </div>
+      </section>
+
+      <section className="calculator-section calculator-section--split">
+        <div className="calculator-section__col calculator-section__col--aside">
+          <SectionHeader
+            step={3}
+            title={t("calculator.sectionEnterprise.title")}
+            description={t("calculator.sectionEnterprise.description")}
+          />
+          <div className="calculator-form__field">
+            <label htmlFor="calculator-headcount">
+              {t("calculator.headcount")}
+            </label>
+            <input
+              id="calculator-headcount"
+              type="number"
+              min={1}
+              value={headcount}
+              onChange={(e) => setHeadcount(Number(e.target.value))}
+            />
+          </div>
+        </div>
+
+        <div className="calculator-section__col calculator-section__col--main">
+          <ImpactsGrid
+            impacts={enterpriseAnnual}
+            title={t("calculator.resultEnterpriseAnnual")}
+          />
+        </div>
+      </section>
     </div>
   );
 }

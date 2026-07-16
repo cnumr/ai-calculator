@@ -1,3 +1,5 @@
+import { formatNumber, scaleRange } from "../domain/units";
+
 export function gaugePositions(
   min: number,
   max: number,
@@ -22,6 +24,7 @@ interface RangeGaugeProps {
 
 export function RangeGauge({ min, max, unit, label }: RangeGaugeProps) {
   const { fillLeftPct, fillRightPct, tickLeftPct } = gaugePositions(min, max);
+  const scaled = scaleRange(min, max, unit);
 
   return (
     <div className="range-gauge">
@@ -38,10 +41,10 @@ export function RangeGauge({ min, max, unit, label }: RangeGaugeProps) {
       </div>
       <div className="range-gauge__bounds">
         <span>
-          min {min.toPrecision(3)} {unit}
+          min {formatNumber(scaled.min)} {scaled.unit}
         </span>
         <span>
-          max {max.toPrecision(3)} {unit}
+          max {formatNumber(scaled.max)} {scaled.unit}
         </span>
       </div>
     </div>

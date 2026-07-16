@@ -164,6 +164,69 @@ button {
   margin-bottom: 2rem;
 }
 
+/* Calculator sections (numbered steps, two-column layout) */
+
+.calculator-section {
+  margin-bottom: 3rem;
+}
+
+.calculator-section__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.calculator-section__badge {
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--forest-deep);
+  color: var(--surface);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.0625rem;
+}
+
+.calculator-section__header h2 {
+  margin-bottom: 0.25rem;
+}
+
+.calculator-section__header p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.calculator-section--split {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.calculator-section__col > *:first-child {
+  margin-top: 0;
+}
+
+.calculator-section--split .calculator-section__col--aside {
+  position: sticky;
+  top: 1.5rem;
+}
+
+@media (max-width: 800px) {
+  .calculator-section--split {
+    grid-template-columns: 1fr;
+  }
+
+  .calculator-section--split .calculator-section__col--aside {
+    position: static;
+  }
+}
+
 .calculator-form {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -227,13 +290,11 @@ button {
   font-weight: 500;
 }
 
-.calculator-page > .calculator-form__field {
-  margin-top: 2rem;
+.calculator-section__col--aside > .calculator-form__field {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 1.75rem;
-  max-width: 260px;
 }
 
 .impacts-grid {
@@ -254,7 +315,7 @@ button {
 
 .range-gauge {
   display: grid;
-  grid-template-columns: minmax(140px, 220px) 1fr;
+  grid-template-columns: minmax(90px, 140px) minmax(60px, 1fr);
   align-items: center;
   gap: 1rem;
   padding: 0.6rem 0;
@@ -475,6 +536,17 @@ button {
   background: var(--bg);
   color: var(--ink-soft);
   font-size: 0.875rem;
+}
+
+.use-case-card__unavailable,
+.impacts-grid__unavailable {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
 }
 
 .use-case-card__details {

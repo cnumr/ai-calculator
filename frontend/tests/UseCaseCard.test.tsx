@@ -148,4 +148,71 @@ describe("UseCaseCard", () => {
 
     expect(details).toHaveAttribute("open");
   });
+
+  it("scales the details values by frequencyPerDay", async () => {
+    render(
+      <UseCaseCard
+        useCase={EMAIL}
+        availableProviderIds={["openai", "anthropic"]}
+        providerId="openai"
+        profileId="eco"
+        frequencyPerDay={3}
+        onChange={() => {}}
+        onImpactsChange={() => {}}
+      />,
+    );
+
+    await userEvent.click(
+      screen.getByText(
+        /voir\/masquer le détail|show\/hide the impact details/i,
+      ),
+    );
+
+    expect(screen.getByText(/min 3\.00 kgCO2eq/)).toBeInTheDocument();
+    expect(screen.getByText(/max 6\.00 kgCO2eq/)).toBeInTheDocument();
+  });
+
+  it("shows a not-available message instead of a gauge for null criteria", async () => {
+    const VIDEO: UseCase = {
+      id: "video",
+      providers: [
+        {
+          providerId: "google",
+          profiles: [
+            {
+              id: "video",
+              impacts: {
+                gwp: { min: 0.37, max: 0.37 },
+                energy: null,
+                adpe: { min: 0.000008, max: 0.000008 },
+                pe: null,
+                water: null,
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    render(
+      <UseCaseCard
+        useCase={VIDEO}
+        availableProviderIds={["google"]}
+        providerId="google"
+        profileId="video"
+        frequencyPerDay={1}
+        onChange={() => {}}
+        onImpactsChange={() => {}}
+      />,
+    );
+
+    await userEvent.click(
+      screen.getByText(
+        /voir\/masquer le détail|show\/hide the impact details/i,
+      ),
+    );
+
+    expect(screen.getAllByText(/non disponible|not available/i).length).toBe(3);
+    expect(screen.getByText(/min 370 gCO2eq/)).toBeInTheDocument();
+  });
 });

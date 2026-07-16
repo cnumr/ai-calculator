@@ -28,4 +28,25 @@ describe("RangeGauge", () => {
     expect(screen.getByText(/1.2/)).toBeInTheDocument();
     expect(screen.getByText(/3.4/)).toBeInTheDocument();
   });
+
+  it("scales tiny values to a readable unit instead of scientific notation", () => {
+    render(
+      <RangeGauge
+        min={0.00000001}
+        max={0.00000002}
+        unit="kgSbeq"
+        label="ADPe"
+      />,
+    );
+
+    expect(screen.getByText(/0.0100 mgSbeq/)).toBeInTheDocument();
+    expect(screen.getByText(/0.0200 mgSbeq/)).toBeInTheDocument();
+  });
+
+  it("scales large values up to a coarser unit", () => {
+    render(<RangeGauge min={1500} max={2500} unit="kgCO2eq" label="GWP" />);
+
+    expect(screen.getByText(/1.50 tCO2eq/)).toBeInTheDocument();
+    expect(screen.getByText(/2.50 tCO2eq/)).toBeInTheDocument();
+  });
 });

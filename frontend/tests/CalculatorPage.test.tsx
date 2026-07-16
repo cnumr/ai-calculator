@@ -174,4 +174,47 @@ describe("CalculatorPage", () => {
       ).toBeInTheDocument(),
     );
   });
+
+  it("shows a not-available message for null criteria in the annual totals", async () => {
+    const CATALOG_WITH_NULLS: apiClient.UseCasesCatalog = {
+      providers: [{ id: "google", selectedByDefault: true }],
+      useCases: [
+        {
+          id: "video",
+          providers: [
+            {
+              providerId: "google",
+              profiles: [
+                {
+                  id: "video",
+                  impacts: {
+                    gwp: { min: 1, max: 2 },
+                    energy: null,
+                    adpe: { min: 0.01, max: 0.02 },
+                    pe: null,
+                    water: null,
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    mockedFetchUseCases.mockResolvedValue(CATALOG_WITH_NULLS);
+
+    render(<CalculatorPage />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(/génération de vidéos|video generation/i),
+      ).toBeInTheDocument(),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getAllByText(/non disponible|not available/i).length,
+      ).toBeGreaterThan(0);
+    });
+  });
 });
