@@ -6,3 +6,5 @@ __pycache__/
 node_modules/
 .playwright-mcp/
 .superpowers/brainstorm/
+frontend/test-results/
+frontend/playwright-report/
