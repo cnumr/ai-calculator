@@ -91,8 +91,27 @@ frontend/   SPA React + Vite, bilingue FR/EN
 docs/       Documentation (ce fichier)
 ```
 
+## Processus de release
+
+Le versioning est automatisé avec [Changesets](https://github.com/changesets/changesets). Le projet a une **version unique partagée** entre `frontend/package.json` et `backend/pyproject.toml`, pilotée par le `package.json` racine.
+
+**Pour chaque changement notable** (feature, fix… — pas pour un `chore`/`docs` mineur), ajouter un changeset avant de merger sur `main` :
+
+```bash
+npm install   # une fois, à la racine
+npx changeset
+```
+
+Répondre aux questions (bump `patch`/`minor`/`major`, résumé du changement en une phrase — ce résumé alimente directement le `CHANGELOG.md`). Committer le fichier généré dans `.changeset/`.
+
+**Automatisation (`.github/workflows/release.yml`)** :
+
+1. À chaque push sur `main`, si des changesets sont en attente, la CI ouvre/actualise une pull request « Version Packages » qui applique le(s) bump(s) et met à jour `CHANGELOG.md`.
+2. Au merge de cette PR, la CI (`scripts/create-release.mjs`) crée le tag `vX.Y.Z` et la GitHub Release correspondante. Le projet n'étant publié sur aucun registre (npm/PyPI), il n'y a pas d'étape `npm publish`/`twine upload` : seuls la version, le changelog, le tag et la release sont automatisés.
+3. `scripts/sync-versions.mjs` (appelé pendant l'étape `version`) synchronise la version bumpée du `package.json` racine vers `frontend/package.json` et `backend/pyproject.toml`.
+
 ## Devops : état actuel et hors périmètre
 
-- **CI/CD** : aucun pipeline configuré à ce jour — à mettre en place (lint + tests des deux suites à chaque PR, a minima).
+- **CI/CD** : le versioning/tag/release est automatisé (voir ci-dessus). Il n'y a en revanche aucun pipeline de lint/tests à chaque PR à ce jour — à mettre en place (tests des deux suites a minima).
 - **Images de production** : les `Dockerfile` actuels (`backend/Dockerfile`, `frontend/Dockerfile`) sont conçus pour le développement local (hot-reload, montage du code en volume) et **ne sont pas adaptés à la production** (pas de build multi-stage, pas de serveur de fichiers statiques pour le frontend, pas de durcissement de l'image). La conteneurisation de production est hors périmètre de ce guide et devra faire l'objet d'un travail dédié le moment venu.
 - **Hébergement / mise en production** : non défini (voir mention "à préciser" dans les mentions légales du front).

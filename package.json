@@ -1,0 +1,13 @@
+{
+  "name": "ai-calculator",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Version unique partagée entre le front (frontend/package.json) et le back (backend/pyproject.toml), pilotée par Changesets.",
+  "scripts": {
+    "changeset": "changeset",
+    "version": "changeset version && node scripts/sync-versions.mjs"
+  },
+  "devDependencies": {
+    "@changesets/cli": "2.31.1"
+  }
+}

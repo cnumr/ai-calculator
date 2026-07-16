@@ -8,6 +8,8 @@ Le format s'inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 
 ### Ajouté
 
+- Processus de release automatisé avec [Changesets](https://github.com/changesets/changesets) : version unique partagée entre `frontend/package.json` et `backend/pyproject.toml` (`package.json` racine + `scripts/sync-versions.mjs`), workflow `.github/workflows/release.yml` (PR « Version Packages » puis tag + GitHub Release via `scripts/create-release.mjs` au merge). **À partir de la prochaine version, `CHANGELOG.md` est généré par Changesets** (les entrées ci-dessous restent gérées manuellement) ; voir `docs/DEVELOPMENT.md` pour le détail du workflow (`npx changeset` à ajouter pour chaque changement notable).
+
 - `docker-compose.yml` pour lancer le back et le front en local (hot-reload, dépendances isolées via volumes nommés).
 - `backend/Dockerfile` et `frontend/Dockerfile` (images de développement, non adaptées à la production).
 - `docs/DEVELOPMENT.md` : guide développeur/devops (démarrage Docker Compose ou manuel, variables d'environnement, tests, structure du dépôt, état des lieux CI/CD).
