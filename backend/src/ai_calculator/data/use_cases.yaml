@@ -153,6 +153,8 @@ use_cases:
             ecologits_provider: anthropic
             ecologits_model: claude-sonnet-4-5
             output_tokens: 200000
+  # id shortened from the design spec's "meeting_summary" to match the
+  # pre-existing asset filename (assets/use-cases/meet_summary.svg)
   - id: meet_summary
     default_provider: microsoft_copilot
     recommended_tier: eco
