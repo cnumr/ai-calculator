@@ -15,6 +15,7 @@ Voir [README.md](README.md) pour le cahier des charges complet.
 - Pour l'ergonomie du front, s'appuyer sur le skill Claude Code `frontend-design`.
 - Le front doit être bilingue (FR/EN).
 - Se référer au projet [ai-footprint](https://github.com/hrenaud/ai-footprint) pour le mécanisme de résolution de modèles via Hugging Face (référentiel de modèles enrichi).
+- On ne travaille jamais directement sur `main`. Chaque changement part d'une branche `feat/*` (fonctionnalité) ou `fix/*` (correctif), mergée sur `develop` pour y être testée, puis `develop` est mergée sur `main` via une pull request. C'est ce merge sur `main` qui déclenche le processus de release (voir `docs/DEVELOPMENT.md`).
 
 ## Pages requises
 

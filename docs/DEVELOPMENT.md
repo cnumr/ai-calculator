@@ -93,6 +93,12 @@ docs/       Documentation (ce fichier)
 
 ## Processus de release
 
+### Branches
+
+On ne travaille jamais directement sur `main`. Chaque changement part d'une branche `feat/*` (fonctionnalité) ou `fix/*` (correctif), mergée sur `develop` pour y être testée. `develop` est ensuite mergée sur `main` via une pull request : c'est ce merge (donc un push sur `main`) qui déclenche le workflow de release décrit ci-dessous — le déclencheur `on: push: branches: [main]` de `.github/workflows/release.yml` fonctionne indifféremment que le push vienne d'un commit direct ou d'un merge de PR.
+
+### Versioning
+
 Le versioning est automatisé avec [Changesets](https://github.com/changesets/changesets). Le projet a une **version unique partagée** entre `frontend/package.json` et `backend/pyproject.toml`, pilotée par le `package.json` racine.
 
 **Pour chaque changement notable** (feature, fix… — pas pour un `chore`/`docs` mineur), ajouter un changeset avant de merger sur `main` :
