@@ -38,6 +38,13 @@ describe("scaleImpacts", () => {
     expect(scaled.gwp).toEqual({ min: 10, max: 20 });
     expect(scaled.water).toEqual({ min: 30, max: 40 });
   });
+
+  it("keeps a null criterion null regardless of the factor", () => {
+    const withNullEnergy: Impacts = { ...IMPACTS_A, energy: null };
+    const scaled = scaleImpacts(withNullEnergy, 10);
+    expect(scaled.energy).toBeNull();
+    expect(scaled.gwp).toEqual({ min: 10, max: 20 });
+  });
 });
 
 describe("sumImpacts", () => {
@@ -45,6 +52,21 @@ describe("sumImpacts", () => {
     const total = sumImpacts(IMPACTS_A, IMPACTS_B);
     expect(total.gwp).toEqual({ min: 11, max: 22 });
     expect(total.energy).toEqual({ min: 1.1, max: 2.2 });
+  });
+
+  it("treats a null operand as no contribution when the other has a value", () => {
+    const withNullEnergy: Impacts = { ...IMPACTS_B, energy: null };
+    const total = sumImpacts(IMPACTS_A, withNullEnergy);
+    expect(total.energy).toEqual(IMPACTS_A.energy);
+    expect(total.gwp).toEqual({ min: 11, max: 22 });
+  });
+
+  it("produces a null criterion only when both operands have it null", () => {
+    const bothNull = sumImpacts(
+      { ...IMPACTS_A, energy: null },
+      { ...IMPACTS_B, energy: null },
+    );
+    expect(bothNull.energy).toBeNull();
   });
 });
 
@@ -63,5 +85,16 @@ describe("aggregateByProvider", () => {
 
   it("returns an empty object for no entries", () => {
     expect(aggregateByProvider([])).toEqual({});
+  });
+
+  it("does not let one null criterion hide the value from other entries for a provider", () => {
+    const withNullEnergy: Impacts = { ...IMPACTS_A, energy: null };
+    const result = aggregateByProvider([
+      { providerId: "openai", impacts: withNullEnergy },
+      { providerId: "openai", impacts: IMPACTS_A },
+    ]);
+
+    expect(result.openai.energy).toEqual(IMPACTS_A.energy);
+    expect(result.openai.gwp).toEqual({ min: 2, max: 4 });
   });
 });
