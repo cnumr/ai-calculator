@@ -81,6 +81,8 @@ Par défaut, le frontend appelle l'API sur la même origine (`VITE_API_BASE_URL`
 VITE_API_BASE_URL=http://localhost:8000 npm run dev
 ```
 
+Pour éviter de la répéter à chaque commande, cette variable peut être placée dans un fichier `frontend/.env` local (non versionné, voir `.gitignore`) : Vite le charge automatiquement en dev comme en build. **Attention** : ce fichier ne doit jamais être commité, car Vite l'utiliserait aussi pour le build de production (`docker-compose.yml`), y figeant une URL locale (`localhost:8000`) inutilisable par les visiteurs.
+
 ## Variables d'environnement (développement)
 
 Ces variables s'appliquent à `docker-compose.dev.yml` (voir [PRODUCTION.md](PRODUCTION.md) pour la production) :
