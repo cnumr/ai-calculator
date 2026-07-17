@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0
+
+### Minor Changes
+
+- e6763ef: Ajout d'une stack Docker Compose de production (`docker-compose.yml`, `Dockerfile.prod` back/front, proxy Nginx) : un seul point d'entrée HTTP exposé, le backend n'est plus jamais accessible directement depuis le navigateur. L'ancien `docker-compose.yml` de développement devient `docker-compose.dev.yml`. Voir `docs/PRODUCTION.md`.
+
+### Patch Changes
+
+- ae4033d: Fix critique prod : `frontend/.env` (contenant `VITE_API_BASE_URL=http://localhost:8000`) était commité dans le dépôt, ce qui figeait cette URL locale dans le build de production du front (`docker-compose.yml`), rendant le chargement du catalogue de cas d'usage impossible pour les visiteurs. Le fichier est retiré du suivi git et désormais exclu du contexte de build Docker (`frontend/.dockerignore`).
+
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
 Le format s'inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
