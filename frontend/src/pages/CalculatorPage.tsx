@@ -91,7 +91,7 @@ function ProviderBreakdown({
           const scaled = scaleRange(
             impacts.gwp!.min,
             impacts.gwp!.max,
-            "kgCO2eq",
+            "kgCO2eq"
           );
           return (
             <li key={providerId}>
@@ -123,7 +123,7 @@ export function CalculatorPage() {
   const [catalog, setCatalog] = useState<UseCasesCatalog | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [selectedProviders, setSelectedProviders] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
   const [cardStates, setCardStates] = useState<Record<string, CardState>>({});
   const [cardImpacts, setCardImpacts] = useState<
@@ -139,10 +139,8 @@ export function CalculatorPage() {
         setCatalog(loaded);
         setSelectedProviders(
           new Set(
-            loaded.providers
-              .filter((p) => p.selectedByDefault)
-              .map((p) => p.id),
-          ),
+            loaded.providers.filter((p) => p.selectedByDefault).map((p) => p.id)
+          )
         );
         const initialStates: Record<string, CardState> = {};
         for (const useCase of loaded.useCases) {
@@ -197,10 +195,10 @@ export function CalculatorPage() {
         total,
         scaleImpacts(
           entry.impacts,
-          (cardStates[useCaseId]?.frequencyPerDay ?? 0) * WORKING_DAYS_PER_YEAR,
-        ),
+          (cardStates[useCaseId]?.frequencyPerDay ?? 0) * WORKING_DAYS_PER_YEAR
+        )
       ),
-    zeroImpacts(),
+    zeroImpacts()
   );
 
   const perCardAnnualEntries = Object.entries(cardImpacts).map(
@@ -208,9 +206,9 @@ export function CalculatorPage() {
       providerId: entry.providerId,
       impacts: scaleImpacts(
         entry.impacts,
-        (cardStates[useCaseId]?.frequencyPerDay ?? 0) * WORKING_DAYS_PER_YEAR,
+        (cardStates[useCaseId]?.frequencyPerDay ?? 0) * WORKING_DAYS_PER_YEAR
       ),
-    }),
+    })
   );
   const providerBreakdown = aggregateByProvider(perCardAnnualEntries);
   const enterpriseAnnual = scaleImpacts(individualAnnual, headcount);
@@ -278,33 +276,29 @@ export function CalculatorPage() {
         </div>
       </section>
 
-      <section className="calculator-section calculator-section--split">
-        <div className="calculator-section__col calculator-section__col--aside">
-          <SectionHeader
-            step={3}
-            title={t("calculator.sectionEnterprise.title")}
-            description={t("calculator.sectionEnterprise.description")}
+      <section className="calculator-section">
+        <SectionHeader
+          step={3}
+          title={t("calculator.sectionEnterprise.title")}
+          description={t("calculator.sectionEnterprise.description")}
+        />
+        <div className="calculator-form__field">
+          <label htmlFor="calculator-headcount">
+            {t("calculator.headcount")}
+          </label>
+          <input
+            id="calculator-headcount"
+            type="number"
+            min={1}
+            value={headcount}
+            onChange={(e) => setHeadcount(Number(e.target.value))}
           />
-          <div className="calculator-form__field">
-            <label htmlFor="calculator-headcount">
-              {t("calculator.headcount")}
-            </label>
-            <input
-              id="calculator-headcount"
-              type="number"
-              min={1}
-              value={headcount}
-              onChange={(e) => setHeadcount(Number(e.target.value))}
-            />
-          </div>
         </div>
 
-        <div className="calculator-section__col calculator-section__col--main">
-          <ImpactsGrid
-            impacts={enterpriseAnnual}
-            title={t("calculator.resultEnterpriseAnnual")}
-          />
-        </div>
+        <ImpactsGrid
+          impacts={enterpriseAnnual}
+          title={t("calculator.resultEnterpriseAnnual")}
+        />
       </section>
     </div>
   );
