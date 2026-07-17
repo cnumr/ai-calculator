@@ -7,10 +7,36 @@
   - Python ≥ 3.11 avec [uv](https://docs.astral.sh/uv/)
   - Node.js ≥ 22 avec npm
 
-## Démarrage avec Docker Compose (recommandé)
+## Démarrage en production avec Docker Compose (recommandé)
 
 ```bash
 docker compose up --build
+```
+
+`docker-compose.yml` est la stack de **production** : build multi-stage, pas de hot-reload ni de montage de volumes, un seul service HTTP exposé sur l'hôte.
+
+- Le frontend (`frontend/Dockerfile.prod`) compile le SPA (`npm run build`) et sert les fichiers statiques via Nginx sur http://localhost (port `80`, configurable avec `HTTP_PORT`).
+- Nginx (`frontend/nginx.conf`) proxifie en interne les requêtes `/api/` vers le service `backend` (port `8000`, sur le réseau Docker uniquement).
+- Le backend (`backend/Dockerfile.prod`) ne publie aucun port sur l'hôte : il n'est joignable que depuis le conteneur frontend, jamais directement depuis le navigateur.
+
+```bash
+HTTP_PORT=8080 docker compose up --build
+```
+
+Le script `scripts/verify-prod-compose.sh` vérifie que cette contrainte (un seul point d'entrée HTTP, backend non publié) reste respectée.
+
+Pour arrêter :
+
+```bash
+docker compose down
+```
+
+## Démarrage en développement avec Docker Compose
+
+Le fichier `docker-compose.dev.yml` fournit l'environnement de dev (hot-reload, montage du code en volume) :
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
 ```
 
 - Backend (FastAPI + hot-reload) : http://localhost:8000
@@ -22,13 +48,13 @@ Les dossiers `backend/` et `frontend/` sont montés en volume dans les conteneur
 Pour arrêter :
 
 ```bash
-docker compose down
+docker compose -f docker-compose.dev.yml down
 ```
 
 Si `pyproject.toml`, `uv.lock`, `package.json` ou `package-lock.json` changent, reconstruire les images :
 
 ```bash
-docker compose up --build
+docker compose -f docker-compose.dev.yml up --build
 ```
 
 ## Démarrage manuel (sans Docker)
@@ -55,13 +81,15 @@ Par défaut, le frontend appelle l'API sur la même origine (`VITE_API_BASE_URL`
 VITE_API_BASE_URL=http://localhost:8000 npm run dev
 ```
 
-## Variables d'environnement
+## Variables d'environnement (développement)
 
-| Variable               | Service        | Défaut                  | Rôle                                                                                                                                                                |
-| ---------------------- | -------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CORS_ALLOWED_ORIGINS` | backend        | `http://localhost:5173` | Liste d'origines autorisées à appeler l'API (séparées par des virgules). À ajuster si le frontend est servi depuis une autre origine (déploiement, port différent). |
-| `VITE_API_BASE_URL`    | frontend       | `""` (même origine)     | URL de base de l'API consommée par le frontend.                                                                                                                     |
-| `FRONTEND_PORT`        | docker-compose | `5173`                  | Port hôte sur lequel le frontend est exposé (`docker compose up`). Utile en cas de conflit de port local, ex : `FRONTEND_PORT=3000 docker compose up`.              |
+Ces variables s'appliquent à `docker-compose.dev.yml` (voir [PRODUCTION.md](PRODUCTION.md) pour la production) :
+
+| Variable               | Service        | Défaut                  | Rôle                                                                                                                                                                                                       |
+| ---------------------- | -------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CORS_ALLOWED_ORIGINS` | backend        | `http://localhost:5173` | Liste d'origines autorisées à appeler l'API (séparées par des virgules). À ajuster si le frontend est servi depuis une autre origine (déploiement, port différent).                                        |
+| `VITE_API_BASE_URL`    | frontend       | `""` (même origine)     | URL de base de l'API consommée par le frontend.                                                                                                                                                            |
+| `FRONTEND_PORT`        | docker-compose | `5173`                  | Port hôte sur lequel le frontend est exposé (`docker compose -f docker-compose.dev.yml up`). Utile en cas de conflit de port local, ex : `FRONTEND_PORT=3000 docker compose -f docker-compose.dev.yml up`. |
 
 Si `FRONTEND_PORT` est changé, penser à ajuster en parallèle `CORS_ALLOWED_ORIGINS` côté backend pour que l'origine corresponde toujours au port réellement utilisé.
 
@@ -119,5 +147,5 @@ Répondre aux questions (bump `patch`/`minor`/`major`, résumé du changement en
 ## Devops : état actuel et hors périmètre
 
 - **CI/CD** : le versioning/tag/release est automatisé (voir ci-dessus). Il n'y a en revanche aucun pipeline de lint/tests à chaque PR à ce jour — à mettre en place (tests des deux suites a minima).
-- **Images de production** : les `Dockerfile` actuels (`backend/Dockerfile`, `frontend/Dockerfile`) sont conçus pour le développement local (hot-reload, montage du code en volume) et **ne sont pas adaptés à la production** (pas de build multi-stage, pas de serveur de fichiers statiques pour le frontend, pas de durcissement de l'image). La conteneurisation de production est hors périmètre de ce guide et devra faire l'objet d'un travail dédié le moment venu.
+- **Images de production** : voir [PRODUCTION.md](PRODUCTION.md) — `docker-compose.yml` + `Dockerfile.prod` fournissent une stack de production (build multi-stage, un seul point d'entrée HTTP, backend non exposé).
 - **Hébergement / mise en production** : non défini (voir mention "à préciser" dans les mentions légales du front).
