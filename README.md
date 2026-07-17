@@ -44,7 +44,7 @@ Un premier [POC](https://ia-calculator.greenit.eco/) a été réalisé sous form
 
 ## Développement
 
-Voir [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) pour lancer le projet (Docker Compose ou manuel), les tests, et les notes devops.
+Voir [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) pour lancer le projet (Docker Compose ou manuel), les tests, et les notes devops. Pour un déploiement en production, voir [docs/PRODUCTION.md](docs/PRODUCTION.md).
 
 ## Statut
 
