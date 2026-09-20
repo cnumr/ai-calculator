@@ -12,6 +12,9 @@ def test_get_use_cases_returns_200_with_providers_and_use_cases():
     body = response.json()
     assert len(body["providers"]) == 5
     assert len(body["use_cases"]) == 8
+    email = next(uc for uc in body["use_cases"] if uc["id"] == "email")
+    assert email["default_provider"] == "microsoft_copilot"
+    assert email["recommended_tier"] == "eco"
 
 
 def test_get_use_cases_reflects_selected_by_default():

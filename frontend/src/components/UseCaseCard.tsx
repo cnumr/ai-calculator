@@ -2,7 +2,9 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type { Impacts, UseCase } from "../api/client";
 import { RangeGauge } from "./RangeGauge";
+import { ImpactIcon, isImpactCriterion } from "./ImpactIcon";
 import { scaleImpacts } from "../domain/aggregate";
+import { formatNumber, scaleRange } from "../domain/units";
 import videoIcon from "../assets/use-cases/video.svg";
 import imageIcon from "../assets/use-cases/image.svg";
 import deepResearchIcon from "../assets/use-cases/deep_research.svg";
@@ -28,6 +30,11 @@ const CRITERIA: Array<{ key: keyof Impacts; unit: string }> = [
   { key: "energy", unit: "kWh" },
   { key: "adpe", unit: "kgSbeq" },
   { key: "pe", unit: "MJ" },
+  { key: "water", unit: "L" },
+];
+
+const SUMMARY_CRITERIA: Array<{ key: "gwp" | "water"; unit: string }> = [
+  { key: "gwp", unit: "kgCO2eq" },
   { key: "water", unit: "L" },
 ];
 
@@ -65,6 +72,9 @@ export function UseCaseCard({
   const profiles = currentMapping?.profiles ?? [];
   const currentProfile =
     profiles.find((p) => p.id === profileId) ?? profiles[0];
+  const scaledImpacts = currentProfile
+    ? scaleImpacts(currentProfile.impacts, frequencyPerDay)
+    : null;
 
   useEffect(() => {
     if (currentProfile) {
@@ -81,7 +91,12 @@ export function UseCaseCard({
         {USE_CASE_ICONS[useCase.id] && (
           <img src={USE_CASE_ICONS[useCase.id]} alt="" role="img" />
         )}
-        <h3>{t(`useCases.${useCase.id}.name`)}</h3>
+        <div>
+          <h3>{t(`useCases.${useCase.id}.name`)}</h3>
+          <p className="use-case-card__subtitle">
+            {t(useCase.subtitleKey ?? `useCases.${useCase.id}.subtitle`, { defaultValue: "" })}
+          </p>
+        </div>
       </header>
 
       {!currentMapping || profiles.length === 0 ? (
@@ -90,108 +105,147 @@ export function UseCaseCard({
         </p>
       ) : (
         <>
-          <div className="use-case-card__field">
-            <label htmlFor={`${inputIdPrefix}-provider`}>
-              {t("calculator.providerSelect")}
-            </label>
-            <select
-              id={`${inputIdPrefix}-provider`}
-              value={currentMapping.providerId}
-              onChange={(e) => {
-                const nextMapping = offeredProviders.find(
-                  (pm) => pm.providerId === e.target.value,
+          <div className="use-case-card__form">
+            <div className="use-case-card__field">
+              <label htmlFor={`${inputIdPrefix}-provider`}>
+                {t("calculator.providerSelect")}
+              </label>
+              <select
+                id={`${inputIdPrefix}-provider`}
+                value={currentMapping.providerId}
+                onChange={(e) => {
+                  const nextMapping = offeredProviders.find(
+                    (pm) => pm.providerId === e.target.value,
+                  );
+                  const nextProfileId = nextMapping?.profiles[0]?.id ?? "";
+                  onChange({
+                    providerId: e.target.value,
+                    profileId: nextProfileId,
+                    frequencyPerDay,
+                  });
+                }}
+              >
+                {offeredProviders.map((pm) => (
+                  <option key={pm.providerId} value={pm.providerId}>
+                    {t(`providers.${pm.providerId}`, {
+                      defaultValue: pm.providerId,
+                    })}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="use-case-card__field">
+              <label htmlFor={`${inputIdPrefix}-profile`}>
+                {t("calculator.profileSelect")}
+              </label>
+              <select
+                id={`${inputIdPrefix}-profile`}
+                value={currentProfile?.id ?? ""}
+                onChange={(e) =>
+                  onChange({
+                    providerId: currentMapping.providerId,
+                    profileId: e.target.value,
+                    frequencyPerDay,
+                  })
+                }
+              >
+                {profiles.map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {t(`calculator.tier.${profile.id}`, {
+                      defaultValue: profile.id,
+                    })}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="use-case-card__field">
+              <label htmlFor={`${inputIdPrefix}-frequency`}>
+                {t("calculator.frequencyPerDay")}
+              </label>
+              <input
+                id={`${inputIdPrefix}-frequency`}
+                type="number"
+                min={0}
+                value={frequencyPerDay}
+                onChange={(e) =>
+                  onChange({
+                    providerId: currentMapping.providerId,
+                    profileId: currentProfile?.id ?? "",
+                    frequencyPerDay: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <p className="use-case-card__profile-hint">
+              {t(`calculator.profileHint.${currentProfile?.id}`, { defaultValue: "" })}
+            </p>
+          </div>
+
+          {scaledImpacts && (
+            <div className="use-case-card__primary-impacts">
+              <dl className="use-case-card__summary">
+                {SUMMARY_CRITERIA.map(({ key, unit }) => {
+                  const range = scaledImpacts[key];
+                  const value = range && scaleRange(range.min, range.max, unit);
+                  return (
+                    <div key={key}>
+                      <dt>
+                        <ImpactIcon
+                          criterion={key}
+                          title={t(`calculator.cardImpactSummary.${key}`)}
+                          className="use-case-card__summary-icon"
+                        />
+                      </dt>
+                      <dd>
+                        {value
+                          ? `${formatNumber((value.min + value.max) / 2)} ${value.unit}`
+                          : t("calculator.notAvailable")}
+                      </dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            </div>
+          )}
+
+          {scaledImpacts && (
+            <details className="use-case-card__details">
+              <summary>{t("calculator.detailsToggle")}</summary>
+              {CRITERIA.map(({ key, unit }) => {
+                const value = scaledImpacts[key];
+                const label = t(`calculator.criterion.${key}`);
+                return value === null ? (
+                  <p key={key} className="use-case-card__unavailable">
+                    {label}: {t("calculator.notAvailable")}
+                  </p>
+                ) : (
+                    <RangeGauge
+                      key={key}
+                      min={value.min}
+                      max={value.max}
+                      unit={unit}
+                      label={
+                        isImpactCriterion(key) ? (
+                          <>
+                            <ImpactIcon
+                              criterion={key}
+                              title={label}
+                              className="impact-icon--detail use-case-card__detail-icon"
+                              decorative
+                            />
+                            <span>{label}</span>
+                          </>
+                        ) : (
+                          label
+                        )
+                      }
+                    />
                 );
-                const nextProfileId = nextMapping?.profiles[0]?.id ?? "";
-                onChange({
-                  providerId: e.target.value,
-                  profileId: nextProfileId,
-                  frequencyPerDay,
-                });
-              }}
-            >
-              {offeredProviders.map((pm) => (
-                <option key={pm.providerId} value={pm.providerId}>
-                  {t(`providers.${pm.providerId}`, {
-                    defaultValue: pm.providerId,
-                  })}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="use-case-card__field">
-            <label htmlFor={`${inputIdPrefix}-profile`}>
-              {t("calculator.profileSelect")}
-            </label>
-            <select
-              id={`${inputIdPrefix}-profile`}
-              value={currentProfile?.id ?? ""}
-              onChange={(e) =>
-                onChange({
-                  providerId: currentMapping.providerId,
-                  profileId: e.target.value,
-                  frequencyPerDay,
-                })
-              }
-            >
-              {profiles.map((profile) => (
-                <option key={profile.id} value={profile.id}>
-                  {t(`calculator.tier.${profile.id}`, {
-                    defaultValue: profile.id,
-                  })}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="use-case-card__field">
-            <label htmlFor={`${inputIdPrefix}-frequency`}>
-              {t("calculator.frequencyPerDay")}
-            </label>
-            <input
-              id={`${inputIdPrefix}-frequency`}
-              type="number"
-              min={0}
-              value={frequencyPerDay}
-              onChange={(e) =>
-                onChange({
-                  providerId: currentMapping.providerId,
-                  profileId: currentProfile?.id ?? "",
-                  frequencyPerDay: Number(e.target.value),
-                })
-              }
-            />
-          </div>
-
-          {currentProfile &&
-            (() => {
-              const scaledImpacts = scaleImpacts(
-                currentProfile.impacts,
-                frequencyPerDay,
-              );
-              return (
-                <details className="use-case-card__details">
-                  <summary>{t("calculator.detailsToggle")}</summary>
-                  {CRITERIA.map(({ key, unit }) => {
-                    const value = scaledImpacts[key];
-                    return value === null ? (
-                      <p key={key} className="use-case-card__unavailable">
-                        {t(`calculator.criterion.${key}`)}:{" "}
-                        {t("calculator.notAvailable")}
-                      </p>
-                    ) : (
-                      <RangeGauge
-                        key={key}
-                        min={value.min}
-                        max={value.max}
-                        unit={unit}
-                        label={t(`calculator.criterion.${key}`)}
-                      />
-                    );
-                  })}
-                </details>
-              );
-            })()}
+              })}
+            </details>
+          )}
         </>
       )}
     </article>

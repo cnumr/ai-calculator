@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { formatNumber, scaleRange } from "../domain/units";
 
 export function gaugePositions(
@@ -19,7 +20,7 @@ interface RangeGaugeProps {
   min: number;
   max: number;
   unit: string;
-  label: string;
+  label: ReactNode;
 }
 
 export function RangeGauge({ min, max, unit, label }: RangeGaugeProps) {

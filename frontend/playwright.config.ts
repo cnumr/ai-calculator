@@ -7,7 +7,7 @@ export default defineConfig({
     baseURL: "http://localhost:5173",
   },
   webServer: {
-    command: "npm run dev",
+    command: "VITE_API_BASE_URL=http://127.0.0.1:8000 npm run dev",
     url: "http://localhost:5173",
     reuseExistingServer: !process.env.CI,
   },

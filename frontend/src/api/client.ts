@@ -100,6 +100,9 @@ export interface ProviderMapping {
 
 export interface UseCase {
   id: string;
+  subtitleKey?: string;
+  defaultProviderId?: string;
+  recommendedProfileId?: string;
   providers: ProviderMapping[];
 }
 
@@ -112,6 +115,9 @@ interface UseCasesResponseBody {
   providers: Array<{ id: string; selected_by_default: boolean }>;
   use_cases: Array<{
     id: string;
+    subtitle_key?: string;
+    default_provider?: string;
+    recommended_tier?: string;
     providers: Array<{
       provider_id: string;
       profiles: Array<{ id: string; impacts: Impacts }>;
@@ -132,6 +138,9 @@ export async function fetchUseCases(): Promise<UseCasesCatalog> {
     })),
     useCases: body.use_cases.map((uc) => ({
       id: uc.id,
+      subtitleKey: uc.subtitle_key,
+      defaultProviderId: uc.default_provider,
+      recommendedProfileId: uc.recommended_tier,
       providers: uc.providers.map((pm) => ({
         providerId: pm.provider_id,
         profiles: pm.profiles.map((p) => ({ id: p.id, impacts: p.impacts })),

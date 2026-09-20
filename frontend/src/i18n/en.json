@@ -10,14 +10,14 @@
     "microsoft_copilot": "Microsoft Copilot"
   },
   "useCases": {
-    "video": { "name": "Video generation" },
-    "image": { "name": "Image generation" },
-    "deep_research": { "name": "Deep research" },
-    "meet_summary": { "name": "Meeting summary" },
-    "doc_small": { "name": "Writing a short document" },
-    "doc_large": { "name": "Writing a long document" },
-    "ai_query": { "name": "Query to an AI assistant" },
-    "email": { "name": "Writing an email" }
+    "video": { "name": "Video generation", "subtitle": "Veo, Runway, Sora..." },
+    "image": { "name": "Image generation", "subtitle": "Illustrations and visuals" },
+    "deep_research": { "name": "Deep research", "subtitle": "Multi-step research" },
+    "meet_summary": { "name": "Meeting summary", "subtitle": "Meet, Teams, video calls" },
+    "doc_small": { "name": "Writing a short document", "subtitle": "Notes and short summaries" },
+    "doc_large": { "name": "Writing a long document", "subtitle": "Reports, PDFs, articles" },
+    "ai_query": { "name": "Query to an AI assistant", "subtitle": "Chat and assistant" },
+    "email": { "name": "Writing an email", "subtitle": "Gmail, Outlook, calendar" }
   },
   "calculator": {
     "title": "Impact calculator",
@@ -42,13 +42,24 @@
     "providerSelect": "Provider",
     "profileSelect": "Profile",
     "profileUnsupported": "Not available for this provider",
+    "profileHint": { "eco": "For simple, recurring tasks", "balanced": "For a balance between performance and impact", "powerful": "Reserve for complex tasks", "research": "For critical, multi-step research", "image": "For image generation", "video": "For video generation" },
     "notAvailable": "Not available",
     "frequencyPerDay": "Frequency per day",
     "detailsToggle": "Show/hide the impact details for this task",
+    "cardImpactSummary": {
+      "gwp": "Greenhouse gases",
+      "water": "Water"
+    },
     "breakdownByProvider": "Breakdown by provider",
     "resultUnit": "Per action",
     "resultIndividualAnnual": "Per person, per year",
     "resultEnterpriseAnnual": "For the company, per year",
+    "gwpSummary": {
+      "individual": "Annual impact - 1 user",
+      "enterprise": "Annual impact - company",
+      "range": "{{min}} to {{max}} {{unit}}",
+      "workingDays": "Over 218 working days / year"
+    },
     "headcount": "Headcount",
     "tier": {
       "eco": "Eco",
@@ -69,11 +80,14 @@
     "errorGeneric": "An error occurred during the calculation.",
     "errorCatalogLoad": "Could not load the use case catalogue.",
     "retry": "Retry",
+    "reset": "Reset",
     "co2Equivalent": {
       "car_km": "{{count}} km by car",
-      "beef_burger": "{{count}} beef burgers",
-      "laptop_hour": "{{count}} hours of laptop use"
+      "streaming_hour": "{{count}} hours of video streaming"
+      ,"smartphone": "{{count}} smartphone"
     }
+    ,"co2EquivalentsHeading": "Individual equivalents",
+    "compareOnImpactCo2": "Compare on ImpactCO2.fr"
   },
   "methodology": {
     "title": "Methodology",

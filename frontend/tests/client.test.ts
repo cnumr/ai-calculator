@@ -6,12 +6,14 @@ describe("fetchUseCases", () => {
     vi.unstubAllGlobals();
   });
 
-  it("converts snake_case provider_id/selected_by_default to camelCase", async () => {
+  it("converts catalogue defaults and provider fields to camelCase", async () => {
     const body = {
       providers: [{ id: "openai", selected_by_default: true }],
       use_cases: [
         {
           id: "email",
+          default_provider: "openai",
+          recommended_tier: "eco",
           providers: [
             {
               provider_id: "openai",
@@ -45,6 +47,10 @@ describe("fetchUseCases", () => {
     expect(catalog.providers).toEqual([
       { id: "openai", selectedByDefault: true },
     ]);
+    expect(catalog.useCases[0]).toMatchObject({
+      defaultProviderId: "openai",
+      recommendedProfileId: "eco",
+    });
     expect(catalog.useCases[0].providers[0].providerId).toBe("openai");
     expect(catalog.useCases[0].providers[0].profiles[0].impacts.gwp).toEqual({
       min: 1,
