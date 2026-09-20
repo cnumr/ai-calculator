@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import "../src/i18n";
+import i18n from "../src/i18n";
 import { UseCaseCard } from "../src/components/UseCaseCard";
 import type { UseCase } from "../src/api/client";
 
@@ -24,24 +25,61 @@ const EMAIL: UseCase = {
           id: "eco",
           impacts: {
             ...ZERO_IMPACTS,
-            gwp: { min: 1, max: 2 },
-            water: { min: 1, max: 2 },
+            gwp: { min: 0.001, max: 0.002 },
+            water: { min: 0.001, max: 0.002 },
           },
         },
         {
           id: "powerful",
-          impacts: { ...ZERO_IMPACTS, gwp: { min: 5, max: 8 } },
+          impacts: {
+            ...ZERO_IMPACTS,
+            gwp: { min: 0.005, max: 0.008 },
+            water: { min: 0.005, max: 0.008 },
+          },
         },
       ],
     },
     {
       providerId: "anthropic",
       profiles: [
-        { id: "eco", impacts: { ...ZERO_IMPACTS, gwp: { min: 3, max: 4 } } },
+        {
+          id: "eco",
+          impacts: {
+            ...ZERO_IMPACTS,
+            gwp: { min: 0.003, max: 0.004 },
+            water: { min: 0.003, max: 0.004 },
+          },
+        },
       ],
     },
   ],
 };
+
+function InteractiveUseCaseCard() {
+  const [selection, setSelection] = useState({
+    providerId: "openai",
+    profileId: "eco",
+    frequencyPerDay: 1,
+  });
+
+  return (
+    <UseCaseCard
+      useCase={EMAIL}
+      availableProviderIds={["openai", "anthropic"]}
+      {...selection}
+      onChange={setSelection}
+      onImpactsChange={() => {}}
+    />
+  );
+}
+
+function summaryMetric(label: RegExp) {
+  const metric = screen
+    .getByText(label, { selector: "dt" })
+    .closest<HTMLDivElement>("div");
+  expect(metric).toBeInTheDocument();
+  return metric!;
+}
 
 const VIDEO: UseCase = {
   id: "video",
@@ -119,7 +157,7 @@ describe("UseCaseCard", () => {
     );
 
     expect(onImpactsChange).toHaveBeenCalledWith(
-      expect.objectContaining({ gwp: { min: 1, max: 2 } }),
+      expect.objectContaining({ gwp: { min: 0.001, max: 0.002 } }),
     );
   });
 
@@ -196,8 +234,8 @@ describe("UseCaseCard", () => {
       ),
     );
 
-    expect(screen.getByText(/min 3\.00 kgCO2eq/)).toBeInTheDocument();
-    expect(screen.getByText(/max 6\.00 kgCO2eq/)).toBeInTheDocument();
+    expect(screen.getByText(/min 3\.00 gCO2eq/)).toBeInTheDocument();
+    expect(screen.getByText(/max 6\.00 gCO2eq/)).toBeInTheDocument();
   });
 
   it("shows scaled midpoint GHG and water values without opening details", () => {
@@ -221,17 +259,63 @@ describe("UseCaseCard", () => {
       within(summary!)
         .getByText(/greenhouse gases|gaz à effet de serre/i)
         .closest<HTMLDivElement>("div"),
-    ).toHaveTextContent(/3\.00 kgCO2eq/);
+    ).toHaveTextContent(/3\.00 gCO2eq/);
     expect(
       within(summary!)
         .getByText(/water|eau/i)
         .closest<HTMLDivElement>("div"),
-    ).toHaveTextContent(/3\.00 L/);
+    ).toHaveTextContent(/3\.00 mL/);
     expect(
       screen
         .getByText(/voir\/masquer le détail|show\/hide the impact details/i)
         .closest("details"),
     ).not.toHaveAttribute("open");
+  });
+
+  it("updates the visible summary when the frequency changes", async () => {
+    await i18n.changeLanguage("en");
+    const user = userEvent.setup();
+    render(<InteractiveUseCaseCard />);
+
+    await user.clear(screen.getByLabelText("Frequency per day"));
+    await user.type(screen.getByLabelText("Frequency per day"), "2");
+
+    expect(summaryMetric(/greenhouse gases/i)).toHaveTextContent(
+      "3.00 gCO2eq",
+    );
+    expect(summaryMetric(/^water$/i)).toHaveTextContent("3.00 mL");
+  });
+
+  it("updates the visible summary when the profile changes", async () => {
+    await i18n.changeLanguage("fr");
+    const user = userEvent.setup();
+    render(<InteractiveUseCaseCard />);
+
+    await user.selectOptions(screen.getByLabelText("Profil"), "powerful");
+
+    expect(summaryMetric(/gaz à effet de serre/i)).toHaveTextContent(
+      "6.50 gCO2eq",
+    );
+    expect(summaryMetric(/^eau$/i)).toHaveTextContent("6.50 mL");
+  });
+
+  it("renders localized summary labels in French and English", async () => {
+    await i18n.changeLanguage("fr");
+    const { unmount } = render(<InteractiveUseCaseCard />);
+
+    expect(
+      screen.getByText("Gaz à effet de serre", { selector: "dt" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Eau", { selector: "dt" })).toBeInTheDocument();
+
+    unmount();
+    await i18n.changeLanguage("en");
+    render(<InteractiveUseCaseCard />);
+
+    expect(
+      screen.getByText("Greenhouse gases", { selector: "dt" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Water", { selector: "dt" })).toBeInTheDocument();
   });
 
   it("shows unavailable when a card summary metric is null", () => {
