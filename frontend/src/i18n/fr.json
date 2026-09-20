@@ -83,9 +83,11 @@
     "reset": "Réinitialiser",
     "co2Equivalent": {
       "car_km": "{{count}} km en voiture",
-      "beef_burger": "{{count}} burgers au bœuf",
-      "laptop_hour": "{{count}} heures d'utilisation d'un ordinateur portable"
+      "streaming_hour": "{{count}} heures de streaming vidéo"
+      ,"smartphone": "{{count}} smartphone"
     }
+    ,"co2EquivalentsHeading": "Équivalences individuelles",
+    "compareOnImpactCo2": "Comparer sur ImpactCO2.fr"
   },
   "methodology": {
     "title": "Méthodologie",

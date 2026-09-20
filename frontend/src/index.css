@@ -765,6 +765,11 @@ button {
   gap: 0.75rem;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
+.co2-equivalents h3 { grid-column: 1 / -1; }
+.co2-equivalents ul { display: contents; list-style: none; padding: 0; margin: 0; }
+.co2-equivalents__icon { display: inline-block; width: 1.75rem; height: 1.75rem; margin-right: 0.6rem; vertical-align: middle; color: var(--surface); }
+.co2-equivalents__icon svg { width: 100%; height: 100%; }
+.co2-equivalents__link { grid-column: 1 / -1; display: block; padding: 0.65rem; border-radius: 8px; background: var(--surface); color: var(--forest-deep); font-weight: 700; text-align: center; text-decoration: none; }
 
 .co2-equivalents li {
   background: var(--forest-deep);
