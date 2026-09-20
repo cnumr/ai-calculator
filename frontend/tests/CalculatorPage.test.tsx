@@ -175,6 +175,22 @@ describe("CalculatorPage", () => {
     );
   });
 
+  it("shows the five impact icons in annual and provider detail grids", async () => {
+    mockedFetchUseCases.mockResolvedValue(CATALOG);
+
+    const { container } = render(<CalculatorPage />);
+
+    await waitFor(() =>
+      expect(container.querySelectorAll(".impacts-grid").length).toBeGreaterThan(
+        0,
+      ),
+    );
+
+    container.querySelectorAll(".impacts-grid").forEach((grid) => {
+      expect(grid.querySelectorAll(".impact-icon--detail")).toHaveLength(5);
+    });
+  });
+
   it("shows a not-available message for null criteria in the annual totals", async () => {
     const CATALOG_WITH_NULLS: apiClient.UseCasesCatalog = {
       providers: [{ id: "google", selectedByDefault: true }],

@@ -74,8 +74,12 @@ function InteractiveUseCaseCard() {
 }
 
 function summaryMetric(label: RegExp) {
-  const metric = screen
-    .getByText(label, { selector: "dt" })
+  const summary = document.querySelector<HTMLDListElement>(
+    ".use-case-card__summary",
+  );
+  expect(summary).toBeInTheDocument();
+  const metric = within(summary!)
+    .getByTitle(label)
     .closest<HTMLDivElement>("div");
   expect(metric).toBeInTheDocument();
   return metric!;
@@ -103,6 +107,73 @@ const VIDEO: UseCase = {
 };
 
 describe("UseCaseCard", () => {
+  it("groups the form, primary impacts, and details into layout zones", () => {
+    render(
+      <UseCaseCard
+        useCase={EMAIL}
+        availableProviderIds={["openai", "anthropic"]}
+        providerId="openai"
+        profileId="eco"
+        frequencyPerDay={1}
+        onChange={() => {}}
+        onImpactsChange={() => {}}
+      />,
+    );
+
+    const card = document.querySelector<HTMLElement>(".use-case-card");
+    const form = card?.querySelector(".use-case-card__form");
+    const primaryImpacts = card?.querySelector(
+      ".use-case-card__primary-impacts",
+    );
+    const details = card?.querySelector(".use-case-card__details");
+
+    expect(form).toContainElement(screen.getByLabelText(/fournisseur|provider/i));
+    expect(primaryImpacts).toContainElement(
+      screen.getByTitle(/gaz à effet de serre|greenhouse gases/i),
+    );
+    expect(details?.parentElement).toBe(card);
+  });
+
+  it("shows large titled summary icons and smaller titled detail icons", async () => {
+    render(
+      <UseCaseCard
+        useCase={EMAIL}
+        availableProviderIds={["openai", "anthropic"]}
+        providerId="openai"
+        profileId="eco"
+        frequencyPerDay={1}
+        onChange={() => {}}
+        onImpactsChange={() => {}}
+      />,
+    );
+
+    const summary = document.querySelector<HTMLElement>(
+      ".use-case-card__summary",
+    );
+    expect(
+      within(summary!).getByTitle(/gaz à effet de serre|greenhouse gases/i),
+    ).toHaveClass("use-case-card__summary-icon");
+    expect(within(summary!).getByTitle(/eau|water/i)).toHaveClass(
+      "use-case-card__summary-icon",
+    );
+
+    await userEvent.click(
+      screen.getByText(
+        /voir\/masquer le détail|show\/hide the impact details/i,
+      ),
+    );
+
+    const details = document.querySelector(".use-case-card__details");
+    const detailIcons = details!.querySelectorAll(
+      ".use-case-card__detail-icon",
+    );
+    expect(detailIcons).toHaveLength(5);
+    detailIcons.forEach((icon) => {
+      expect(icon).toHaveAttribute("aria-hidden", "true");
+      expect(icon).not.toHaveAttribute("title");
+    });
+  });
+
   it("renders the use case name and its picto", () => {
     render(
       <UseCaseCard
@@ -257,12 +328,12 @@ describe("UseCaseCard", () => {
     expect(summary).toBeInTheDocument();
     expect(
       within(summary!)
-        .getByText(/greenhouse gases|gaz à effet de serre/i)
+        .getByTitle(/greenhouse gases|gaz à effet de serre/i)
         .closest<HTMLDivElement>("div"),
     ).toHaveTextContent(/3\.00 gCO2eq/);
     expect(
       within(summary!)
-        .getByText(/water|eau/i)
+        .getByTitle(/water|eau/i)
         .closest<HTMLDivElement>("div"),
     ).toHaveTextContent(/3\.00 mL/);
     expect(
@@ -327,18 +398,30 @@ describe("UseCaseCard", () => {
     const { unmount } = render(<InteractiveUseCaseCard />);
 
     expect(
-      screen.getByText("Gaz à effet de serre", { selector: "dt" }),
+      within(document.querySelector(".use-case-card__summary")!).getByTitle(
+        "Gaz à effet de serre",
+      ),
     ).toBeInTheDocument();
-    expect(screen.getByText("Eau", { selector: "dt" })).toBeInTheDocument();
+    expect(
+      within(document.querySelector(".use-case-card__summary")!).getByTitle(
+        "Eau",
+      ),
+    ).toBeInTheDocument();
 
     unmount();
     await i18n.changeLanguage("en");
     render(<InteractiveUseCaseCard />);
 
     expect(
-      screen.getByText("Greenhouse gases", { selector: "dt" }),
+      within(document.querySelector(".use-case-card__summary")!).getByTitle(
+        "Greenhouse gases",
+      ),
     ).toBeInTheDocument();
-    expect(screen.getByText("Water", { selector: "dt" })).toBeInTheDocument();
+    expect(
+      within(document.querySelector(".use-case-card__summary")!).getByTitle(
+        "Water",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("shows unavailable when a card summary metric is null", () => {
@@ -360,7 +443,7 @@ describe("UseCaseCard", () => {
     expect(summary).toBeInTheDocument();
     expect(
       within(summary!)
-        .getByText(/water|eau/i)
+        .getByTitle(/water|eau/i)
         .closest<HTMLDivElement>("div"),
     ).toHaveTextContent(/not available|non disponible/i);
   });

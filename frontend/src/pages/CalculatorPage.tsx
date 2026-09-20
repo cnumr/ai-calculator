@@ -4,6 +4,7 @@ import { Impacts, UseCasesCatalog, fetchUseCases } from "../api/client";
 import { ProviderChips } from "../components/ProviderChips";
 import { UseCaseCard } from "../components/UseCaseCard";
 import { RangeGauge } from "../components/RangeGauge";
+import { ImpactIcon, isImpactCriterion } from "../components/ImpactIcon";
 import { Co2Equivalents } from "../components/Co2Equivalents";
 import {
   aggregateByProvider,
@@ -56,9 +57,11 @@ function ImpactsGrid({ impacts, title }: { impacts: Impacts; title: string }) {
       <h3>{title}</h3>
       {CRITERIA.map(({ key, unit }) => {
         const value = impacts[key];
+        const label = t(`calculator.criterion.${key}`);
+        const hasIcon = isImpactCriterion(key);
         return value === null ? (
           <p key={key} className="impacts-grid__unavailable">
-            {t(`calculator.criterion.${key}`)}: {t("calculator.notAvailable")}
+            {label}: {t("calculator.notAvailable")}
           </p>
         ) : (
           <RangeGauge
@@ -66,7 +69,20 @@ function ImpactsGrid({ impacts, title }: { impacts: Impacts; title: string }) {
             min={value.min}
             max={value.max}
             unit={unit}
-            label={t(`calculator.criterion.${key}`)}
+            label={
+              hasIcon ? (
+                <>
+                  <ImpactIcon
+                    criterion={key}
+                    className="impact-icon--detail"
+                    decorative
+                  />
+                  <span>{label}</span>
+                </>
+              ) : (
+                label
+              )
+            }
           />
         );
       })}
