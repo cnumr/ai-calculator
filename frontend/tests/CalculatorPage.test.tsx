@@ -31,11 +31,13 @@ const ZERO_IMPACTS = {
 const CATALOG: apiClient.UseCasesCatalog = {
   providers: [
     { id: "openai", selectedByDefault: true },
-    { id: "anthropic", selectedByDefault: false },
+    { id: "anthropic", selectedByDefault: true },
   ],
   useCases: [
     {
       id: "email",
+      defaultProviderId: "anthropic",
+      recommendedProfileId: "eco",
       providers: [
         {
           providerId: "openai",
@@ -90,8 +92,21 @@ describe("CalculatorPage", () => {
     );
     expect(screen.getByRole("button", { name: /anthropic/i })).toHaveAttribute(
       "aria-pressed",
-      "false",
+      "true",
     );
+  });
+
+  it("initializes each card with its catalogue provider and profile defaults", async () => {
+    mockedFetchUseCases.mockResolvedValue(CATALOG);
+
+    render(<CalculatorPage />);
+
+    await waitFor(() =>
+      expect(screen.getByLabelText(/fournisseur|provider/i)).toHaveValue(
+        "anthropic",
+      ),
+    );
+    expect(screen.getByLabelText(/profil|profile/i)).toHaveValue("eco");
   });
 
   it("switches a card's provider away from a deselected chip", async () => {
@@ -105,7 +120,10 @@ describe("CalculatorPage", () => {
       ).toBeInTheDocument(),
     );
 
-    await userEvent.click(screen.getByRole("button", { name: /anthropic/i }));
+    await userEvent.selectOptions(
+      screen.getByLabelText(/fournisseur|provider/i),
+      "openai",
+    );
     await userEvent.click(screen.getByRole("button", { name: /openai/i }));
 
     const providerSelect = screen.getByLabelText(/fournisseur|provider/i);
@@ -151,13 +169,13 @@ describe("CalculatorPage", () => {
       ).toBeInTheDocument(),
     );
 
-    // Default frequency is 1/day, 220 working days/year, gwp max = 2 -> 440
+    // Default frequency is 1/day, 218 working days/year, Anthropic gwp max = 4 -> 872
     // Card impacts populate via a child useEffect after the initial render,
     // so the gauge text appears asynchronously relative to the catalogue load.
     await waitFor(() => {
       const gauges = container.querySelectorAll(".range-gauge");
       const found = Array.from(gauges).some((gauge) =>
-        gauge.textContent?.includes("440"),
+        gauge.textContent?.includes("872"),
       );
       expect(found).toBe(true);
     });

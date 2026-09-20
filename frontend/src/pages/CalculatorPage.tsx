@@ -14,7 +14,7 @@ import {
 } from "../domain/aggregate";
 import { formatNumber, scaleRange } from "../domain/units";
 
-const WORKING_DAYS_PER_YEAR = 220;
+const WORKING_DAYS_PER_YEAR = 218;
 
 const CRITERIA: Array<{ key: keyof Impacts; unit: string }> = [
   { key: "gwp", unit: "kgCO2eq" },
@@ -160,10 +160,17 @@ export function CalculatorPage() {
         );
         const initialStates: Record<string, CardState> = {};
         for (const useCase of loaded.useCases) {
-          const firstMapping = useCase.providers[0];
+          const firstMapping =
+            useCase.providers.find(
+              (mapping) => mapping.providerId === useCase.defaultProviderId,
+            ) ?? useCase.providers[0];
+          const firstProfile =
+            firstMapping?.profiles.find(
+              (profile) => profile.id === useCase.recommendedProfileId,
+            ) ?? firstMapping?.profiles[0];
           initialStates[useCase.id] = {
             providerId: firstMapping?.providerId ?? "",
-            profileId: firstMapping?.profiles[0]?.id ?? "",
+            profileId: firstProfile?.id ?? "",
             frequencyPerDay: 1,
           };
         }

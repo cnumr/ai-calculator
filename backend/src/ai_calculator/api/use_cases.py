@@ -25,6 +25,8 @@ def _to_use_cases_response(catalog: Catalog) -> UseCasesResponse:
         use_cases=[
             UseCaseOut(
                 id=uc.id,
+                default_provider=uc.default_provider,
+                recommended_tier=uc.recommended_tier,
                 providers=[
                     ProviderMappingOut(
                         provider_id=pm.provider_id,
