@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+### Minor Changes
+
+- 0b8fc5d: Add configurable use-case cards with EcoLogits impact summaries, annual context, provider shares, reset controls, and ImpactCO2-aligned equivalences.
+
 ## 0.2.1
 
 ### Patch Changes
