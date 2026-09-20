@@ -8,17 +8,15 @@ describe("Co2Equivalents", () => {
     render(<Co2Equivalents gwpKgCo2eq={2.18} />);
 
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
-    // Tighten regexes to match exact rendered text: gwpKgCo2eq=2.18 gives counts of 10, 1, 109
+    // ImpactCO2 factors give 34 streaming hours, 0 smartphone, and 15 km.
     expect(
-      screen.getByText(/^10 km by car$|^10 km en voiture$/),
+      screen.getByText(/^34 hours of video streaming$|^34 heures de streaming vidéo$/),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/^1 beef burgers$|^1 burgers au bœuf$/),
+      screen.getByText(/^0 smartphone$/),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(
-        /^109 hours of laptop use$|^109 heures d'utilisation d'un ordinateur portable$/,
-      ),
+      screen.getByText(/^15 km by car$|^15 km en voiture$/),
     ).toBeInTheDocument();
   });
 });

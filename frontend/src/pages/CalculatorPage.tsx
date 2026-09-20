@@ -4,7 +4,9 @@ import { Impacts, UseCasesCatalog, fetchUseCases } from "../api/client";
 import { ProviderChips } from "../components/ProviderChips";
 import { UseCaseCard } from "../components/UseCaseCard";
 import { RangeGauge } from "../components/RangeGauge";
+import { ImpactIcon, isImpactCriterion } from "../components/ImpactIcon";
 import { Co2Equivalents } from "../components/Co2Equivalents";
+import { GwpSummary } from "../components/GwpSummary";
 import {
   aggregateByProvider,
   scaleImpacts,
@@ -13,7 +15,7 @@ import {
 } from "../domain/aggregate";
 import { formatNumber, scaleRange } from "../domain/units";
 
-const WORKING_DAYS_PER_YEAR = 220;
+const WORKING_DAYS_PER_YEAR = 218;
 
 const CRITERIA: Array<{ key: keyof Impacts; unit: string }> = [
   { key: "gwp", unit: "kgCO2eq" },
@@ -27,6 +29,26 @@ interface CardState {
   providerId: string;
   profileId: string;
   frequencyPerDay: number;
+}
+
+function createInitialCardStates(useCases: UseCasesCatalog["useCases"]) {
+  const states: Record<string, CardState> = {};
+  for (const useCase of useCases) {
+    const mapping =
+      useCase.providers.find(
+        (item) => item.providerId === useCase.defaultProviderId,
+      ) ?? useCase.providers[0];
+    const profile =
+      mapping?.profiles.find(
+        (item) => item.id === useCase.recommendedProfileId,
+      ) ?? mapping?.profiles[0];
+    states[useCase.id] = {
+      providerId: mapping?.providerId ?? "",
+      profileId: profile?.id ?? "",
+      frequencyPerDay: 1,
+    };
+  }
+  return states;
 }
 
 function SectionHeader({
@@ -56,9 +78,11 @@ function ImpactsGrid({ impacts, title }: { impacts: Impacts; title: string }) {
       <h3>{title}</h3>
       {CRITERIA.map(({ key, unit }) => {
         const value = impacts[key];
+        const label = t(`calculator.criterion.${key}`);
+        const hasIcon = isImpactCriterion(key);
         return value === null ? (
           <p key={key} className="impacts-grid__unavailable">
-            {t(`calculator.criterion.${key}`)}: {t("calculator.notAvailable")}
+            {label}: {t("calculator.notAvailable")}
           </p>
         ) : (
           <RangeGauge
@@ -66,7 +90,20 @@ function ImpactsGrid({ impacts, title }: { impacts: Impacts; title: string }) {
             min={value.min}
             max={value.max}
             unit={unit}
-            label={t(`calculator.criterion.${key}`)}
+            label={
+              hasIcon ? (
+                <>
+                  <ImpactIcon
+                    criterion={key}
+                    className="impact-icon--detail"
+                    decorative
+                  />
+                  <span>{label}</span>
+                </>
+              ) : (
+                label
+              )
+            }
           />
         );
       })}
@@ -93,6 +130,11 @@ function ProviderBreakdown({
             impacts.gwp!.max,
             "kgCO2eq"
           );
+          const total = entries.reduce(
+            (sum, [, item]) => sum + (item.gwp?.max ?? 0),
+            0,
+          );
+          const percentage = total === 0 ? 0 : (impacts.gwp!.max / total) * 100;
           return (
             <li key={providerId}>
               <strong>
@@ -100,6 +142,10 @@ function ProviderBreakdown({
               </strong>{" "}
               {formatNumber(scaled.min)} – {formatNumber(scaled.max)}{" "}
               {scaled.unit}
+              <span className="provider-breakdown__share">
+                {formatNumber(percentage)} %
+              </span>
+              <meter min="0" max="100" value={percentage} aria-label={`${t(`providers.${providerId}`, { defaultValue: providerId })}: ${formatNumber(percentage)} %`} />
             </li>
           );
         })}
@@ -142,16 +188,7 @@ export function CalculatorPage() {
             loaded.providers.filter((p) => p.selectedByDefault).map((p) => p.id)
           )
         );
-        const initialStates: Record<string, CardState> = {};
-        for (const useCase of loaded.useCases) {
-          const firstMapping = useCase.providers[0];
-          initialStates[useCase.id] = {
-            providerId: firstMapping?.providerId ?? "",
-            profileId: firstMapping?.profiles[0]?.id ?? "",
-            frequencyPerDay: 1,
-          };
-        }
-        setCardStates(initialStates);
+        setCardStates(createInitialCardStates(loaded.useCases));
       })
       .catch(() => {
         setLoadError(true);
@@ -172,6 +209,14 @@ export function CalculatorPage() {
       }
       return next;
     });
+  }
+
+  function resetCalculator() {
+    if (!catalog) return;
+    setSelectedProviders(new Set(catalog.providers.filter((p) => p.selectedByDefault).map((p) => p.id)));
+    setCardStates(createInitialCardStates(catalog.useCases));
+    setCardImpacts({});
+    setHeadcount(1);
   }
 
   if (loadError) {
@@ -217,6 +262,9 @@ export function CalculatorPage() {
     <div className="calculator-page">
       <div className="calculator-hero">
         <h1>{t("calculator.title")}</h1>
+        <button type="button" className="calculator-reset" onClick={resetCalculator}>
+          {t("calculator.reset")}
+        </button>
       </div>
 
       <section className="calculator-section">
@@ -267,6 +315,7 @@ export function CalculatorPage() {
         </div>
 
         <div className="calculator-section__col calculator-section__col--aside">
+          <GwpSummary impact={individualAnnual.gwp} scope="individual" />
           <ImpactsGrid
             impacts={individualAnnual}
             title={t("calculator.resultIndividualAnnual")}
@@ -295,6 +344,7 @@ export function CalculatorPage() {
           />
         </div>
 
+        <GwpSummary impact={enterpriseAnnual.gwp} scope="enterprise" />
         <ImpactsGrid
           impacts={enterpriseAnnual}
           title={t("calculator.resultEnterpriseAnnual")}

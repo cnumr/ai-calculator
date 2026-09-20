@@ -10,14 +10,14 @@
     "microsoft_copilot": "Microsoft Copilot"
   },
   "useCases": {
-    "video": { "name": "Génération de vidéos" },
-    "image": { "name": "Génération d'images" },
-    "deep_research": { "name": "Recherche approfondie" },
-    "meet_summary": { "name": "Résumé de réunion" },
-    "doc_small": { "name": "Rédaction d'un document court" },
-    "doc_large": { "name": "Rédaction d'un document long" },
-    "ai_query": { "name": "Question à un assistant IA" },
-    "email": { "name": "Rédaction d'un email" }
+    "video": { "name": "Génération de vidéos", "subtitle": "Veo, Runway, Sora..." },
+    "image": { "name": "Génération d'images", "subtitle": "Illustrations et visuels" },
+    "deep_research": { "name": "Recherche approfondie", "subtitle": "Recherche multi-étapes" },
+    "meet_summary": { "name": "Résumé de réunion", "subtitle": "Meet, Teams, visioconférence" },
+    "doc_small": { "name": "Rédaction d'un document court", "subtitle": "Notes et synthèses courtes" },
+    "doc_large": { "name": "Rédaction d'un document long", "subtitle": "Rapports, PDF, articles" },
+    "ai_query": { "name": "Question à un assistant IA", "subtitle": "Chat et assistant" },
+    "email": { "name": "Rédaction d'un email", "subtitle": "Gmail, Outlook, agenda" }
   },
   "calculator": {
     "title": "Calculateur d'impacts",
@@ -42,13 +42,24 @@
     "providerSelect": "Fournisseur",
     "profileSelect": "Profil",
     "profileUnsupported": "Non disponible pour ce fournisseur",
+    "profileHint": { "eco": "Pour les tâches simples et répétitives", "balanced": "Pour un bon équilibre entre performance et impact", "powerful": "À réserver aux tâches complexes", "research": "Pour les recherches critiques et multi-étapes", "image": "Pour générer une image", "video": "Pour générer une vidéo" },
     "notAvailable": "Non disponible",
     "frequencyPerDay": "Fréquence par jour",
     "detailsToggle": "Voir/Masquer le détail de vos impacts pour cette tâche",
+    "cardImpactSummary": {
+      "gwp": "Gaz à effet de serre",
+      "water": "Eau"
+    },
     "breakdownByProvider": "Répartition par fournisseur",
     "resultUnit": "Par action",
     "resultIndividualAnnual": "Par personne et par an",
     "resultEnterpriseAnnual": "Pour l'entreprise et par an",
+    "gwpSummary": {
+      "individual": "Impact annuel - 1 utilisateur",
+      "enterprise": "Impact annuel - entreprise",
+      "range": "de {{min}} à {{max}} {{unit}}",
+      "workingDays": "Sur 218 jours ouvrés / an"
+    },
     "headcount": "Nombre de salariés",
     "tier": {
       "eco": "Éco",
@@ -69,11 +80,14 @@
     "errorGeneric": "Une erreur est survenue lors du calcul.",
     "errorCatalogLoad": "Impossible de charger le catalogue de cas d'usage.",
     "retry": "Réessayer",
+    "reset": "Réinitialiser",
     "co2Equivalent": {
       "car_km": "{{count}} km en voiture",
-      "beef_burger": "{{count}} burgers au bœuf",
-      "laptop_hour": "{{count}} heures d'utilisation d'un ordinateur portable"
+      "streaming_hour": "{{count}} heures de streaming vidéo"
+      ,"smartphone": "{{count}} smartphone"
     }
+    ,"co2EquivalentsHeading": "Équivalences individuelles",
+    "compareOnImpactCo2": "Comparer sur ImpactCO2.fr"
   },
   "methodology": {
     "title": "Méthodologie",

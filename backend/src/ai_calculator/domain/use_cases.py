@@ -41,6 +41,9 @@ class ResolvedProviderMapping:
 @dataclass(frozen=True)
 class ResolvedUseCase:
     id: str
+    subtitle_key: str
+    default_provider: str
+    recommended_tier: str
     providers: list[ResolvedProviderMapping]
 
 
@@ -128,6 +131,8 @@ def load_catalog(path: Path | None = None) -> Catalog:
     use_cases = []
     for uc in raw_use_cases:
         use_case_id = _require(uc, "id", "use_cases entry")
+        default_provider = _require(uc, "default_provider", f"use case '{use_case_id}'")
+        recommended_tier = _require(uc, "recommended_tier", f"use case '{use_case_id}'")
         raw_provider_mappings = _require(uc, "providers", f"use case '{use_case_id}'")
         provider_mappings = []
         for pm in raw_provider_mappings:
@@ -138,6 +143,14 @@ def load_catalog(path: Path | None = None) -> Catalog:
             provider_mappings.append(
                 ResolvedProviderMapping(provider_id=provider_id, profiles=profiles)
             )
-        use_cases.append(ResolvedUseCase(id=use_case_id, providers=provider_mappings))
+        use_cases.append(
+            ResolvedUseCase(
+                id=use_case_id,
+                subtitle_key=f"useCases.{use_case_id}.subtitle",
+                default_provider=default_provider,
+                recommended_tier=recommended_tier,
+                providers=provider_mappings,
+            )
+        )
 
     return Catalog(providers=providers, use_cases=use_cases)
