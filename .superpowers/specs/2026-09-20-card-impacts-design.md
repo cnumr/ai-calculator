@@ -10,7 +10,7 @@ EcoLogits remains at version 0.11.1 because this is the latest PyPI release.
 
 - Show GHG and water after the frequency field on every supported use-case card.
 - Calculate each displayed value as the midpoint of its existing minimum and maximum bounds, after scaling by the selected daily frequency.
-- Use the existing units: `kgCO2eq` for GHG and `L` for water.
+- Use the same adaptive units as the existing detailed ranges: `kgCO2eq` may be displayed as `gCO2eq` or `mgCO2eq`, and `L` may be displayed as `mL` or `m³`.
 - When a value is unavailable, display the existing localized unavailable message for that metric.
 - Add localized French and English labels.
 
