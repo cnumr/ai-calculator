@@ -45,6 +45,10 @@
     "notAvailable": "Non disponible",
     "frequencyPerDay": "Fréquence par jour",
     "detailsToggle": "Voir/Masquer le détail de vos impacts pour cette tâche",
+    "cardImpactSummary": {
+      "gwp": "Gaz à effet de serre",
+      "water": "Eau"
+    },
     "breakdownByProvider": "Répartition par fournisseur",
     "resultUnit": "Par action",
     "resultIndividualAnnual": "Par personne et par an",

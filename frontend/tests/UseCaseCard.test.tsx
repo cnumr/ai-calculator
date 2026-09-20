@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import "../src/i18n";
@@ -20,7 +20,14 @@ const EMAIL: UseCase = {
     {
       providerId: "openai",
       profiles: [
-        { id: "eco", impacts: { ...ZERO_IMPACTS, gwp: { min: 1, max: 2 } } },
+        {
+          id: "eco",
+          impacts: {
+            ...ZERO_IMPACTS,
+            gwp: { min: 1, max: 2 },
+            water: { min: 1, max: 2 },
+          },
+        },
         {
           id: "powerful",
           impacts: { ...ZERO_IMPACTS, gwp: { min: 5, max: 8 } },
@@ -31,6 +38,27 @@ const EMAIL: UseCase = {
       providerId: "anthropic",
       profiles: [
         { id: "eco", impacts: { ...ZERO_IMPACTS, gwp: { min: 3, max: 4 } } },
+      ],
+    },
+  ],
+};
+
+const VIDEO: UseCase = {
+  id: "video",
+  providers: [
+    {
+      providerId: "google",
+      profiles: [
+        {
+          id: "video",
+          impacts: {
+            gwp: { min: 0.37, max: 0.37 },
+            energy: null,
+            adpe: { min: 0.000008, max: 0.000008 },
+            pe: null,
+            water: null,
+          },
+        },
       ],
     },
   ],
@@ -172,28 +200,65 @@ describe("UseCaseCard", () => {
     expect(screen.getByText(/max 6\.00 kgCO2eq/)).toBeInTheDocument();
   });
 
-  it("shows a not-available message instead of a gauge for null criteria", async () => {
-    const VIDEO: UseCase = {
-      id: "video",
-      providers: [
-        {
-          providerId: "google",
-          profiles: [
-            {
-              id: "video",
-              impacts: {
-                gwp: { min: 0.37, max: 0.37 },
-                energy: null,
-                adpe: { min: 0.000008, max: 0.000008 },
-                pe: null,
-                water: null,
-              },
-            },
-          ],
-        },
-      ],
-    };
+  it("shows scaled midpoint GHG and water values without opening details", () => {
+    render(
+      <UseCaseCard
+        useCase={EMAIL}
+        availableProviderIds={["openai", "anthropic"]}
+        providerId="openai"
+        profileId="eco"
+        frequencyPerDay={2}
+        onChange={() => {}}
+        onImpactsChange={() => {}}
+      />,
+    );
 
+    const summary = document.querySelector<HTMLDListElement>(
+      ".use-case-card__summary",
+    );
+    expect(summary).toBeInTheDocument();
+    expect(
+      within(summary!)
+        .getByText(/greenhouse gases|gaz à effet de serre/i)
+        .closest<HTMLDivElement>("div"),
+    ).toHaveTextContent(/3\.00 kgCO2eq/);
+    expect(
+      within(summary!)
+        .getByText(/water|eau/i)
+        .closest<HTMLDivElement>("div"),
+    ).toHaveTextContent(/3\.00 L/);
+    expect(
+      screen
+        .getByText(/voir\/masquer le détail|show\/hide the impact details/i)
+        .closest("details"),
+    ).not.toHaveAttribute("open");
+  });
+
+  it("shows unavailable when a card summary metric is null", () => {
+    render(
+      <UseCaseCard
+        useCase={VIDEO}
+        availableProviderIds={["google"]}
+        providerId="google"
+        profileId="video"
+        frequencyPerDay={1}
+        onChange={() => {}}
+        onImpactsChange={() => {}}
+      />,
+    );
+
+    const summary = document.querySelector<HTMLDListElement>(
+      ".use-case-card__summary",
+    );
+    expect(summary).toBeInTheDocument();
+    expect(
+      within(summary!)
+        .getByText(/water|eau/i)
+        .closest<HTMLDivElement>("div"),
+    ).toHaveTextContent(/not available|non disponible/i);
+  });
+
+  it("shows a not-available message instead of a gauge for null criteria", async () => {
     render(
       <UseCaseCard
         useCase={VIDEO}
@@ -212,7 +277,13 @@ describe("UseCaseCard", () => {
       ),
     );
 
-    expect(screen.getAllByText(/non disponible|not available/i).length).toBe(3);
+    const details = screen
+      .getByText(/voir\/masquer le détail|show\/hide the impact details/i)
+      .closest("details");
+    expect(details).toBeInTheDocument();
+    expect(
+      within(details!).getAllByText(/non disponible|not available/i),
+    ).toHaveLength(3);
     expect(screen.getByText(/min 370 gCO2eq/)).toBeInTheDocument();
   });
 });

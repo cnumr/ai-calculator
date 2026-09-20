@@ -45,6 +45,10 @@
     "notAvailable": "Not available",
     "frequencyPerDay": "Frequency per day",
     "detailsToggle": "Show/hide the impact details for this task",
+    "cardImpactSummary": {
+      "gwp": "Greenhouse gases",
+      "water": "Water"
+    },
     "breakdownByProvider": "Breakdown by provider",
     "resultUnit": "Per action",
     "resultIndividualAnnual": "Per person, per year",

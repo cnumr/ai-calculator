@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { Impacts, UseCase } from "../api/client";
 import { RangeGauge } from "./RangeGauge";
 import { scaleImpacts } from "../domain/aggregate";
+import { formatNumber, scaleRange } from "../domain/units";
 import videoIcon from "../assets/use-cases/video.svg";
 import imageIcon from "../assets/use-cases/image.svg";
 import deepResearchIcon from "../assets/use-cases/deep_research.svg";
@@ -28,6 +29,11 @@ const CRITERIA: Array<{ key: keyof Impacts; unit: string }> = [
   { key: "energy", unit: "kWh" },
   { key: "adpe", unit: "kgSbeq" },
   { key: "pe", unit: "MJ" },
+  { key: "water", unit: "L" },
+];
+
+const SUMMARY_CRITERIA: Array<{ key: "gwp" | "water"; unit: string }> = [
+  { key: "gwp", unit: "kgCO2eq" },
   { key: "water", unit: "L" },
 ];
 
@@ -65,6 +71,9 @@ export function UseCaseCard({
   const profiles = currentMapping?.profiles ?? [];
   const currentProfile =
     profiles.find((p) => p.id === profileId) ?? profiles[0];
+  const scaledImpacts = currentProfile
+    ? scaleImpacts(currentProfile.impacts, frequencyPerDay)
+    : null;
 
   useEffect(() => {
     if (currentProfile) {
@@ -163,35 +172,46 @@ export function UseCaseCard({
             />
           </div>
 
-          {currentProfile &&
-            (() => {
-              const scaledImpacts = scaleImpacts(
-                currentProfile.impacts,
-                frequencyPerDay,
-              );
-              return (
-                <details className="use-case-card__details">
-                  <summary>{t("calculator.detailsToggle")}</summary>
-                  {CRITERIA.map(({ key, unit }) => {
-                    const value = scaledImpacts[key];
-                    return value === null ? (
-                      <p key={key} className="use-case-card__unavailable">
-                        {t(`calculator.criterion.${key}`)}:{" "}
-                        {t("calculator.notAvailable")}
-                      </p>
-                    ) : (
-                      <RangeGauge
-                        key={key}
-                        min={value.min}
-                        max={value.max}
-                        unit={unit}
-                        label={t(`calculator.criterion.${key}`)}
-                      />
-                    );
-                  })}
-                </details>
-              );
-            })()}
+          {scaledImpacts && (
+            <dl className="use-case-card__summary">
+              {SUMMARY_CRITERIA.map(({ key, unit }) => {
+                const range = scaledImpacts[key];
+                const value = range && scaleRange(range.min, range.max, unit);
+                return (
+                  <div key={key}>
+                    <dt>{t(`calculator.cardImpactSummary.${key}`)}</dt>
+                    <dd>
+                      {value
+                        ? `${formatNumber((value.min + value.max) / 2)} ${value.unit}`
+                        : t("calculator.notAvailable")}
+                    </dd>
+                  </div>
+                );
+              })}
+            </dl>
+          )}
+
+          {scaledImpacts && (
+            <details className="use-case-card__details">
+              <summary>{t("calculator.detailsToggle")}</summary>
+              {CRITERIA.map(({ key, unit }) => {
+                const value = scaledImpacts[key];
+                return value === null ? (
+                  <p key={key} className="use-case-card__unavailable">
+                    {t(`calculator.criterion.${key}`)}: {t("calculator.notAvailable")}
+                  </p>
+                ) : (
+                  <RangeGauge
+                    key={key}
+                    min={value.min}
+                    max={value.max}
+                    unit={unit}
+                    label={t(`calculator.criterion.${key}`)}
+                  />
+                );
+              })}
+            </details>
+          )}
         </>
       )}
     </article>
