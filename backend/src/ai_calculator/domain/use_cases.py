@@ -41,6 +41,7 @@ class ResolvedProviderMapping:
 @dataclass(frozen=True)
 class ResolvedUseCase:
     id: str
+    subtitle_key: str
     default_provider: str
     recommended_tier: str
     providers: list[ResolvedProviderMapping]
@@ -145,6 +146,7 @@ def load_catalog(path: Path | None = None) -> Catalog:
         use_cases.append(
             ResolvedUseCase(
                 id=use_case_id,
+                subtitle_key=f"useCases.{use_case_id}.subtitle",
                 default_provider=default_provider,
                 recommended_tier=recommended_tier,
                 providers=provider_mappings,

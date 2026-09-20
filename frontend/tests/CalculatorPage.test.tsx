@@ -191,6 +191,20 @@ describe("CalculatorPage", () => {
         screen.getByText(/répartition par fournisseur|breakdown by provider/i),
       ).toBeInTheDocument(),
     );
+    expect(screen.getByText("100 %")).toBeInTheDocument();
+  });
+
+  it("resets card selections to catalogue defaults", async () => {
+    mockedFetchUseCases.mockResolvedValue(CATALOG);
+    const user = userEvent.setup();
+
+    render(<CalculatorPage />);
+
+    const provider = await screen.findByLabelText(/fournisseur|provider/i);
+    await user.selectOptions(provider, "openai");
+    await user.click(screen.getByRole("button", { name: /réinitialiser|reset/i }));
+
+    expect(provider).toHaveValue("anthropic");
   });
 
   it("shows the five impact icons in annual and provider detail grids", async () => {
@@ -241,7 +255,9 @@ describe("CalculatorPage", () => {
 
     await waitFor(() =>
       expect(
-        screen.getByText(/génération de vidéos|video generation/i),
+        screen.getByText(/génération de vidéos|video generation/i, {
+          selector: "h3",
+        }),
       ).toBeInTheDocument(),
     );
 

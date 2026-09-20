@@ -162,7 +162,13 @@ button {
 
 .calculator-hero {
   margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
 }
+
+.calculator-reset { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); padding: 0.5rem 0.75rem; font-weight: 600; cursor: pointer; }
 
 /* Calculator sections (numbered steps, two-column layout) */
 
@@ -303,6 +309,46 @@ button {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 1.75rem;
+}
+
+.gwp-summary {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: var(--forest-deep);
+  color: var(--surface);
+}
+
+.gwp-summary h3,
+.gwp-summary p {
+  color: inherit;
+}
+
+.gwp-summary h3 {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.gwp-summary__value {
+  margin: 0.5rem 0 0;
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 600;
+}
+
+.gwp-summary__value span,
+.gwp-summary__range,
+.gwp-summary__note {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.gwp-summary__range,
+.gwp-summary__note {
+  margin: 0.25rem 0 0;
+  opacity: 0.8;
 }
 
 .impacts-grid h3 {
@@ -501,6 +547,9 @@ button {
   font-size: 1.0625rem;
 }
 
+.use-case-card__subtitle { margin: 0; color: var(--ink-soft); font-size: 0.75rem; }
+.use-case-card__profile-hint { margin: 0; color: var(--ink-soft); font-size: 0.75rem; }
+
 .use-case-card__field {
   display: flex;
   flex-direction: column;
@@ -695,6 +744,9 @@ button {
   font-family: var(--font-body);
   color: var(--ink);
 }
+
+.provider-breakdown__share { margin-left: auto; color: var(--forest); font-weight: 700; }
+.provider-breakdown meter { width: 5rem; }
 
 .provider-breakdown summary {
   cursor: pointer;

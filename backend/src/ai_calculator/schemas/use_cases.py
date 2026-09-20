@@ -15,6 +15,7 @@ class ProviderMappingOut(BaseModel):
 
 class UseCaseOut(BaseModel):
     id: str
+    subtitle_key: str
     default_provider: str
     recommended_tier: str
     providers: list[ProviderMappingOut]

@@ -91,7 +91,12 @@ export function UseCaseCard({
         {USE_CASE_ICONS[useCase.id] && (
           <img src={USE_CASE_ICONS[useCase.id]} alt="" role="img" />
         )}
-        <h3>{t(`useCases.${useCase.id}.name`)}</h3>
+        <div>
+          <h3>{t(`useCases.${useCase.id}.name`)}</h3>
+          <p className="use-case-card__subtitle">
+            {t(useCase.subtitleKey ?? `useCases.${useCase.id}.subtitle`, { defaultValue: "" })}
+          </p>
+        </div>
       </header>
 
       {!currentMapping || profiles.length === 0 ? (
@@ -173,6 +178,9 @@ export function UseCaseCard({
                 }
               />
             </div>
+            <p className="use-case-card__profile-hint">
+              {t(`calculator.profileHint.${currentProfile?.id}`, { defaultValue: "" })}
+            </p>
           </div>
 
           {scaledImpacts && (
