@@ -299,6 +299,29 @@ describe("UseCaseCard", () => {
     expect(summaryMetric(/^eau$/i)).toHaveTextContent("6.50 mL");
   });
 
+  it("updates the visible summary when the provider changes", async () => {
+    await i18n.changeLanguage("en");
+    const user = userEvent.setup();
+    render(<InteractiveUseCaseCard />);
+
+    expect(summaryMetric(/greenhouse gases/i)).toHaveTextContent(
+      "1.50 gCO2eq",
+    );
+    expect(summaryMetric(/^water$/i)).toHaveTextContent("1.50 mL");
+
+    await user.selectOptions(screen.getByLabelText("Provider"), "anthropic");
+
+    expect(summaryMetric(/greenhouse gases/i)).toHaveTextContent(
+      "3.50 gCO2eq",
+    );
+    expect(summaryMetric(/^water$/i)).toHaveTextContent("3.50 mL");
+    expect(
+      screen
+        .getByText(/show\/hide the impact details/i)
+        .closest("details"),
+    ).not.toHaveAttribute("open");
+  });
+
   it("renders localized summary labels in French and English", async () => {
     await i18n.changeLanguage("fr");
     const { unmount } = render(<InteractiveUseCaseCard />);
