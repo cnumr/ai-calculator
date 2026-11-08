@@ -16,14 +16,9 @@ Hors périmètre de cette spec : mentions légales et page « À propos » (text
 
 ## 1. Données et calculs
 
-### 1.1 Librairie EcoLogits
+### 1.1 Librairie EcoLogits (hors périmètre)
 
-- Version cible : 0.11.3 (dernière publiée). PR #18.
-- Conséquence : trois modèles épinglés ont disparu du catalogue et sont remplacés par leur équivalent de palier :
-  - `claude-opus-4-0` → `claude-opus-4-8` (profil « puissant »)
-  - `gemini-2.0-flash-lite` → `gemini-2.5-flash-lite` (profil « éco »)
-  - `gemini-2.0-flash` → `gemini-2.5-flash` (profil « équilibré »)
-- **À valider** : ces remplacements changent les résultats. Un choix différent (ex. Opus 5.5) donne d'autres valeurs.
+Traité dans la PR #18 (montée de version 0.11.3, remplacement des modèles retirés). Rien à faire dans ce spec.
 
 ### 1.2 Modèles épinglés (demande de Brice)
 
