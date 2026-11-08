@@ -45,7 +45,7 @@ def test_get_use_cases_omits_unsupported_provider_combinations():
     body = response.json()
     video = next(uc for uc in body["use_cases"] if uc["id"] == "video")
     provider_ids = {p["provider_id"] for p in video["providers"]}
-    assert provider_ids == {"google"}
+    assert provider_ids == {"google", "openai"}
 
     image = next(uc for uc in body["use_cases"] if uc["id"] == "image")
     image_provider_ids = {p["provider_id"] for p in image["providers"]}
@@ -82,3 +82,35 @@ def test_get_use_cases_includes_cors_header_for_allowed_origin():
     )
 
     assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
+def test_get_use_cases_serialises_video_parameters_and_variants():
+    response = client.get("/api/use-cases")
+
+    body = response.json()
+    video = next(uc for uc in body["use_cases"] if uc["id"] == "video")
+    google = next(p for p in video["providers"] if p["provider_id"] == "google")
+    profile = next(p for p in google["profiles"] if p["id"] == "video")
+
+    assert profile["parameters"] == [
+        {"id": "resolution", "options": ["720p", "1080p"], "default": "720p"},
+        {"id": "duration_s", "options": [5, 8, 10], "default": 8},
+        {"id": "with_audio", "options": [True, False], "default": True},
+    ]
+    assert len(profile["variants"]) == 12
+    default_variant = next(
+        v
+        for v in profile["variants"]
+        if v["values"] == {"resolution": "720p", "duration_s": 8, "with_audio": True}
+    )
+    assert default_variant["impacts"] == profile["impacts"]
+
+
+def test_get_use_cases_gives_text_profiles_empty_parameters():
+    response = client.get("/api/use-cases")
+
+    body = response.json()
+    email = next(uc for uc in body["use_cases"] if uc["id"] == "email")
+    profile = email["providers"][0]["profiles"][0]
+    assert profile["parameters"] == []
+    assert profile["variants"] == []

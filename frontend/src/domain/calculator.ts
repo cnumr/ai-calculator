@@ -1,5 +1,6 @@
 import type {
   Impacts,
+  ParameterValue,
   Profile,
   ProviderMapping,
   UseCase,
@@ -10,6 +11,11 @@ export interface CardState {
   providerId: string;
   profileId: string;
   frequencyPerDay: number;
+  /**
+   * Parameter values chosen by the user (e.g. video resolution). Kept when
+   * switching profile, so a choice comes back with a model that supports it.
+   */
+  parameters: Record<string, ParameterValue>;
 }
 
 export interface ResolvedSelection {
@@ -42,6 +48,40 @@ export function resolveSelection(
 }
 
 /**
+ * Effective parameter values of a profile: the user's choice when the
+ * profile offers it, otherwise the profile default.
+ */
+export function resolveParameters(
+  profile: Profile,
+  chosen: Record<string, ParameterValue>,
+): Record<string, ParameterValue> {
+  const values: Record<string, ParameterValue> = {};
+  for (const parameter of profile.parameters ?? []) {
+    const choice = chosen[parameter.id];
+    values[parameter.id] =
+      choice !== undefined && parameter.options.includes(choice)
+        ? choice
+        : parameter.defaultValue;
+  }
+  return values;
+}
+
+/**
+ * Impacts of a profile for the user's parameter choices: the matching
+ * precomputed variant, or the profile's default impacts.
+ */
+export function resolveImpacts(
+  profile: Profile,
+  chosen: Record<string, ParameterValue>,
+): Impacts {
+  const values = resolveParameters(profile, chosen);
+  const variant = (profile.variants ?? []).find((v) =>
+    Object.entries(values).every(([id, value]) => v.values[id] === value),
+  );
+  return variant?.impacts ?? profile.impacts;
+}
+
+/**
  * Annual impacts of each card, attributed to the provider the card really
  * uses. Cards offered by no selected provider contribute nothing.
  */
@@ -61,7 +101,7 @@ export function computeAnnualEntries(
     entries.push({
       providerId: mapping.providerId,
       impacts: scaleImpacts(
-        profile.impacts,
+        resolveImpacts(profile, state.parameters),
         state.frequencyPerDay * workingDaysPerYear,
       ),
     });

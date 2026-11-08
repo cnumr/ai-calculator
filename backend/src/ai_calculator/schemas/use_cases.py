@@ -14,9 +14,26 @@ class ImpactsOut(BaseModel):
     water: ImpactRangeOut | None
 
 
+# bool first: in smart mode Pydantic keeps exact types, so True stays a bool.
+ParameterValueOut = bool | int | float | str
+
+
+class ProfileParameterOut(BaseModel):
+    id: str
+    options: list[ParameterValueOut]
+    default: ParameterValueOut
+
+
+class ProfileVariantOut(BaseModel):
+    values: dict[str, ParameterValueOut]
+    impacts: ImpactsOut
+
+
 class ProfileOut(BaseModel):
     id: str
     impacts: ImpactsOut
+    parameters: list[ProfileParameterOut]
+    variants: list[ProfileVariantOut]
 
 
 class ProviderMappingOut(BaseModel):

@@ -1,12 +1,14 @@
 from fastapi import APIRouter
 
 from ai_calculator.domain.impacts import ImpactRange, UnitImpacts
-from ai_calculator.domain.use_cases import Catalog, load_catalog
+from ai_calculator.domain.use_cases import Catalog, ResolvedProfile, load_catalog
 from ai_calculator.schemas.use_cases import (
     CatalogProviderOut,
     ImpactRangeOut,
     ImpactsOut,
     ProfileOut,
+    ProfileParameterOut,
+    ProfileVariantOut,
     ProviderMappingOut,
     UseCaseOut,
     UseCasesResponse,
@@ -33,6 +35,21 @@ def _to_impacts_out(impacts: UnitImpacts) -> ImpactsOut:
     )
 
 
+def _to_profile_out(profile: ResolvedProfile) -> ProfileOut:
+    return ProfileOut(
+        id=profile.id,
+        impacts=_to_impacts_out(profile.impacts),
+        parameters=[
+            ProfileParameterOut(id=p.id, options=p.options, default=p.default)
+            for p in profile.parameters
+        ],
+        variants=[
+            ProfileVariantOut(values=v.values, impacts=_to_impacts_out(v.impacts))
+            for v in profile.variants
+        ],
+    )
+
+
 def _to_use_cases_response(catalog: Catalog) -> UseCasesResponse:
     return UseCasesResponse(
         providers=[
@@ -48,10 +65,7 @@ def _to_use_cases_response(catalog: Catalog) -> UseCasesResponse:
                 providers=[
                     ProviderMappingOut(
                         provider_id=pm.provider_id,
-                        profiles=[
-                            ProfileOut(id=p.id, impacts=_to_impacts_out(p.impacts))
-                            for p in pm.profiles
-                        ],
+                        profiles=[_to_profile_out(p) for p in pm.profiles],
                     )
                     for pm in uc.providers
                 ],

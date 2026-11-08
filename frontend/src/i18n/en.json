@@ -46,7 +46,7 @@
     "providerSelect": "Provider",
     "profileSelect": "Profile",
     "profileUnsupported": "Not available for this provider",
-    "profileHint": { "eco": "For simple, recurring tasks", "balanced": "For a balance between performance and impact", "powerful": "Reserve for complex tasks", "research": "For critical, multi-step research", "image": "For image generation", "video": "For video generation" },
+    "profileHint": { "eco": "For simple, recurring tasks", "balanced": "For a balance between performance and impact", "powerful": "Reserve for complex tasks", "research": "For critical, multi-step research", "image": "For image generation", "video": "For video generation", "video_fast": "For faster video generation" },
     "notAvailable": "Not available",
     "frequencyPerDay": "Frequency per day",
     "detailsToggle": "Show/hide the impact details for this task",
@@ -71,7 +71,20 @@
       "powerful": "Powerful",
       "research": "Deep research",
       "image": "Standard",
-      "video": "Standard"
+      "video": "Standard",
+      "video_fast": "Fast"
+    },
+    "parameter": {
+      "resolution": "Resolution",
+      "duration_s": "Duration",
+      "with_audio": "Audio"
+    },
+    "parameterOption": {
+      "duration_s": "{{value}} s",
+      "with_audio": {
+        "true": "With audio",
+        "false": "Without audio"
+      }
     },
     "criterion": {
       "gwp": "Greenhouse gases",

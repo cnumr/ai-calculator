@@ -230,6 +230,7 @@ describe("UseCaseCard", () => {
       providerId: "openai",
       profileId: "powerful",
       frequencyPerDay: 1,
+      parameters: {},
     });
   });
 
@@ -483,5 +484,110 @@ describe("UseCaseCard data-source note", () => {
     renderCard(EMAIL, "openai", "eco");
 
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
+  });
+});
+
+describe("UseCaseCard model parameters", () => {
+  const impactsOf = (gwpGrams: number, waterMl: number) => ({
+    ...ZERO_IMPACTS,
+    gwp: { min: gwpGrams / 1000, max: gwpGrams / 1000 },
+    water: { min: waterMl / 1000, max: waterMl / 1000 },
+  });
+
+  const VIDEO: UseCase = {
+    id: "video",
+    providers: [
+      {
+        providerId: "google",
+        profiles: [
+          {
+            id: "video",
+            impacts: impactsOf(10, 100),
+            parameters: [
+              { id: "resolution", options: ["720p", "1080p"], defaultValue: "720p" },
+              { id: "duration_s", options: [5, 8], defaultValue: 8 },
+              { id: "with_audio", options: [true, false], defaultValue: true },
+            ],
+            variants: [
+              { values: { resolution: "720p", duration_s: 8, with_audio: true }, impacts: impactsOf(10, 100) },
+              { values: { resolution: "1080p", duration_s: 8, with_audio: true }, impacts: impactsOf(20, 200) },
+              { values: { resolution: "720p", duration_s: 5, with_audio: true }, impacts: impactsOf(6, 60) },
+              { values: { resolution: "1080p", duration_s: 5, with_audio: true }, impacts: impactsOf(12, 120) },
+              { values: { resolution: "720p", duration_s: 8, with_audio: false }, impacts: impactsOf(9, 90) },
+              { values: { resolution: "1080p", duration_s: 8, with_audio: false }, impacts: impactsOf(18, 180) },
+              { values: { resolution: "720p", duration_s: 5, with_audio: false }, impacts: impactsOf(5, 50) },
+              { values: { resolution: "1080p", duration_s: 5, with_audio: false }, impacts: impactsOf(11, 110) },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  function InteractiveVideoCard() {
+    const [state, setState] = useState({
+      providerId: "google",
+      profileId: "video",
+      frequencyPerDay: 1,
+      parameters: {} as Record<string, string | number | boolean>,
+    });
+    return (
+      <UseCaseCard
+        useCase={VIDEO}
+        availableProviderIds={["google"]}
+        providerId={state.providerId}
+        profileId={state.profileId}
+        frequencyPerDay={state.frequencyPerDay}
+        parameters={state.parameters}
+        onChange={setState}
+      />
+    );
+  }
+
+  it("shows one select per parameter, initialised from the defaults", async () => {
+    await i18n.changeLanguage("fr");
+    render(<InteractiveVideoCard />);
+
+    const resolution = screen.getByLabelText("Résolution");
+    expect(resolution).toHaveDisplayValue("720p");
+    expect(screen.getByLabelText("Durée")).toHaveDisplayValue("8 s");
+    expect(screen.getByLabelText("Audio")).toHaveDisplayValue("Avec audio");
+    expect(
+      Array.from(screen.getByLabelText("Audio").querySelectorAll("option")).map(
+        (o) => o.textContent,
+      ),
+    ).toEqual(["Avec audio", "Sans audio"]);
+  });
+
+  it("updates the impacts when a parameter changes", async () => {
+    await i18n.changeLanguage("en");
+    const user = userEvent.setup();
+    render(<InteractiveVideoCard />);
+
+    expect(summaryMetric(/greenhouse gases/i)).toHaveTextContent("10.0 g CO2eq");
+
+    await user.selectOptions(screen.getByLabelText("Resolution"), "1080p");
+    await user.selectOptions(screen.getByLabelText("Duration"), "5 s");
+    await user.selectOptions(screen.getByLabelText("Audio"), "Without audio");
+
+    expect(summaryMetric(/greenhouse gases/i)).toHaveTextContent("11.0 g CO2eq");
+    expect(summaryMetric(/^water$/i)).toHaveTextContent("110 mL");
+  });
+
+  it("shows no parameter select for profiles without parameters", async () => {
+    await i18n.changeLanguage("en");
+    render(
+      <UseCaseCard
+        useCase={EMAIL}
+        availableProviderIds={["openai"]}
+        providerId="openai"
+        profileId="eco"
+        frequencyPerDay={1}
+        onChange={() => {}}
+      />,
+    );
+
+    expect(screen.queryByLabelText("Resolution")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Duration")).not.toBeInTheDocument();
   });
 });

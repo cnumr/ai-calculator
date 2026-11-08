@@ -41,9 +41,27 @@ export interface CatalogProvider {
   selectedByDefault: boolean;
 }
 
+export type ParameterValue = string | number | boolean;
+
+/** A setting the user can change for a profile (e.g. video resolution). */
+export interface ProfileParameter {
+  id: string;
+  options: ParameterValue[];
+  defaultValue: ParameterValue;
+}
+
+/** Precomputed impacts for one combination of parameter values. */
+export interface ProfileVariant {
+  values: Record<string, ParameterValue>;
+  impacts: Impacts;
+}
+
 export interface Profile {
   id: string;
+  /** Impacts of the default parameter values. */
   impacts: Impacts;
+  parameters?: ProfileParameter[];
+  variants?: ProfileVariant[];
 }
 
 export interface ProviderMapping {
@@ -73,7 +91,16 @@ interface UseCasesResponseBody {
     recommended_tier?: string;
     providers: Array<{
       provider_id: string;
-      profiles: Array<{ id: string; impacts: Impacts }>;
+      profiles: Array<{
+        id: string;
+        impacts: Impacts;
+        parameters?: Array<{
+          id: string;
+          options: ParameterValue[];
+          default: ParameterValue;
+        }>;
+        variants?: ProfileVariant[];
+      }>;
     }>;
   }>;
 }
@@ -96,7 +123,16 @@ export async function fetchUseCases(): Promise<UseCasesCatalog> {
       recommendedProfileId: uc.recommended_tier,
       providers: uc.providers.map((pm) => ({
         providerId: pm.provider_id,
-        profiles: pm.profiles.map((p) => ({ id: p.id, impacts: p.impacts })),
+        profiles: pm.profiles.map((p) => ({
+          id: p.id,
+          impacts: p.impacts,
+          parameters: (p.parameters ?? []).map((param) => ({
+            id: param.id,
+            options: param.options,
+            defaultValue: param.default,
+          })),
+          variants: p.variants ?? [],
+        })),
       })),
     })),
   };

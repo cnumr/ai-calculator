@@ -41,6 +41,7 @@ function createInitialCardStates(useCases: UseCasesCatalog["useCases"]) {
       providerId: mapping?.providerId ?? "",
       profileId: profile?.id ?? "",
       frequencyPerDay: 1,
+      parameters: {},
     };
   }
   return states;
@@ -280,6 +281,7 @@ export function CalculatorPage() {
                   providerId={state.providerId}
                   profileId={state.profileId}
                   frequencyPerDay={state.frequencyPerDay}
+                  parameters={state.parameters}
                   onChange={(next) =>
                     setCardStates((prev) => ({ ...prev, [useCase.id]: next }))
                   }

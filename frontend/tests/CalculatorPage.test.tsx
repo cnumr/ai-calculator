@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import "../src/i18n";
+import i18next from "../src/i18n";
 import { CalculatorPage } from "../src/pages/CalculatorPage";
 import * as apiClient from "../src/api/client";
 
@@ -349,5 +349,62 @@ describe("CalculatorPage annual totals stay consistent with the cards", () => {
 
     expect(breakdownText(container)).toMatch(/OpenAI/);
     expect(breakdownText(container)).not.toMatch(/Google/);
+  });
+});
+
+describe("CalculatorPage model parameters", () => {
+  const gwpKg = (value: number) => ({
+    ...ZERO_IMPACTS,
+    gwp: { min: value, max: value },
+  });
+
+  const VIDEO_CATALOG: apiClient.UseCasesCatalog = {
+    providers: [{ id: "google", selectedByDefault: true }],
+    useCases: [
+      {
+        id: "video",
+        defaultProviderId: "google",
+        recommendedProfileId: "video",
+        providers: [
+          {
+            providerId: "google",
+            profiles: [
+              {
+                id: "video",
+                impacts: gwpKg(1),
+                parameters: [
+                  { id: "resolution", options: ["720p", "1080p"], defaultValue: "720p" },
+                ],
+                variants: [
+                  { values: { resolution: "720p" }, impacts: gwpKg(1) },
+                  { values: { resolution: "1080p" }, impacts: gwpKg(2) },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  it("updates the annual total when a card parameter changes", async () => {
+    await i18next.changeLanguage("en");
+    mockedFetchUseCases.mockResolvedValue(VIDEO_CATALOG);
+    const user = userEvent.setup();
+
+    const { container } = render(<CalculatorPage />);
+
+    // 1 kg x 218 days
+    await waitFor(() =>
+      expect(
+        container.querySelector(".gwp-summary__value")?.textContent,
+      ).toBe("218 kg CO2eq"),
+    );
+
+    await user.selectOptions(screen.getByLabelText("Resolution"), "1080p");
+
+    expect(container.querySelector(".gwp-summary__value")?.textContent).toBe(
+      "436 kg CO2eq",
+    );
   });
 });

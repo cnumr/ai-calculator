@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from itertools import product
 from pathlib import Path
 
 import yaml
@@ -11,6 +12,7 @@ from ai_calculator.domain.impacts import (
     compute_unit_impacts,
     compute_video_unit_impacts,
 )
+from ai_calculator.domain.video import VideoCapabilities, video_capabilities
 
 DEFAULT_USE_CASES_PATH = (
     Path(__file__).resolve().parent.parent / "data" / "use_cases.yaml"
@@ -27,10 +29,34 @@ class CatalogProvider:
     selected_by_default: bool
 
 
+ParameterValue = str | int | float | bool
+
+
+@dataclass(frozen=True)
+class ProfileParameter:
+    """A setting the user can change for a profile (e.g. video resolution)."""
+
+    id: str
+    options: list[ParameterValue]
+    default: ParameterValue
+
+
+@dataclass(frozen=True)
+class ProfileVariant:
+    """Precomputed impacts for one combination of parameter values."""
+
+    values: dict[str, ParameterValue]
+    impacts: UnitImpacts
+
+
 @dataclass(frozen=True)
 class ResolvedProfile:
     id: str
+    # Impacts of the default parameter values (or the only value when the
+    # profile has no parameters).
     impacts: UnitImpacts
+    parameters: list[ProfileParameter] = field(default_factory=list)
+    variants: list[ProfileVariant] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -95,21 +121,54 @@ def _resolve_llm_profile(profile_id: str, profile: dict, context: str) -> Resolv
     return ResolvedProfile(id=profile_id, impacts=impacts)
 
 
-def _resolve_video_profile(profile_id: str, video: dict, context: str) -> ResolvedProfile:
-    model = _require(video, "model", context)
-    resolution = _require(video, "resolution", context)
-    duration_s = _require(video, "duration_s", context)
-    with_audio = _require(video, "with_audio", context)
-    try:
-        impacts = compute_video_unit_impacts(
-            model_name=str(model),
-            resolution=str(resolution),
-            duration_s=float(duration_s),
-            with_audio=bool(with_audio),
+def _video_parameters(
+    capabilities: VideoCapabilities, defaults: dict, context: str
+) -> list[ProfileParameter]:
+    parameters = []
+    for parameter_id, options in (
+        ("resolution", capabilities.resolutions),
+        ("duration_s", capabilities.durations_s),
+        ("with_audio", capabilities.audio),
+    ):
+        default = _require(defaults, parameter_id, context)
+        if default not in options:
+            raise UseCasesConfigError(
+                f"{context}: default {parameter_id} {default!r} is not supported "
+                f"by the model (supported: {options})"
+            )
+        parameters.append(
+            ProfileParameter(id=parameter_id, options=list(options), default=default)
         )
+    return parameters
+
+
+def _resolve_video_profile(profile_id: str, video: dict, context: str) -> ResolvedProfile:
+    model = str(_require(video, "model", context))
+    defaults = _require(video, "defaults", context)
+    try:
+        capabilities = video_capabilities(model)
+        parameters = _video_parameters(capabilities, defaults, context)
+        variants = []
+        for combination in product(*(p.options for p in parameters)):
+            values = {p.id: value for p, value in zip(parameters, combination)}
+            impacts = compute_video_unit_impacts(
+                model_name=model,
+                resolution=str(values["resolution"]),
+                duration_s=float(values["duration_s"]),
+                with_audio=bool(values["with_audio"]),
+            )
+            variants.append(ProfileVariant(values=values, impacts=impacts))
     except (ModelNotFoundError, EcologitsComputationError) as exc:
         raise UseCasesConfigError(f"{context}: {exc}") from exc
-    return ResolvedProfile(id=profile_id, impacts=impacts)
+
+    default_values = {p.id: p.default for p in parameters}
+    default_impacts = next(v.impacts for v in variants if v.values == default_values)
+    return ResolvedProfile(
+        id=profile_id,
+        impacts=default_impacts,
+        parameters=parameters,
+        variants=variants,
+    )
 
 
 def _resolve_profile(profile: dict, context: str) -> ResolvedProfile:

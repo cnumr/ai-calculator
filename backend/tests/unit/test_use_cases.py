@@ -64,10 +64,7 @@ def test_load_catalog_resolves_llm_and_static_profiles(tmp_path):
     assert static_profile.impacts.pe is None
 
 
-def test_load_catalog_resolves_video_profiles_with_ecologits(tmp_path):
-    config_file = tmp_path / "use_cases.yaml"
-    config_file.write_text(
-        """
+VIDEO_YAML = """
 providers:
   - id: google
     selected_by_default: true
@@ -80,53 +77,97 @@ use_cases:
         profiles:
           - id: video
             ecologits_video:
-              model: google/veo-3.0
-              resolution: 720p
-              duration_s: 8
-              with_audio: true
+              model: {model}
+              defaults:
+                resolution: {resolution}
+                duration_s: {duration_s}
+                with_audio: true
 """
+
+
+def _load_video_profile(tmp_path, model="google/veo-3.0", resolution="720p", duration_s=8):
+    config_file = tmp_path / "use_cases.yaml"
+    config_file.write_text(
+        VIDEO_YAML.format(model=model, resolution=resolution, duration_s=duration_s)
     )
+    return load_catalog(config_file).use_cases[0].providers[0].profiles[0]
 
-    catalog = load_catalog(config_file)
 
-    profile = catalog.use_cases[0].providers[0].profiles[0]
-    assert profile.id == "video"
-    for range_ in (
-        profile.impacts.gwp,
-        profile.impacts.energy,
-        profile.impacts.adpe,
-        profile.impacts.pe,
-        profile.impacts.water,
-    ):
-        assert range_ is not None
-        assert range_.max >= range_.min > 0
+def test_load_catalog_exposes_video_parameters_from_ecologits_capabilities(tmp_path):
+    profile = _load_video_profile(tmp_path)
+
+    assert [(p.id, p.options, p.default) for p in profile.parameters] == [
+        ("resolution", ["720p", "1080p"], "720p"),
+        ("duration_s", [5, 8, 10], 8),
+        ("with_audio", [True, False], True),
+    ]
+
+
+def test_load_catalog_precomputes_one_variant_per_combination(tmp_path):
+    profile = _load_video_profile(tmp_path)
+
+    assert len(profile.variants) == 2 * 3 * 2
+    for variant in profile.variants:
+        for range_ in (
+            variant.impacts.gwp,
+            variant.impacts.energy,
+            variant.impacts.adpe,
+            variant.impacts.pe,
+            variant.impacts.water,
+        ):
+            assert range_ is not None
+            assert range_.max >= range_.min > 0
+
+
+def test_load_catalog_uses_the_default_variant_as_profile_impacts(tmp_path):
+    profile = _load_video_profile(tmp_path)
+
+    default = next(
+        v
+        for v in profile.variants
+        if v.values == {"resolution": "720p", "duration_s": 8, "with_audio": True}
+    )
+    assert profile.impacts == default.impacts
+
+
+def test_load_catalog_video_impacts_grow_with_resolution(tmp_path):
+    profile = _load_video_profile(tmp_path)
+
+    def gwp_max(resolution):
+        return next(
+            v.impacts.gwp.max
+            for v in profile.variants
+            if v.values == {"resolution": resolution, "duration_s": 8, "with_audio": True}
+        )
+
+    assert gwp_max("1080p") > gwp_max("720p")
+
+
+def test_load_catalog_raises_on_unsupported_default_duration(tmp_path):
+    # veo-3.0-fast only offers 4, 6 or 8 s.
+    with pytest.raises(UseCasesConfigError, match="duration_s"):
+        _load_video_profile(tmp_path, model="google/veo-3.0-fast", duration_s=10)
+
+
+def test_load_catalog_raises_on_unsupported_default_resolution(tmp_path):
+    with pytest.raises(UseCasesConfigError, match="resolution"):
+        _load_video_profile(tmp_path, resolution="4k")
 
 
 def test_load_catalog_raises_on_unknown_video_model(tmp_path):
-    config_file = tmp_path / "use_cases.yaml"
-    config_file.write_text(
-        """
-providers:
-  - id: google
-    selected_by_default: true
-use_cases:
-  - id: video
-    default_provider: google
-    recommended_tier: video
-    providers:
-      - provider_id: google
-        profiles:
-          - id: video
-            ecologits_video:
-              model: google/veo-2
-              resolution: 720p
-              duration_s: 8
-              with_audio: true
-"""
-    )
-
     with pytest.raises(UseCasesConfigError):
-        load_catalog(config_file)
+        _load_video_profile(tmp_path, model="google/veo-2")
+
+
+def test_load_catalog_gives_text_profiles_no_parameters(tmp_path):
+    config_file = tmp_path / "use_cases.yaml"
+    config_file.write_text(VALID_YAML)
+
+    for use_case in load_catalog(config_file).use_cases:
+        for mapping in use_case.providers:
+            for profile in mapping.profiles:
+                assert profile.parameters == []
+                assert profile.variants == []
 
 
 def test_load_catalog_raises_on_unknown_ecologits_model(tmp_path):
@@ -189,12 +230,20 @@ def test_load_catalog_default_path_loads_real_config():
     assert len(catalog.use_cases) == 8
 
 
-def test_real_config_computes_video_with_ecologits():
+def test_real_config_offers_google_and_openai_video_profiles():
     catalog = load_catalog()
 
     video = next(uc for uc in catalog.use_cases if uc.id == "video")
-    profile = video.providers[0].profiles[0]
-    # Every criterion is available once video comes from EcoLogits.
-    assert profile.impacts.energy is not None
-    assert profile.impacts.water is not None
-    assert profile.impacts.pe is not None
+    profiles = {
+        mapping.provider_id: [p.id for p in mapping.profiles]
+        for mapping in video.providers
+    }
+    assert profiles == {"google": ["video", "video_fast"], "openai": ["video"]}
+    for mapping in video.providers:
+        for profile in mapping.profiles:
+            assert {p.id for p in profile.parameters} == {
+                "resolution",
+                "duration_s",
+                "with_audio",
+            }
+            assert profile.impacts.energy is not None

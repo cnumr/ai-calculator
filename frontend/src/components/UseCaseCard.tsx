@@ -1,9 +1,14 @@
 import { useTranslation } from "react-i18next";
-import type { Impacts, UseCase } from "../api/client";
+import type { Impacts, ParameterValue, UseCase } from "../api/client";
 import { RangeGauge } from "./RangeGauge";
 import { ImpactIcon, isImpactCriterion } from "./ImpactIcon";
 import { scaleImpacts } from "../domain/aggregate";
-import { resolveSelection } from "../domain/calculator";
+import {
+  CardState,
+  resolveImpacts,
+  resolveParameters,
+  resolveSelection,
+} from "../domain/calculator";
 import { formatNumber, scaleRange } from "../domain/units";
 import videoIcon from "../assets/use-cases/video.svg";
 import imageIcon from "../assets/use-cases/image.svg";
@@ -44,11 +49,9 @@ interface UseCaseCardProps {
   providerId: string;
   profileId: string;
   frequencyPerDay: number;
-  onChange: (next: {
-    providerId: string;
-    profileId: string;
-    frequencyPerDay: number;
-  }) => void;
+  /** Parameter values chosen by the user (see CardState.parameters). */
+  parameters?: Record<string, ParameterValue>;
+  onChange: (next: CardState) => void;
 }
 
 export function UseCaseCard({
@@ -57,6 +60,7 @@ export function UseCaseCard({
   providerId,
   profileId,
   frequencyPerDay,
+  parameters = {},
   onChange,
 }: UseCaseCardProps) {
   const { t, i18n } = useTranslation();
@@ -71,9 +75,26 @@ export function UseCaseCard({
     profileId,
   });
   const profiles = currentMapping?.profiles ?? [];
+  const parameterValues = currentProfile
+    ? resolveParameters(currentProfile, parameters)
+    : {};
   const scaledImpacts = currentProfile
-    ? scaleImpacts(currentProfile.impacts, frequencyPerDay)
+    ? scaleImpacts(resolveImpacts(currentProfile, parameters), frequencyPerDay)
     : null;
+
+  function optionLabel(parameterId: string, value: ParameterValue): string {
+    if (parameterId === "duration_s") {
+      return t("calculator.parameterOption.duration_s", {
+        value: new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(
+          Number(value),
+        ),
+      });
+    }
+    if (parameterId === "with_audio") {
+      return t(`calculator.parameterOption.with_audio.${String(value)}`);
+    }
+    return String(value);
+  }
 
   // Optional per-use-case caveat about where its impact values come from.
   const dataNote = t(`useCases.${useCase.id}.dataNote`, { defaultValue: "" });
@@ -117,6 +138,7 @@ export function UseCaseCard({
                     providerId: e.target.value,
                     profileId: nextProfileId,
                     frequencyPerDay,
+                    parameters,
                   });
                 }}
               >
@@ -142,6 +164,7 @@ export function UseCaseCard({
                     providerId: currentMapping.providerId,
                     profileId: e.target.value,
                     frequencyPerDay,
+                    parameters,
                   })
                 }
               >
@@ -154,6 +177,42 @@ export function UseCaseCard({
                 ))}
               </select>
             </div>
+
+            {(currentProfile?.parameters ?? []).map((parameter) => {
+              const selectId = `${inputIdPrefix}-parameter-${parameter.id}`;
+              return (
+                <div key={parameter.id} className="use-case-card__field">
+                  <label htmlFor={selectId}>
+                    {t(`calculator.parameter.${parameter.id}`, {
+                      defaultValue: parameter.id,
+                    })}
+                  </label>
+                  <select
+                    id={selectId}
+                    value={String(
+                      parameter.options.indexOf(parameterValues[parameter.id]),
+                    )}
+                    onChange={(e) =>
+                      onChange({
+                        providerId: currentMapping.providerId,
+                        profileId: currentProfile?.id ?? "",
+                        frequencyPerDay,
+                        parameters: {
+                          ...parameters,
+                          [parameter.id]: parameter.options[Number(e.target.value)],
+                        },
+                      })
+                    }
+                  >
+                    {parameter.options.map((option, index) => (
+                      <option key={String(option)} value={String(index)}>
+                        {optionLabel(parameter.id, option)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              );
+            })}
 
             <div className="use-case-card__field">
               <label htmlFor={`${inputIdPrefix}-frequency`}>
@@ -169,6 +228,7 @@ export function UseCaseCard({
                     providerId: currentMapping.providerId,
                     profileId: currentProfile?.id ?? "",
                     frequencyPerDay: Number(e.target.value),
+                    parameters,
                   })
                 }
               />

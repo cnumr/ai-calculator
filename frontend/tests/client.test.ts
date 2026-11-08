@@ -58,6 +58,54 @@ describe("fetchUseCases", () => {
     });
   });
 
+  it("keeps profile parameters and variants, defaulting to none", async () => {
+    const impacts = {
+      gwp: { min: 1, max: 2 },
+      energy: null,
+      adpe: null,
+      pe: null,
+      water: null,
+    };
+    const body = {
+      providers: [{ id: "google", selected_by_default: true }],
+      use_cases: [
+        {
+          id: "video",
+          providers: [
+            {
+              provider_id: "google",
+              profiles: [
+                {
+                  id: "video",
+                  impacts,
+                  parameters: [
+                    { id: "resolution", options: ["720p", "1080p"], default: "720p" },
+                  ],
+                  variants: [{ values: { resolution: "1080p" }, impacts }],
+                },
+                { id: "legacy", impacts },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(body) }),
+    );
+
+    const [video, legacy] = (await fetchUseCases()).useCases[0].providers[0]
+      .profiles;
+
+    expect(video.parameters).toEqual([
+      { id: "resolution", options: ["720p", "1080p"], defaultValue: "720p" },
+    ]);
+    expect(video.variants).toEqual([{ values: { resolution: "1080p" }, impacts }]);
+    expect(legacy.parameters).toEqual([]);
+    expect(legacy.variants).toEqual([]);
+  });
+
   it("throws ApiError when the response is not ok", async () => {
     vi.stubGlobal(
       "fetch",
