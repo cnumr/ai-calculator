@@ -86,6 +86,7 @@ Remarque : le POC V1 n'a pas ces use cases. Les libellés finaux sont à valider
 - Espaces dans les unités : « g CO2eq », « mg CO2eq », etc.
 - Titre de la section 1 : « Votre écosystème IA ».
 - Page méthodologie : basculer vers le fichier `.md` dédié (demande de push à la racine).
+- Numéro de version affiché dans le footer du produit. Demande de l'équipe, non remontée par Brice.
 
 ### 3.2 Paramètres
 
