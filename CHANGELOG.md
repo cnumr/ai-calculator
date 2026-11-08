@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+### Minor Changes
+
+- 0b8fc5d: Add configurable use-case cards with EcoLogits impact summaries, annual context, provider shares, reset controls, and ImpactCO2-aligned equivalences.
+- 22edf28: Remove the legacy `POST /api/calculate` endpoint and its duplicate extrapolation logic: the calculator aggregates impacts on the frontend from `GET /api/use-cases`.
+
 ## 0.2.1
 
 ### Patch Changes
