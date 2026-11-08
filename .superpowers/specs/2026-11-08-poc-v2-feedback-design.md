@@ -110,6 +110,22 @@ Remarque : le POC V1 n'a pas ces use cases. Les libellés finaux sont à valider
 3. Image : la méthodologie fournit-elle une valeur par taille ?
 4. Écart API / EcoLogits : tester avant de corriger.
 
+## Points à creuser et limites
+
+À creuser :
+- Tokens par use case : Brice demande de confirmer les nombres. Sans réponse, la question sur le cas « mail » reste ouverte.
+- Mise à jour des modèles : Brice préfère un mécanisme via l'API, ou une revue manuelle régulière. Le spec retient l'option A, la B reste à valider avec lui.
+- Méthodologie en `.md` : vérifier que la PR #12 (« Create METHODOLOGY.md ») couvre ce besoin avant de dupliquer.
+- Feuille de calcul : le spec ne retient que « 20 à 100 lignes ». Les formules, contrôles et commentaires demandés par Brice ne sont pas pris en compte.
+- Présentation (Slides) : 8 à 12 slides, mais aucun nombre de tokens.
+
+Limites :
+- Session agentique de 2 jours : EcoLogits ne modélise pas ce type de session. Il faut une méthode de calcul ou une hypothèse décidée par l'équipe.
+- Vidéo 4k pour tous les modèles : chaque modèle n'accepte pas toutes les résolutions (kling-v1.6 : 720p seulement). L'interface doit proposer des options par modèle, ce que la config YAML ne permet pas aujourd'hui.
+- Valeurs image par taille : si la méthodologie ne donne pas de valeur par taille, la liste 1024×1024 / 2048×2048 ne change pas le résultat.
+- Écart avec l'interface EcoLogits : peut venir de notre appel API, non vérifié. À tester avec des entrées identiques avant toute correction.
+- Mentions légales et « À propos » : texte à rédiger par l'équipe, hors périmètre.
+
 ## Tests attendus
 
 - Un test vérifie que chaque modèle du YAML existe dans le catalogue EcoLogits installé (préventif pour 1.2).
