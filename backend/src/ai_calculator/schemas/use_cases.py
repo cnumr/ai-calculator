@@ -7,21 +7,30 @@ ParameterValueOut = bool | int | float | str
 
 
 class ProfileParameterOut(BaseModel):
+    """A choice among `options`, or a free integer (`options` null) in [min, max]."""
+
     id: str
-    options: list[ParameterValueOut]
     default: ParameterValueOut
+    options: list[ParameterValueOut] | None
+    min: int | None
+    max: int | None
 
 
 class ProfileOut(BaseModel):
     id: str
     parameters: list[ProfileParameterOut]
     models: list[str]
-    output_tokens: int | None
 
 
 class ProviderMappingOut(BaseModel):
     provider_id: str
     profiles: list[ProfileOut]
+
+
+class SourceOut(BaseModel):
+    id: str
+    version: str | None
+    url: str | None
 
 
 class UseCaseOut(BaseModel):
@@ -31,6 +40,7 @@ class UseCaseOut(BaseModel):
     default_provider: str
     recommended_tier: str
     providers: list[ProviderMappingOut]
+    source: SourceOut
 
 
 class CatalogProviderOut(BaseModel):

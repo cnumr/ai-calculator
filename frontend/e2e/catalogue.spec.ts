@@ -14,30 +14,33 @@ test("shows use-case cards in a single column", async ({ page }) => {
   expect(secondCard!.y).toBeGreaterThan(firstCard!.y);
 });
 
-test("puts the selectors and impacts on one row, with full-width details", async ({
+test("puts provider, profile and frequency on one row, with results below", async ({
   page,
 }) => {
   await page.goto("/");
 
   const card = page.locator(".use-case-card").first();
   await expect(card).toBeVisible();
-  const selection = card.locator(".use-case-card__selection");
-  const impacts = card.locator(".use-case-card__primary-impacts");
-  const details = card.locator(".use-case-card__details").last();
+  const provider = card.getByLabel(/fournisseur|provider/i);
+  const profile = card.getByLabel(/profil|profile/i);
+  const frequency = card.getByLabel(/fréquence|frequency/i);
+  const selects = card.locator(".use-case-card__selects");
+  const results = card.locator(".use-case-card__results");
 
-  await expect(selection).toBeVisible();
-  await expect(impacts).toBeVisible();
-  const selectionBox = await selection.boundingBox();
-  const impactsBox = await impacts.boundingBox();
-  const detailsBox = await details.boundingBox();
+  const [providerBox, profileBox, frequencyBox, selectsBox, resultsBox] =
+    await Promise.all(
+      [provider, profile, frequency, selects, results].map((l) => l.boundingBox()),
+    );
 
-  expect(selectionBox).not.toBeNull();
-  expect(impactsBox).not.toBeNull();
-  expect(detailsBox).not.toBeNull();
-  expect(impactsBox!.x).toBeGreaterThan(selectionBox!.x);
-  expect(Math.abs(impactsBox!.y - selectionBox!.y)).toBeLessThan(1);
-  expect(detailsBox!.y).toBeGreaterThan(selectionBox!.y + selectionBox!.height);
-  expect(detailsBox!.width).toBeGreaterThan(selectionBox!.width);
+  // Same line (vertically centred together), left to right.
+  const middle = (box: { y: number; height: number } | null) => box!.y + box!.height / 2;
+  expect(Math.abs(middle(profileBox) - middle(providerBox))).toBeLessThan(3);
+  expect(Math.abs(middle(frequencyBox) - middle(providerBox))).toBeLessThan(3);
+  expect(profileBox!.x).toBeGreaterThan(providerBox!.x);
+  expect(frequencyBox!.x).toBeGreaterThan(profileBox!.x);
+  // Results below the selection row, as wide as it.
+  expect(resultsBox!.y).toBeGreaterThan(selectsBox!.y + selectsBox!.height);
+  expect(Math.abs(resultsBox!.width - selectsBox!.width)).toBeLessThan(2);
 });
 
 test("calculator: impacts come from POST /api/calculate and follow the cards", async ({

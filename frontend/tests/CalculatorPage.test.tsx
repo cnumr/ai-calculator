@@ -38,7 +38,7 @@ const CATALOG: UseCasesCatalog = {
             {
               id: "video",
               parameters: [
-                { id: "resolution", options: ["720p", "1080p"], defaultValue: "720p" },
+                { id: "resolution", options: ["720p", "1080p"], defaultValue: "720p", min: null, max: null },
               ],
             },
           ],
@@ -204,6 +204,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
           providerId: "google",
           profileId: "eco",
           frequencyPerDay: 1,
+          parameters: {},
         },
       ],
     });
@@ -217,6 +218,14 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     const breakdown = document.querySelector(".provider-breakdown")!;
     expect(breakdown).toHaveTextContent("Google");
     expect(breakdown).toHaveTextContent("100 %");
+  });
+
+  it("shows each provider's logo next to its name in the breakdown", async () => {
+    await renderLoaded();
+
+    const name = document.querySelector(".provider-breakdown__name")!;
+    expect(name).toHaveTextContent("Google");
+    expect(name.querySelector("img.provider-breakdown__logo")).toHaveAttribute("alt", "");
   });
 
   it("shows the CO2 equivalents returned", async () => {

@@ -7,6 +7,7 @@ from ai_calculator.schemas.use_cases import (
     ProfileOut,
     ProfileParameterOut,
     ProviderMappingOut,
+    SourceOut,
     UseCaseOut,
     UseCasesResponse,
 )
@@ -18,11 +19,12 @@ def _to_profile_out(profile: ResolvedProfile) -> ProfileOut:
     return ProfileOut(
         id=profile.id,
         parameters=[
-            ProfileParameterOut(id=p.id, options=p.options, default=p.default)
+            ProfileParameterOut(
+                id=p.id, default=p.default, options=p.options, min=p.minimum, max=p.maximum
+            )
             for p in profile.parameters
         ],
         models=profile.models,
-        output_tokens=profile.output_tokens,
     )
 
 
@@ -46,6 +48,9 @@ def _to_use_cases_response(catalog: Catalog) -> UseCasesResponse:
                     )
                     for pm in uc.providers
                 ],
+                source=SourceOut(
+                    id=uc.source.id, version=uc.source.version, url=uc.source.url
+                ),
             )
             for uc in catalog.use_cases
         ],

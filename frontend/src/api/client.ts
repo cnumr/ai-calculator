@@ -46,11 +46,17 @@ export type ParameterValue = string | number | boolean;
 /** How a use case's impacts are computed, and which parameters it accepts. */
 export type UseCaseKind = "text" | "video" | "image";
 
-/** A setting the user can change for a profile (e.g. video resolution). */
+/**
+ * A setting the user can change for a profile: a choice among `options`
+ * (e.g. video resolution), or a free integer in [min, max] when `options`
+ * is null (e.g. generated tokens).
+ */
 export interface ProfileParameter {
   id: string;
-  options: ParameterValue[];
   defaultValue: ParameterValue;
+  options: ParameterValue[] | null;
+  min: number | null;
+  max: number | null;
 }
 
 export interface Profile {
@@ -58,8 +64,6 @@ export interface Profile {
   parameters?: ProfileParameter[];
   /** Display names of the model(s) behind the profile, when known. */
   models?: string[];
-  /** Generated tokens per action assumed for text profiles. */
-  outputTokens?: number | null;
 }
 
 export interface ProviderMapping {
@@ -67,9 +71,18 @@ export interface ProviderMapping {
   profiles: Profile[];
 }
 
+/** Methodological source behind a use case's impacts. */
+export interface MethodologicalSource {
+  /** "ecologits_llm", "ecologits_video" or "unsourced". */
+  id: string;
+  version: string | null;
+  url: string | null;
+}
+
 export interface UseCase {
   id: string;
   kind: UseCaseKind;
+  source?: MethodologicalSource;
   subtitleKey?: string;
   defaultProviderId?: string;
   recommendedProfileId?: string;
@@ -86,6 +99,7 @@ interface UseCasesResponseBody {
   use_cases: Array<{
     id: string;
     kind: UseCaseKind;
+    source?: MethodologicalSource;
     subtitle_key?: string;
     default_provider?: string;
     recommended_tier?: string;
@@ -95,11 +109,12 @@ interface UseCasesResponseBody {
         id: string;
         parameters?: Array<{
           id: string;
-          options: ParameterValue[];
           default: ParameterValue;
+          options: ParameterValue[] | null;
+          min: number | null;
+          max: number | null;
         }>;
         models?: string[];
-        output_tokens?: number | null;
       }>;
     }>;
   }>;
@@ -119,6 +134,7 @@ export async function fetchUseCases(): Promise<UseCasesCatalog> {
     useCases: body.use_cases.map((uc) => ({
       id: uc.id,
       kind: uc.kind,
+      source: uc.source,
       subtitleKey: uc.subtitle_key,
       defaultProviderId: uc.default_provider,
       recommendedProfileId: uc.recommended_tier,
@@ -128,11 +144,12 @@ export async function fetchUseCases(): Promise<UseCasesCatalog> {
           id: p.id,
           parameters: (p.parameters ?? []).map((param) => ({
             id: param.id,
-            options: param.options,
             defaultValue: param.default,
+            options: param.options,
+            min: param.min,
+            max: param.max,
           })),
           models: p.models ?? [],
-          outputTokens: p.output_tokens ?? null,
         })),
       })),
     })),
@@ -150,7 +167,7 @@ export interface UsageRequest {
   providerId: string;
   profileId: string;
   frequencyPerDay: number;
-  /** Only for video usages. */
+  /** Text and video usages only (image usages have no parameter). */
   parameters?: Record<string, ParameterValue>;
 }
 
@@ -230,7 +247,7 @@ export async function calculate(
         provider_id: u.providerId,
         profile_id: u.profileId,
         frequency_per_day: u.frequencyPerDay,
-        ...(u.kind === "video" ? { parameters: u.parameters ?? {} } : {}),
+        ...(u.kind !== "image" ? { parameters: u.parameters ?? {} } : {}),
       })),
     }),
     signal,

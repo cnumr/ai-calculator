@@ -11,8 +11,8 @@ import {
 const VIDEO_PROFILE: Profile = {
   id: "video",
   parameters: [
-    { id: "resolution", options: ["720p", "1080p"], defaultValue: "720p" },
-    { id: "duration_s", options: [5, 8, 10], defaultValue: 8 },
+    { id: "resolution", options: ["720p", "1080p"], defaultValue: "720p", min: null, max: null },
+    { id: "duration_s", options: [5, 8, 10], defaultValue: 8, min: null, max: null },
   ],
 };
 
@@ -100,6 +100,24 @@ describe("resolveParameters", () => {
   });
 });
 
+describe("resolveParameters with a free integer", () => {
+  const TOKENS: Profile = {
+    id: "eco",
+    parameters: [{ id: "output_tokens", defaultValue: 300, options: null, min: 1, max: 1000 }],
+  };
+
+  it("keeps a valid integer", () => {
+    expect(resolveParameters(TOKENS, { output_tokens: 750 })).toEqual({ output_tokens: 750 });
+  });
+
+  it.each([[""], [0], [1001], [12.5], ["750"]])(
+    "falls back to the default for %j (empty, out of range or not an integer)",
+    (value) => {
+      expect(resolveParameters(TOKENS, { output_tokens: value })).toEqual({ output_tokens: 300 });
+    },
+  );
+});
+
 describe("buildCalculateRequest", () => {
   const states = {
     video: state({ profileId: "video", parameters: { resolution: "1080p" } }),
@@ -126,6 +144,7 @@ describe("buildCalculateRequest", () => {
           providerId: "google",
           profileId: "eco",
           frequencyPerDay: 3,
+          parameters: {},
         },
       ],
     });

@@ -7,6 +7,7 @@ import type {
   CalculateRequest,
   ParameterValue,
   Profile,
+  ProfileParameter,
   ProviderMapping,
   UsageRequest,
   UsageResult,
@@ -53,6 +54,21 @@ export function resolveSelection(
   return { offeredProviders, mapping, profile };
 }
 
+function isAllowed(
+  parameter: ProfileParameter,
+  value: ParameterValue | undefined,
+): value is ParameterValue {
+  if (value === undefined) return false;
+  if (parameter.options !== null) return parameter.options.includes(value);
+  // Free integer, e.g. generated tokens being typed ("" while empty).
+  return (
+    typeof value === "number" &&
+    Number.isInteger(value) &&
+    (parameter.min === null || value >= parameter.min) &&
+    (parameter.max === null || value <= parameter.max)
+  );
+}
+
 /**
  * Effective parameter values of a profile: the user's choice when the
  * profile offers it, otherwise the profile default.
@@ -64,10 +80,9 @@ export function resolveParameters(
   const values: Record<string, ParameterValue> = {};
   for (const parameter of profile.parameters ?? []) {
     const choice = chosen[parameter.id];
-    values[parameter.id] =
-      choice !== undefined && parameter.options.includes(choice)
-        ? choice
-        : parameter.defaultValue;
+    values[parameter.id] = isAllowed(parameter, choice)
+      ? choice
+      : parameter.defaultValue;
   }
   return values;
 }
@@ -96,7 +111,7 @@ export function buildCalculateRequest(
       profileId: profile.id,
       frequencyPerDay: Math.max(0, state.frequencyPerDay || 0),
     };
-    if (useCase.kind === "video") {
+    if (useCase.kind !== "image") {
       usage.parameters = resolveParameters(profile, state.parameters);
     }
     usages.push(usage);

@@ -14,7 +14,7 @@ from ai_calculator.schemas.calculate import (
     ProviderShareOut,
     UsageIn,
     UsageOut,
-    VideoUsageIn,
+    ImageUsageIn,
 )
 from ai_calculator.schemas.impacts import to_impacts_out
 
@@ -23,9 +23,9 @@ router = APIRouter()
 
 def _to_usage_input(usage: UsageIn) -> UsageInput:
     parameters = (
-        usage.parameters.model_dump(exclude_none=True)
-        if isinstance(usage, VideoUsageIn)
-        else {}
+        {}
+        if isinstance(usage, ImageUsageIn)
+        else usage.parameters.model_dump(exclude_none=True)
     )
     return UsageInput(
         kind=usage.kind,

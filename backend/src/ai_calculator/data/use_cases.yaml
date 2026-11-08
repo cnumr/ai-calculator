@@ -33,7 +33,8 @@ providers:
     selected_by_default: true
 # Each use case declares its kind, which sets how its impacts are computed
 # and which parameters POST /api/calculate accepts for it:
-#   text  -> EcoLogits LLM (ecologits_model + output_tokens), no parameter
+#   text  -> EcoLogits LLM (ecologits_model); output_tokens is the default
+#            tokens per action, which users can change
 #   video -> EcoLogits video (ecologits_video), resolution / duration / audio
 #   image -> static_impacts declared below, no parameter
 use_cases:

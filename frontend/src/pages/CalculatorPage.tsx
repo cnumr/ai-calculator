@@ -12,6 +12,7 @@ import { RangeGauge } from "../components/RangeGauge";
 import { ImpactIcon, isImpactCriterion } from "../components/ImpactIcon";
 import { Co2Equivalents } from "../components/Co2Equivalents";
 import { GwpSummary } from "../components/GwpSummary";
+import { ProviderLogo } from "../components/ProviderLogo";
 import {
   CardState,
   buildCalculateRequest,
@@ -126,7 +127,13 @@ function ProviderBreakdown({ shares }: { shares: ProviderShare[] }) {
           );
           return (
             <li key={providerId}>
-              <strong>
+              <strong className="provider-breakdown__name">
+                <ProviderLogo
+                  providerId={providerId}
+                  label={t(`providers.${providerId}`, { defaultValue: providerId })}
+                  className="provider-breakdown__logo"
+                  fallbackClassName="provider-breakdown__logo provider-breakdown__logo--fallback"
+                />
                 {t(`providers.${providerId}`, { defaultValue: providerId })}
               </strong>{" "}
               {formatNumber(scaled.min, locale)} – {formatNumber(scaled.max, locale)}{" "}

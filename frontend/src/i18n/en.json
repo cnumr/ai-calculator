@@ -13,8 +13,7 @@
     "video": { "name": "Video generation", "subtitle": "Veo, Runway, Sora..." },
     "image": {
       "name": "Image generation",
-      "subtitle": "Illustrations and visuals",
-      "dataNote": "Indicative value, no published source yet."
+      "subtitle": "Illustrations and visuals"
     },
     "deep_research": { "name": "Deep research", "subtitle": "Multi-step research" },
     "meet_summary": { "name": "Meeting summary", "subtitle": "Meet, Teams, video calls" },
@@ -73,16 +72,25 @@
       "video": "Standard",
       "video_fast": "Fast"
     },
-    "assumptionTokens": "Calculation assumption: {{value}} tokens generated per action",
     "calculating": "Calculating…",
+    "source": {
+      "ecologits_llm": "Source: EcoLogits {{version}}, LLM inference model.",
+      "ecologits_video": "Source: EcoLogits {{version}}, video generation model.",
+      "unsourced": "Indicative value, no published source yet."
+    },
+    "sourceLink": "Methodology",
+    "newTab": "new tab",
+    "parameterDefault": "Default value: {{value}}",
     "perDayShort": "/day",
     "customize": "Customize: {{values}}",
     "parameter": {
+      "output_tokens": "Generated tokens per action",
       "resolution": "Resolution",
       "duration_s": "Duration",
       "with_audio": "Audio"
     },
     "parameterOption": {
+      "output_tokens": "{{value}} generated tokens",
       "duration_s": "{{value}} s",
       "with_audio": {
         "true": "With audio",

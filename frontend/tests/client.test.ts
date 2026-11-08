@@ -23,6 +23,11 @@ describe("fetchUseCases", () => {
         {
           id: "video",
           kind: "video",
+          source: {
+            id: "ecologits_video",
+            version: "0.11.3",
+            url: "https://ecologits.ai/latest/methodology/video_generation/",
+          },
           default_provider: "google",
           recommended_tier: "video",
           providers: [
@@ -32,10 +37,9 @@ describe("fetchUseCases", () => {
                 {
                   id: "video",
                   parameters: [
-                    { id: "resolution", options: ["720p", "1080p"], default: "720p" },
+                    { id: "resolution", default: "720p", options: ["720p", "1080p"], min: null, max: null },
                   ],
                   models: ["Veo 3"],
-                  output_tokens: null,
                 },
                 { id: "legacy" },
               ],
@@ -51,17 +55,23 @@ describe("fetchUseCases", () => {
     expect(catalog.useCases[0]).toMatchObject({
       id: "video",
       kind: "video",
+      source: {
+        id: "ecologits_video",
+        version: "0.11.3",
+        url: "https://ecologits.ai/latest/methodology/video_generation/",
+      },
       defaultProviderId: "google",
       recommendedProfileId: "video",
     });
     const [video, legacy] = catalog.useCases[0].providers[0].profiles;
     expect(video).toEqual({
       id: "video",
-      parameters: [{ id: "resolution", options: ["720p", "1080p"], defaultValue: "720p" }],
+      parameters: [
+        { id: "resolution", defaultValue: "720p", options: ["720p", "1080p"], min: null, max: null },
+      ],
       models: ["Veo 3"],
-      outputTokens: null,
     });
-    expect(legacy).toEqual({ id: "legacy", parameters: [], models: [], outputTokens: null });
+    expect(legacy).toEqual({ id: "legacy", parameters: [], models: [] });
   });
 
   it("throws ApiError when the response is not ok", async () => {
@@ -96,7 +106,7 @@ describe("calculate", () => {
     co2_equivalents: [{ id: "car_km", impact_co2_slug: "voiturethermique", quantity: 7.5 }],
   };
 
-  it("posts the scenario in snake_case, with parameters for video usages only", async () => {
+  it("posts the scenario in snake_case, with parameters for text and video usages", async () => {
     const fetchMock = stubFetch(response);
     const controller = new AbortController();
 
@@ -118,6 +128,14 @@ describe("calculate", () => {
             providerId: "openai",
             profileId: "eco",
             frequencyPerDay: 3,
+            parameters: { output_tokens: 500 },
+          },
+          {
+            kind: "image",
+            useCaseId: "image",
+            providerId: "google",
+            profileId: "image",
+            frequencyPerDay: 2,
             parameters: { ignored: true },
           },
         ],
@@ -146,6 +164,14 @@ describe("calculate", () => {
           provider_id: "openai",
           profile_id: "eco",
           frequency_per_day: 3,
+          parameters: { output_tokens: 500 },
+        },
+        {
+          kind: "image",
+          use_case_id: "image",
+          provider_id: "google",
+          profile_id: "image",
+          frequency_per_day: 2,
         },
       ],
     });

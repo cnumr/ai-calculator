@@ -13,8 +13,7 @@
     "video": { "name": "Génération de vidéos", "subtitle": "Veo, Runway, Sora..." },
     "image": {
       "name": "Génération d'images",
-      "subtitle": "Illustrations et visuels",
-      "dataNote": "Valeur indicative, sans source publiée à ce jour."
+      "subtitle": "Illustrations et visuels"
     },
     "deep_research": { "name": "Recherche approfondie", "subtitle": "Recherche multi-étapes" },
     "meet_summary": { "name": "Résumé de réunion", "subtitle": "Meet, Teams, visioconférence" },
@@ -73,16 +72,25 @@
       "video": "Standard",
       "video_fast": "Rapide"
     },
-    "assumptionTokens": "Hypothèse de calcul : {{value}} tokens générés par action",
     "calculating": "Calcul en cours…",
+    "source": {
+      "ecologits_llm": "Source : EcoLogits {{version}}, modélisation de l'inférence des LLM.",
+      "ecologits_video": "Source : EcoLogits {{version}}, modélisation de la génération vidéo.",
+      "unsourced": "Valeur indicative, sans source publiée à ce jour."
+    },
+    "sourceLink": "Méthodologie",
+    "newTab": "nouvel onglet",
+    "parameterDefault": "Valeur par défaut : {{value}}",
     "perDayShort": "/jour",
     "customize": "Personnaliser : {{values}}",
     "parameter": {
+      "output_tokens": "Tokens générés par action",
       "resolution": "Résolution",
       "duration_s": "Durée",
       "with_audio": "Audio"
     },
     "parameterOption": {
+      "output_tokens": "{{value}} tokens générés",
       "duration_s": "{{value}} s",
       "with_audio": {
         "true": "Avec audio",

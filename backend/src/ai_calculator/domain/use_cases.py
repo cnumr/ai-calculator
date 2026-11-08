@@ -20,6 +20,7 @@ from ai_calculator.domain.impacts import (
     compute_unit_impacts,
     compute_video_unit_impacts,
 )
+from ai_calculator.domain.sources import MethodologicalSource, source_for_kind
 from ai_calculator.domain.video import VideoCapabilities, video_capabilities
 
 DEFAULT_USE_CASES_PATH = (
@@ -46,13 +47,46 @@ class CatalogProvider:
     selected_by_default: bool
 
 
+# Bounds of the generated tokens a user can set for a text action.
+MIN_OUTPUT_TOKENS = 1
+MAX_OUTPUT_TOKENS = 10_000_000
+
+
 @dataclass(frozen=True)
 class ProfileParameter:
-    """A setting the user can change for a profile (e.g. video resolution)."""
+    """A setting the user can change for a profile.
+
+    Either a choice among `options` (e.g. video resolution), or, when
+    `options` is None, a free integer between `minimum` and `maximum`
+    (e.g. generated tokens).
+    """
 
     id: str
-    options: list[ParameterValue]
     default: ParameterValue
+    options: list[ParameterValue] | None = None
+    minimum: int | None = None
+    maximum: int | None = None
+
+    def validate(self, value: ParameterValue) -> ParameterValue:
+        """The value to compute with; ParameterError when it is not allowed."""
+        if self.options is None:
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or value != int(value):
+                raise ParameterError(f"{self.id} must be an integer, got {value!r}")
+            number = int(value)
+            if (self.minimum is not None and number < self.minimum) or (
+                self.maximum is not None and number > self.maximum
+            ):
+                raise ParameterError(
+                    f"{self.id} {number} is out of range ({self.minimum}-{self.maximum})"
+                )
+            return number
+        # Return the catalogue's own option (e.g. 8, not 8.0).
+        option = next((o for o in self.options if _same_value(o, value)), None)
+        if option is None:
+            raise ParameterError(
+                f"{self.id} {value!r} is not supported (supported: {self.options})"
+            )
+        return option
 
 
 class ProfileCalculation(Protocol):
@@ -61,17 +95,16 @@ class ProfileCalculation(Protocol):
 
 @dataclass(frozen=True)
 class TextCalculation:
-    """Text generation: EcoLogits LLM impacts for a fixed number of tokens."""
+    """Text generation: EcoLogits LLM impacts for the generated tokens."""
 
     ecologits_provider: str
     ecologits_model: str
-    output_tokens: int
 
     def unit_impacts(self, values: Mapping[str, ParameterValue]) -> UnitImpacts:
         return compute_unit_impacts(
             provider=self.ecologits_provider,
             model_name=self.ecologits_model,
-            output_tokens=self.output_tokens,
+            output_tokens=int(values["output_tokens"]),
         )
 
 
@@ -114,8 +147,6 @@ class ResolvedProfile:
     parameters: list[ProfileParameter] = field(default_factory=list)
     # Display names of the model(s) behind the profile, when known.
     models: list[str] = field(default_factory=list)
-    # Generated tokens per action assumed for text profiles (None otherwise).
-    output_tokens: int | None = None
 
     def resolve_values(
         self, chosen: Mapping[str, ParameterValue] | None = None
@@ -129,20 +160,10 @@ class ResolvedProfile:
         unknown = sorted(set(chosen) - known)
         if unknown:
             raise ParameterError(f"unknown parameter(s): {', '.join(unknown)}")
-        values: dict[str, ParameterValue] = {}
-        for parameter in self.parameters:
-            value = chosen.get(parameter.id, parameter.default)
-            # Return the catalogue's own option (e.g. 8, not 8.0).
-            option = next(
-                (o for o in parameter.options if _same_value(o, value)), None
-            )
-            if option is None:
-                raise ParameterError(
-                    f"{parameter.id} {value!r} is not supported "
-                    f"(supported: {parameter.options})"
-                )
-            values[parameter.id] = option
-        return values
+        return {
+            parameter.id: parameter.validate(chosen.get(parameter.id, parameter.default))
+            for parameter in self.parameters
+        }
 
     def unit_impacts(
         self, chosen: Mapping[str, ParameterValue] | None = None
@@ -165,6 +186,7 @@ class ResolvedUseCase:
     default_provider: str
     recommended_tier: str
     providers: list[ResolvedProviderMapping]
+    source: MethodologicalSource
 
 
 @dataclass(frozen=True)
@@ -224,8 +246,22 @@ def _text_calculation(profile: dict, context: str) -> TextCalculation:
     return TextCalculation(
         ecologits_provider=str(_require(profile, "ecologits_provider", context)),
         ecologits_model=str(_require(profile, "ecologits_model", context)),
-        output_tokens=int(_require(profile, "output_tokens", context)),
     )
+
+
+def _text_parameters(profile: dict, context: str) -> list[ProfileParameter]:
+    # The catalogue's tokens per action are the default; users can change them.
+    output_tokens = int(_require(profile, "output_tokens", context))
+    if not MIN_OUTPUT_TOKENS <= output_tokens <= MAX_OUTPUT_TOKENS:
+        raise UseCasesConfigError(f"{context}: output_tokens {output_tokens} is out of range")
+    return [
+        ProfileParameter(
+            id="output_tokens",
+            default=output_tokens,
+            minimum=MIN_OUTPUT_TOKENS,
+            maximum=MAX_OUTPUT_TOKENS,
+        )
+    ]
 
 
 def _video_parameters(
@@ -244,7 +280,7 @@ def _video_parameters(
                 f"by the model (supported: {options})"
             )
         parameters.append(
-            ProfileParameter(id=parameter_id, options=list(options), default=default)
+            ProfileParameter(id=parameter_id, default=default, options=list(options))
         )
     return parameters
 
@@ -312,12 +348,11 @@ def _resolve_profile(
                 models=models,
             )
         else:
-            calculation = _text_calculation(profile, profile_context)
             resolved = ResolvedProfile(
                 id=profile_id,
-                calculation=calculation,
+                calculation=_text_calculation(profile, profile_context),
+                parameters=_text_parameters(profile, profile_context),
                 models=models,
-                output_tokens=calculation.output_tokens,
             )
         # Validate the catalogue at startup: the default computation must work.
         resolved.unit_impacts()
@@ -387,6 +422,7 @@ def load_catalog(path: Path | None = None) -> Catalog:
                 default_provider=default_provider,
                 recommended_tier=recommended_tier,
                 providers=provider_mappings,
+                source=source_for_kind(kind),
             )
         )
 

@@ -57,19 +57,21 @@ def test_get_use_cases_serialises_video_parameters():
     profile = next(p for p in google["profiles"] if p["id"] == "video")
 
     assert profile["parameters"] == [
-        {"id": "resolution", "options": ["720p", "1080p"], "default": "720p"},
-        {"id": "duration_s", "options": [5, 8, 10], "default": 8},
-        {"id": "with_audio", "options": [True, False], "default": True},
+        {"id": "resolution", "default": "720p", "options": ["720p", "1080p"], "min": None, "max": None},
+        {"id": "duration_s", "default": 8, "options": [5, 8, 10], "min": None, "max": None},
+        {"id": "with_audio", "default": True, "options": [True, False], "min": None, "max": None},
     ]
 
 
-def test_get_use_cases_gives_text_profiles_empty_parameters():
+def test_get_use_cases_offers_editable_output_tokens_for_text_profiles():
     response = client.get("/api/use-cases")
 
     body = response.json()
     email = next(uc for uc in body["use_cases"] if uc["id"] == "email")
     profile = email["providers"][0]["profiles"][0]
-    assert profile["parameters"] == []
+    assert profile["parameters"] == [
+        {"id": "output_tokens", "default": 300, "options": None, "min": 1, "max": 10_000_000}
+    ]
 
 
 def test_get_use_cases_exposes_profile_model_names():
@@ -80,10 +82,6 @@ def test_get_use_cases_exposes_profile_model_names():
     openai = next(p for p in email["providers"] if p["provider_id"] == "openai")
     eco = next(p for p in openai["profiles"] if p["id"] == "eco")
     assert eco["models"] == ["GPT-4o mini"]
-    assert eco["output_tokens"] == 300
-
-    video = next(uc for uc in body["use_cases"] if uc["id"] == "video")
-    assert video["providers"][0]["profiles"][0]["output_tokens"] is None
 
 
 def test_get_use_cases_declares_the_kind_of_each_use_case():
@@ -102,4 +100,15 @@ def test_get_use_cases_exposes_no_impacts():
     for use_case in body["use_cases"]:
         for mapping in use_case["providers"]:
             for profile in mapping["profiles"]:
-                assert set(profile) == {"id", "parameters", "models", "output_tokens"}
+                assert set(profile) == {"id", "parameters", "models"}
+
+
+def test_get_use_cases_exposes_the_methodological_source():
+    body = client.get("/api/use-cases").json()
+
+    sources = {uc["id"]: uc["source"] for uc in body["use_cases"]}
+    assert sources["email"]["id"] == "ecologits_llm"
+    assert sources["email"]["url"].startswith("https://ecologits.ai/")
+    assert sources["email"]["version"]
+    assert sources["video"]["id"] == "ecologits_video"
+    assert sources["image"] == {"id": "unsourced", "version": None, "url": None}

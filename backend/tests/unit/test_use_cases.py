@@ -107,20 +107,16 @@ def test_load_catalog_gives_each_profile_its_calculation(tmp_path):
     email, image = _load(tmp_path, VALID_YAML).use_cases
 
     assert email.providers[0].profiles[0].calculation == TextCalculation(
-        ecologits_provider="openai", ecologits_model="gpt-4o-mini", output_tokens=300
+        ecologits_provider="openai", ecologits_model="gpt-4o-mini"
     )
     assert isinstance(image.providers[0].profiles[0].calculation, StaticCalculation)
 
 
-def test_load_catalog_exposes_model_names_and_output_tokens(tmp_path):
+def test_load_catalog_exposes_model_names(tmp_path):
     email, image = _load(tmp_path, VALID_YAML).use_cases
 
-    email_profile = email.providers[0].profiles[0]
-    image_profile = image.providers[0].profiles[0]
-    assert email_profile.models == ["GPT-4o mini"]
-    assert email_profile.output_tokens == 300
-    assert image_profile.models == ["DALL·E 3"]
-    assert image_profile.output_tokens is None
+    assert email.providers[0].profiles[0].models == ["GPT-4o mini"]
+    assert image.providers[0].profiles[0].models == ["DALL·E 3"]
 
 
 def test_load_catalog_gives_no_model_to_static_profiles_without_one(tmp_path):
@@ -141,11 +137,13 @@ def test_load_catalog_exposes_video_parameters_from_ecologits_capabilities(tmp_p
     ]
 
 
-def test_load_catalog_gives_text_profiles_no_parameters(tmp_path):
-    for use_case in _load(tmp_path, VALID_YAML).use_cases:
-        for mapping in use_case.providers:
-            for profile in mapping.profiles:
-                assert profile.parameters == []
+def test_text_profiles_offer_their_output_tokens_as_a_free_integer(tmp_path):
+    email, image = _load(tmp_path, VALID_YAML).use_cases
+
+    [tokens] = email.providers[0].profiles[0].parameters
+    assert (tokens.id, tokens.default, tokens.options) == ("output_tokens", 300, None)
+    assert (tokens.minimum, tokens.maximum) == (1, 10_000_000)
+    assert image.providers[0].profiles[0].parameters == []
 
 
 # --- Unit impacts ------------------------------------------------------------
@@ -205,11 +203,33 @@ def test_resolve_values_rejects_unsupported_values(tmp_path, chosen):
         profile.resolve_values(chosen)
 
 
-def test_text_profiles_reject_any_parameter(tmp_path):
+def test_text_profile_impacts_follow_the_chosen_output_tokens(tmp_path):
+    profile = _load(tmp_path, VALID_YAML).use_cases[0].providers[0].profiles[0]
+
+    assert profile.resolve_values({}) == {"output_tokens": 300}
+    assert profile.resolve_values({"output_tokens": 1000.0}) == {"output_tokens": 1000}
+    assert (
+        profile.unit_impacts({"output_tokens": 3000}).gwp.max
+        > profile.unit_impacts().gwp.max
+    )
+
+
+@pytest.mark.parametrize(
+    "chosen",
+    [
+        {"resolution": "720p"},
+        {"output_tokens": 0},
+        {"output_tokens": 10_000_001},
+        {"output_tokens": 12.5},
+        {"output_tokens": True},
+        {"output_tokens": "300"},
+    ],
+)
+def test_text_profiles_reject_invalid_parameters(tmp_path, chosen):
     profile = _load(tmp_path, VALID_YAML).use_cases[0].providers[0].profiles[0]
 
     with pytest.raises(ParameterError):
-        profile.resolve_values({"resolution": "720p"})
+        profile.resolve_values(chosen)
 
 
 # --- Catalogue lookup ----------------------------------------------------------
@@ -322,3 +342,27 @@ def test_real_config_names_the_model_of_every_profile():
         for mapping in use_case.providers:
             for profile in mapping.profiles:
                 assert len(profile.models) == 1, (use_case.id, mapping.provider_id)
+
+
+# --- Methodological source ---------------------------------------------------------
+
+
+def test_use_cases_name_their_methodological_source(tmp_path):
+    from importlib.metadata import version
+
+    email, image = _load(tmp_path, VALID_YAML).use_cases
+    video = _load(
+        tmp_path, VIDEO_YAML.format(model="google/veo-3.0", resolution="720p", duration_s=8)
+    ).use_cases[0]
+
+    ecologits = version("ecologits")
+    assert email.source.id == "ecologits_llm"
+    assert email.source.version == ecologits
+    assert email.source.url == "https://ecologits.ai/latest/methodology/llm_inference/"
+    assert video.source.id == "ecologits_video"
+    assert video.source.version == ecologits
+    assert video.source.url == "https://ecologits.ai/latest/methodology/video_generation/"
+    # Image values come from the POC V1, without a published source.
+    assert image.source.id == "unsourced"
+    assert image.source.version is None
+    assert image.source.url is None

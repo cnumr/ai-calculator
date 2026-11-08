@@ -86,8 +86,11 @@ def test_calculate_defaults_headcount_to_one():
 @pytest.mark.parametrize(
     "payload",
     [
-        # parameters are only accepted for video usages
+        # each kind only accepts its own parameters
         {"usages": [{**EMAIL, "parameters": {"resolution": "720p"}}]},
+        {"usages": [{**IMAGE, "parameters": {"output_tokens": 10}}]},
+        {"usages": [{**EMAIL, "parameters": {"output_tokens": 0}}]},
+        {"usages": [{**EMAIL, "parameters": {"output_tokens": 12.5}}]},
         # unknown video parameter
         {"usages": [{**VIDEO, "parameters": {"fps": 30}}]},
         # unknown kind
@@ -121,9 +124,23 @@ def test_openapi_documents_parameters_per_use_case_kind():
     schemas = client.get("/openapi.json").json()["components"]["schemas"]
 
     assert "parameters" in schemas["VideoUsageIn"]["properties"]
-    assert "parameters" not in schemas["TextUsageIn"]["properties"]
+    assert "parameters" in schemas["TextUsageIn"]["properties"]
+    assert "parameters" not in schemas["ImageUsageIn"]["properties"]
+    assert set(schemas["TextParametersIn"]["properties"]) == {"output_tokens"}
     assert set(schemas["VideoParametersIn"]["properties"]) == {
         "resolution",
         "duration_s",
         "with_audio",
     }
+
+
+def test_calculate_uses_the_chosen_output_tokens():
+    default = client.post("/api/calculate", json={"usages": [EMAIL]}).json()["usages"][0]
+    custom = client.post(
+        "/api/calculate",
+        json={"usages": [{**EMAIL, "parameters": {"output_tokens": 3000}}]},
+    ).json()["usages"][0]
+
+    assert default["parameters"] == {"output_tokens": 300}
+    assert custom["parameters"] == {"output_tokens": 3000}
+    assert custom["unit_impacts"]["gwp"]["max"] > default["unit_impacts"]["gwp"]["max"]

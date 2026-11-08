@@ -47,9 +47,9 @@ const VIDEO: UseCase = {
         {
           id: "video",
           parameters: [
-            { id: "resolution", options: ["720p", "1080p"], defaultValue: "720p" },
-            { id: "duration_s", options: [5, 8], defaultValue: 8 },
-            { id: "with_audio", options: [true, false], defaultValue: true },
+            { id: "resolution", options: ["720p", "1080p"], defaultValue: "720p", min: null, max: null },
+            { id: "duration_s", options: [5, 8], defaultValue: 8, min: null, max: null },
+            { id: "with_audio", options: [true, false], defaultValue: true, min: null, max: null },
           ],
         },
       ],
@@ -85,21 +85,24 @@ function summaryMetric(label: RegExp) {
 const detailsToggle = /voir\/masquer le détail|show\/hide the impact details/i;
 
 describe("UseCaseCard layout", () => {
-  it("groups the card into header, main row and details zones", () => {
+  it("puts provider, profile and frequency on one row, results below", () => {
     renderEmail();
 
-    const card = document.querySelector<HTMLElement>(".use-case-card");
-    const header = card?.querySelector(".use-case-card__header");
-    const selects = card?.querySelector(".use-case-card__selects");
-    const main = card?.querySelector(".use-case-card__main");
-    const details = card?.querySelector(".use-case-card__details");
+    const card = document.querySelector<HTMLElement>(".use-case-card")!;
+    const selects = card.querySelector(".use-case-card__selects");
+    const results = card.querySelector(".use-case-card__results");
+    const details = card.querySelector(".use-case-card__details");
 
-    expect(header).toContainElement(screen.getByLabelText(/fréquence|frequency/i));
     expect(selects).toContainElement(screen.getByLabelText(/fournisseur|provider/i));
     expect(selects).toContainElement(screen.getByLabelText(/profil|profile/i));
-    expect(main).toContainElement(
+    expect(selects).toContainElement(screen.getByLabelText(/fréquence|frequency/i));
+    expect(results).toContainElement(
       screen.getByTitle(/gaz à effet de serre|greenhouse gases/i),
     );
+    // The selection row comes before the results.
+    expect(
+      selects!.compareDocumentPosition(results!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(details?.parentElement).toBe(card);
   });
 
@@ -193,40 +196,6 @@ describe("UseCaseCard selection", () => {
     expect(options).toEqual(["Éco (GPT-4o mini)", "Équilibré"]);
   });
 
-  it("states the token assumption of text profiles", async () => {
-    await i18n.changeLanguage("fr");
-    const useCase: UseCase = {
-      id: "email",
-      kind: "text",
-      providers: [
-        { providerId: "openai", profiles: [{ id: "eco", outputTokens: 1000 }] },
-        { providerId: "google", profiles: [{ id: "image", outputTokens: null }] },
-      ],
-    };
-    const { rerender } = renderEmail({
-      useCase,
-      availableProviderIds: ["openai", "google"],
-    });
-
-    // French groups thousands with U+202F, which toHaveTextContent normalises.
-    expect(document.querySelector(".use-case-card__assumption")?.textContent).toBe(
-      "Hypothèse de calcul : 1 000 tokens générés par action",
-    );
-
-    rerender(
-      <UseCaseCard
-        useCase={useCase}
-        availableProviderIds={["openai", "google"]}
-        providerId="google"
-        profileId="image"
-        frequencyPerDay={1}
-        onChange={() => {}}
-      />,
-    );
-
-    expect(document.querySelector(".use-case-card__assumption")).toBeNull();
-  });
-
   it("calls onChange with the full card state when the profile changes", async () => {
     const onChange = vi.fn();
     renderEmail({ onChange });
@@ -311,26 +280,117 @@ describe("UseCaseCard impacts (computed by the backend)", () => {
   });
 });
 
-describe("UseCaseCard data-source note", () => {
+describe("UseCaseCard methodological source", () => {
   const IMAGE: UseCase = {
     id: "image",
     kind: "image",
+    source: { id: "unsourced", version: null, url: null },
     providers: [{ providerId: "google", profiles: [{ id: "image" }] }],
   };
+  const SOURCED_EMAIL: UseCase = {
+    ...EMAIL,
+    source: {
+      id: "ecologits_llm",
+      version: "0.11.3",
+      url: "https://ecologits.ai/latest/methodology/llm_inference/",
+    },
+  };
 
-  it("warns that image values have no published source", async () => {
+  it("names EcoLogits, its version and links to its methodology", async () => {
     await i18n.changeLanguage("fr");
-    renderEmail({ useCase: IMAGE, availableProviderIds: ["google"], providerId: "google", profileId: "image" });
+    renderEmail({ useCase: SOURCED_EMAIL });
+
+    const note = screen.getByRole("note");
+    expect(note).toHaveTextContent(
+      "Source : EcoLogits 0.11.3, modélisation de l'inférence des LLM.",
+    );
+    const link = within(note).getByRole("link", { name: /méthodologie/i });
+    expect(link).toHaveAttribute(
+      "href",
+      "https://ecologits.ai/latest/methodology/llm_inference/",
+    );
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAccessibleName("Méthodologie (nouvel onglet)");
+  });
+
+  it("names the video model of EcoLogits for video use cases", async () => {
+    await i18n.changeLanguage("en");
+    renderEmail({
+      useCase: {
+        ...VIDEO,
+        source: { id: "ecologits_video", version: "0.11.3", url: "https://ecologits.ai/latest/methodology/video_generation/" },
+      },
+      availableProviderIds: ["google"],
+      providerId: "google",
+      profileId: "video",
+    });
 
     expect(screen.getByRole("note")).toHaveTextContent(
-      "Valeur indicative, sans source publiée à ce jour.",
+      "Source: EcoLogits 0.11.3, video generation model.",
     );
   });
 
-  it("shows no note for use cases computed by EcoLogits", () => {
+  it("warns that image values have no published source, without a link", async () => {
+    await i18n.changeLanguage("fr");
+    renderEmail({ useCase: IMAGE, availableProviderIds: ["google"], providerId: "google", profileId: "image" });
+
+    const note = screen.getByRole("note");
+    expect(note).toHaveTextContent("Valeur indicative, sans source publiée à ce jour.");
+    expect(within(note).queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  it("shows no note when the catalogue gives no source", () => {
     renderEmail();
 
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
+  });
+});
+
+describe("UseCaseCard provider logo", () => {
+  it("shows the selected provider's logo left of its select", async () => {
+    const user = userEvent.setup();
+    function Interactive() {
+      const [state, setState] = useState({
+        providerId: "openai",
+        profileId: "eco",
+        frequencyPerDay: 1,
+        parameters: {} as Record<string, ParameterValue>,
+      });
+      return (
+        <UseCaseCard
+          useCase={EMAIL}
+          availableProviderIds={["openai", "anthropic"]}
+          {...state}
+          dailyImpacts={DAILY}
+          onChange={setState}
+        />
+      );
+    }
+    render(<Interactive />);
+
+    const provider = document.querySelector(".use-case-card__provider")!;
+    const logo = () => provider.querySelector<HTMLImageElement>(".use-case-card__provider-logo")!;
+    // Decorative: the select already names the provider.
+    expect(logo()).toHaveAttribute("alt", "");
+    expect(logo()).toHaveAttribute("aria-hidden", "true");
+    expect(provider.firstElementChild).toBe(logo());
+    const openaiLogo = logo().getAttribute("src");
+
+    await user.selectOptions(screen.getByLabelText("Provider"), "anthropic");
+
+    expect(logo().getAttribute("src")).not.toBe(openaiLogo);
+  });
+
+  it("shows the provider's initial when it has no logo", () => {
+    renderEmail({
+      useCase: { ...EMAIL, providers: [{ providerId: "acme", profiles: [{ id: "eco" }] }] },
+      availableProviderIds: ["acme"],
+      providerId: "acme",
+    });
+
+    expect(
+      document.querySelector(".use-case-card__provider-logo--fallback"),
+    ).toHaveTextContent("A");
   });
 });
 
@@ -401,6 +461,61 @@ describe("UseCaseCard model parameters", () => {
     await user.selectOptions(screen.getByLabelText("Résolution"), "1080p");
 
     expect(summary).toHaveTextContent("Personnaliser : 1080p · 8 s · Avec audio");
+  });
+
+  it("folds the editable token assumption of text profiles into Customize", async () => {
+    await i18n.changeLanguage("fr");
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    function TextCard() {
+      const [state, setState] = useState({
+        providerId: "openai",
+        profileId: "eco",
+        frequencyPerDay: 1,
+        parameters: {} as Record<string, ParameterValue>,
+      });
+      return (
+        <UseCaseCard
+          useCase={{
+            ...EMAIL,
+            providers: [
+              {
+                providerId: "openai",
+                profiles: [
+                  {
+                    id: "eco",
+                    parameters: [
+                      { id: "output_tokens", defaultValue: 1000, options: null, min: 1, max: 10_000_000 },
+                    ],
+                  },
+                ],
+              },
+            ],
+          }}
+          availableProviderIds={["openai"]}
+          {...state}
+          dailyImpacts={DAILY}
+          onChange={(next) => {
+            setState(next);
+            onChange(next.parameters);
+          }}
+        />
+      );
+    }
+    render(<TextCard />);
+
+    const summary = document.querySelector(".use-case-card__customize summary")!;
+    // French groups thousands with U+202F, which toHaveTextContent normalises.
+    expect(summary.textContent).toBe("Personnaliser : 1\u202f000 tokens générés");
+    const tokens = screen.getByLabelText("Tokens générés par action");
+    expect(tokens).toHaveValue(1000);
+    expect(tokens).toHaveAccessibleDescription(/Valeur par défaut : 1.000 tokens générés/);
+
+    await user.clear(tokens);
+    await user.type(tokens, "250");
+
+    expect(onChange).toHaveBeenLastCalledWith({ output_tokens: 250 });
+    expect(summary.textContent).toBe("Personnaliser : 250 tokens générés");
   });
 
   it("shows no parameter select for profiles without parameters", () => {

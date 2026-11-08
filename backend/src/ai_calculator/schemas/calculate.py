@@ -8,6 +8,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ai_calculator.domain.use_cases import MAX_OUTPUT_TOKENS, MIN_OUTPUT_TOKENS
 from ai_calculator.schemas.impacts import ImpactsOut
 from ai_calculator.schemas.use_cases import ParameterValueOut
 
@@ -23,10 +24,25 @@ class _UsageIn(BaseModel):
     frequency_per_day: float = Field(ge=0, description="Average actions per day.")
 
 
+class TextParametersIn(BaseModel):
+    """Text settings; each one defaults to the profile's default value."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    output_tokens: int | None = Field(
+        default=None,
+        ge=MIN_OUTPUT_TOKENS,
+        le=MAX_OUTPUT_TOKENS,
+        description="Tokens generated per action.",
+        examples=[300],
+    )
+
+
 class TextUsageIn(_UsageIn):
-    """Text generation (email, documents, assistant...): no parameter."""
+    """Text generation (email, documents, assistant...)."""
 
     kind: Literal["text"]
+    parameters: TextParametersIn = Field(default_factory=TextParametersIn)
 
 
 class ImageUsageIn(_UsageIn):
