@@ -13,6 +13,7 @@ import {
   sumImpacts,
   zeroImpacts,
 } from "../domain/aggregate";
+import { CardState, computeAnnualEntries } from "../domain/calculator";
 import { formatNumber, scaleRange } from "../domain/units";
 
 const WORKING_DAYS_PER_YEAR = 218;
@@ -24,12 +25,6 @@ const CRITERIA: Array<{ key: keyof Impacts; unit: string }> = [
   { key: "pe", unit: "MJ" },
   { key: "water", unit: "L" },
 ];
-
-interface CardState {
-  providerId: string;
-  profileId: string;
-  frequencyPerDay: number;
-}
 
 function createInitialCardStates(useCases: UseCasesCatalog["useCases"]) {
   const states: Record<string, CardState> = {};
@@ -172,9 +167,6 @@ export function CalculatorPage() {
     new Set()
   );
   const [cardStates, setCardStates] = useState<Record<string, CardState>>({});
-  const [cardImpacts, setCardImpacts] = useState<
-    Record<string, { providerId: string; impacts: Impacts }>
-  >({});
   const [headcount, setHeadcount] = useState(1);
 
   const loadCatalog = useCallback(() => {
@@ -215,7 +207,6 @@ export function CalculatorPage() {
     if (!catalog) return;
     setSelectedProviders(new Set(catalog.providers.filter((p) => p.selectedByDefault).map((p) => p.id)));
     setCardStates(createInitialCardStates(catalog.useCases));
-    setCardImpacts({});
     setHeadcount(1);
   }
 
@@ -234,26 +225,15 @@ export function CalculatorPage() {
     return null;
   }
 
-  const individualAnnual = Object.entries(cardImpacts).reduce(
-    (total, [useCaseId, entry]) =>
-      sumImpacts(
-        total,
-        scaleImpacts(
-          entry.impacts,
-          (cardStates[useCaseId]?.frequencyPerDay ?? 0) * WORKING_DAYS_PER_YEAR
-        )
-      ),
-    zeroImpacts()
+  const perCardAnnualEntries = computeAnnualEntries(
+    catalog.useCases,
+    cardStates,
+    selectedProviders,
+    WORKING_DAYS_PER_YEAR,
   );
-
-  const perCardAnnualEntries = Object.entries(cardImpacts).map(
-    ([useCaseId, entry]) => ({
-      providerId: entry.providerId,
-      impacts: scaleImpacts(
-        entry.impacts,
-        (cardStates[useCaseId]?.frequencyPerDay ?? 0) * WORKING_DAYS_PER_YEAR
-      ),
-    })
+  const individualAnnual = perCardAnnualEntries.reduce(
+    (total, entry) => sumImpacts(total, entry.impacts),
+    zeroImpacts(),
   );
   const providerBreakdown = aggregateByProvider(perCardAnnualEntries);
   const enterpriseAnnual = scaleImpacts(individualAnnual, headcount);
@@ -301,12 +281,6 @@ export function CalculatorPage() {
                   frequencyPerDay={state.frequencyPerDay}
                   onChange={(next) =>
                     setCardStates((prev) => ({ ...prev, [useCase.id]: next }))
-                  }
-                  onImpactsChange={(impacts) =>
-                    setCardImpacts((prev) => ({
-                      ...prev,
-                      [useCase.id]: { providerId: state.providerId, impacts },
-                    }))
                   }
                 />
               );

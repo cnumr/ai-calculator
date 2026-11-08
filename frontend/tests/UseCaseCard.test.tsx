@@ -68,7 +68,6 @@ function InteractiveUseCaseCard() {
       availableProviderIds={["openai", "anthropic"]}
       {...selection}
       onChange={setSelection}
-      onImpactsChange={() => {}}
     />
   );
 }
@@ -116,7 +115,6 @@ describe("UseCaseCard", () => {
         profileId="eco"
         frequencyPerDay={1}
         onChange={() => {}}
-        onImpactsChange={() => {}}
       />,
     );
 
@@ -143,7 +141,6 @@ describe("UseCaseCard", () => {
         profileId="eco"
         frequencyPerDay={1}
         onChange={() => {}}
-        onImpactsChange={() => {}}
       />,
     );
 
@@ -183,7 +180,6 @@ describe("UseCaseCard", () => {
         profileId="eco"
         frequencyPerDay={1}
         onChange={() => {}}
-        onImpactsChange={() => {}}
       />,
     );
 
@@ -202,7 +198,6 @@ describe("UseCaseCard", () => {
         profileId="eco"
         frequencyPerDay={1}
         onChange={() => {}}
-        onImpactsChange={() => {}}
       />,
     );
 
@@ -211,25 +206,6 @@ describe("UseCaseCard", () => {
       (o) => o.getAttribute("value"),
     );
     expect(options).toEqual(["eco"]);
-  });
-
-  it("calls onImpactsChange with the resolved profile impacts on mount", () => {
-    const onImpactsChange = vi.fn();
-    render(
-      <UseCaseCard
-        useCase={EMAIL}
-        availableProviderIds={["openai", "anthropic"]}
-        providerId="openai"
-        profileId="eco"
-        frequencyPerDay={1}
-        onChange={() => {}}
-        onImpactsChange={onImpactsChange}
-      />,
-    );
-
-    expect(onImpactsChange).toHaveBeenCalledWith(
-      expect.objectContaining({ gwp: { min: 0.001, max: 0.002 } }),
-    );
   });
 
   it("calls onChange when the profile select changes", async () => {
@@ -242,7 +218,6 @@ describe("UseCaseCard", () => {
         profileId="eco"
         frequencyPerDay={1}
         onChange={onChange}
-        onImpactsChange={() => {}}
       />,
     );
 
@@ -267,7 +242,6 @@ describe("UseCaseCard", () => {
         profileId="eco"
         frequencyPerDay={1}
         onChange={() => {}}
-        onImpactsChange={() => {}}
       />,
     );
 
@@ -295,7 +269,6 @@ describe("UseCaseCard", () => {
         profileId="eco"
         frequencyPerDay={3}
         onChange={() => {}}
-        onImpactsChange={() => {}}
       />,
     );
 
@@ -318,7 +291,6 @@ describe("UseCaseCard", () => {
         profileId="eco"
         frequencyPerDay={2}
         onChange={() => {}}
-        onImpactsChange={() => {}}
       />,
     );
 
@@ -433,7 +405,6 @@ describe("UseCaseCard", () => {
         profileId="video"
         frequencyPerDay={1}
         onChange={() => {}}
-        onImpactsChange={() => {}}
       />,
     );
 
@@ -457,7 +428,6 @@ describe("UseCaseCard", () => {
         profileId="video"
         frequencyPerDay={1}
         onChange={() => {}}
-        onImpactsChange={() => {}}
       />,
     );
 

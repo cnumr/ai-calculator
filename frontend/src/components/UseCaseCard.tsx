@@ -1,9 +1,9 @@
-import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type { Impacts, UseCase } from "../api/client";
 import { RangeGauge } from "./RangeGauge";
 import { ImpactIcon, isImpactCriterion } from "./ImpactIcon";
 import { scaleImpacts } from "../domain/aggregate";
+import { resolveSelection } from "../domain/calculator";
 import { formatNumber, scaleRange } from "../domain/units";
 import videoIcon from "../assets/use-cases/video.svg";
 import imageIcon from "../assets/use-cases/image.svg";
@@ -49,7 +49,6 @@ interface UseCaseCardProps {
     profileId: string;
     frequencyPerDay: number;
   }) => void;
-  onImpactsChange: (impacts: Impacts) => void;
 }
 
 export function UseCaseCard({
@@ -59,29 +58,21 @@ export function UseCaseCard({
   profileId,
   frequencyPerDay,
   onChange,
-  onImpactsChange,
 }: UseCaseCardProps) {
   const { t } = useTranslation();
 
-  const offeredProviders = useCase.providers.filter((pm) =>
-    availableProviderIds.includes(pm.providerId),
-  );
-  const currentMapping =
-    offeredProviders.find((pm) => pm.providerId === providerId) ??
-    offeredProviders[0];
+  const {
+    offeredProviders,
+    mapping: currentMapping,
+    profile: currentProfile,
+  } = resolveSelection(useCase, availableProviderIds, {
+    providerId,
+    profileId,
+  });
   const profiles = currentMapping?.profiles ?? [];
-  const currentProfile =
-    profiles.find((p) => p.id === profileId) ?? profiles[0];
   const scaledImpacts = currentProfile
     ? scaleImpacts(currentProfile.impacts, frequencyPerDay)
     : null;
-
-  useEffect(() => {
-    if (currentProfile) {
-      onImpactsChange(currentProfile.impacts);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentMapping?.providerId, currentProfile?.id]);
 
   const inputIdPrefix = `use-case-${useCase.id}`;
 

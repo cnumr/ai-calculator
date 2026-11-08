@@ -170,8 +170,6 @@ describe("CalculatorPage", () => {
     );
 
     // Default frequency is 1/day, 218 working days/year, Anthropic gwp max = 4 -> 872
-    // Card impacts populate via a child useEffect after the initial render,
-    // so the gauge text appears asynchronously relative to the catalogue load.
     await waitFor(() => {
       const gauges = container.querySelectorAll(".range-gauge");
       const found = Array.from(gauges).some((gauge) =>
@@ -266,5 +264,90 @@ describe("CalculatorPage", () => {
         screen.getAllByText(/non disponible|not available/i).length,
       ).toBeGreaterThan(0);
     });
+  });
+});
+
+describe("CalculatorPage annual totals stay consistent with the cards", () => {
+  const range = (value: number) => ({ min: value, max: value });
+  const gwpOnly = (value: number) => ({ ...ZERO_IMPACTS, gwp: range(value) });
+
+  // video is only offered by google; email falls back to openai without google.
+  const TWO_PROVIDER_CATALOG: apiClient.UseCasesCatalog = {
+    providers: [
+      { id: "openai", selectedByDefault: true },
+      { id: "google", selectedByDefault: true },
+    ],
+    useCases: [
+      {
+        id: "video",
+        defaultProviderId: "google",
+        recommendedProfileId: "video",
+        providers: [
+          { providerId: "google", profiles: [{ id: "video", impacts: gwpOnly(1) }] },
+        ],
+      },
+      {
+        id: "email",
+        defaultProviderId: "google",
+        recommendedProfileId: "eco",
+        providers: [
+          { providerId: "openai", profiles: [{ id: "eco", impacts: gwpOnly(10) }] },
+          { providerId: "google", profiles: [{ id: "eco", impacts: gwpOnly(100) }] },
+        ],
+      },
+    ],
+  };
+
+  function individualSummary(container: HTMLElement) {
+    return container.querySelector(".gwp-summary__value")?.textContent;
+  }
+
+  function breakdownText(container: HTMLElement) {
+    return container.querySelector(".provider-breakdown ul")?.textContent ?? "";
+  }
+
+  it("keeps the totals after a reset with no prior change", async () => {
+    mockedFetchUseCases.mockResolvedValue(TWO_PROVIDER_CATALOG);
+    const user = userEvent.setup();
+
+    const { container } = render(<CalculatorPage />);
+
+    // (1 + 100) kg x 218 days = 22 018 kg
+    await waitFor(() =>
+      expect(individualSummary(container)).toBe("22.0 tCO2eq"),
+    );
+    await user.click(screen.getByRole("button", { name: /réinitialiser|reset/i }));
+
+    expect(individualSummary(container)).toBe("22.0 tCO2eq");
+  });
+
+  it("drops a card no longer offered by any selected provider from the totals", async () => {
+    mockedFetchUseCases.mockResolvedValue(TWO_PROVIDER_CATALOG);
+    const user = userEvent.setup();
+
+    const { container } = render(<CalculatorPage />);
+    await waitFor(() =>
+      expect(individualSummary(container)).toBe("22.0 tCO2eq"),
+    );
+
+    await user.click(screen.getByRole("button", { name: /google/i }));
+
+    // video is unsupported, email falls back to openai: 10 kg x 218 = 2 180 kg
+    expect(individualSummary(container)).toBe("2.18 tCO2eq");
+  });
+
+  it("attributes a card to the provider it falls back to", async () => {
+    mockedFetchUseCases.mockResolvedValue(TWO_PROVIDER_CATALOG);
+    const user = userEvent.setup();
+
+    const { container } = render(<CalculatorPage />);
+    await waitFor(() =>
+      expect(individualSummary(container)).toBe("22.0 tCO2eq"),
+    );
+
+    await user.click(screen.getByRole("button", { name: /google/i }));
+
+    expect(breakdownText(container)).toMatch(/OpenAI/);
+    expect(breakdownText(container)).not.toMatch(/Google/);
   });
 });
