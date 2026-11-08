@@ -91,7 +91,7 @@ use_cases:
             output_tokens: 200000
           - id: powerful
             ecologits_provider: anthropic
-            ecologits_model: claude-opus-4-0
+            ecologits_model: claude-opus-4-8
             output_tokens: 200000
       - provider_id: mistral
         profiles:
@@ -111,11 +111,11 @@ use_cases:
         profiles:
           - id: eco
             ecologits_provider: google_genai
-            ecologits_model: gemini-2.0-flash-lite
+            ecologits_model: gemini-2.5-flash-lite
             output_tokens: 200000
           - id: balanced
             ecologits_provider: google_genai
-            ecologits_model: gemini-2.0-flash
+            ecologits_model: gemini-2.5-flash
             output_tokens: 200000
           - id: powerful
             ecologits_provider: google_genai
@@ -171,7 +171,7 @@ use_cases:
             output_tokens: 8000
           - id: powerful
             ecologits_provider: anthropic
-            ecologits_model: claude-opus-4-0
+            ecologits_model: claude-opus-4-8
             output_tokens: 8000
       - provider_id: mistral
         profiles:
@@ -191,11 +191,11 @@ use_cases:
         profiles:
           - id: eco
             ecologits_provider: google_genai
-            ecologits_model: gemini-2.0-flash-lite
+            ecologits_model: gemini-2.5-flash-lite
             output_tokens: 8000
           - id: balanced
             ecologits_provider: google_genai
-            ecologits_model: gemini-2.0-flash
+            ecologits_model: gemini-2.5-flash
             output_tokens: 8000
           - id: powerful
             ecologits_provider: google_genai
@@ -249,7 +249,7 @@ use_cases:
             output_tokens: 3000
           - id: powerful
             ecologits_provider: anthropic
-            ecologits_model: claude-opus-4-0
+            ecologits_model: claude-opus-4-8
             output_tokens: 3000
       - provider_id: mistral
         profiles:
@@ -269,11 +269,11 @@ use_cases:
         profiles:
           - id: eco
             ecologits_provider: google_genai
-            ecologits_model: gemini-2.0-flash-lite
+            ecologits_model: gemini-2.5-flash-lite
             output_tokens: 3000
           - id: balanced
             ecologits_provider: google_genai
-            ecologits_model: gemini-2.0-flash
+            ecologits_model: gemini-2.5-flash
             output_tokens: 3000
           - id: powerful
             ecologits_provider: google_genai
@@ -327,7 +327,7 @@ use_cases:
             output_tokens: 15000
           - id: powerful
             ecologits_provider: anthropic
-            ecologits_model: claude-opus-4-0
+            ecologits_model: claude-opus-4-8
             output_tokens: 15000
       - provider_id: mistral
         profiles:
@@ -347,11 +347,11 @@ use_cases:
         profiles:
           - id: eco
             ecologits_provider: google_genai
-            ecologits_model: gemini-2.0-flash-lite
+            ecologits_model: gemini-2.5-flash-lite
             output_tokens: 15000
           - id: balanced
             ecologits_provider: google_genai
-            ecologits_model: gemini-2.0-flash
+            ecologits_model: gemini-2.5-flash
             output_tokens: 15000
           - id: powerful
             ecologits_provider: google_genai
@@ -405,7 +405,7 @@ use_cases:
             output_tokens: 1000
           - id: powerful
             ecologits_provider: anthropic
-            ecologits_model: claude-opus-4-0
+            ecologits_model: claude-opus-4-8
             output_tokens: 1000
       - provider_id: mistral
         profiles:
@@ -425,11 +425,11 @@ use_cases:
         profiles:
           - id: eco
             ecologits_provider: google_genai
-            ecologits_model: gemini-2.0-flash-lite
+            ecologits_model: gemini-2.5-flash-lite
             output_tokens: 1000
           - id: balanced
             ecologits_provider: google_genai
-            ecologits_model: gemini-2.0-flash
+            ecologits_model: gemini-2.5-flash
             output_tokens: 1000
           - id: powerful
             ecologits_provider: google_genai
@@ -483,7 +483,7 @@ use_cases:
             output_tokens: 300
           - id: powerful
             ecologits_provider: anthropic
-            ecologits_model: claude-opus-4-0
+            ecologits_model: claude-opus-4-8
             output_tokens: 300
       - provider_id: mistral
         profiles:
@@ -503,11 +503,11 @@ use_cases:
         profiles:
           - id: eco
             ecologits_provider: google_genai
-            ecologits_model: gemini-2.0-flash-lite
+            ecologits_model: gemini-2.5-flash-lite
             output_tokens: 300
           - id: balanced
             ecologits_provider: google_genai
-            ecologits_model: gemini-2.0-flash
+            ecologits_model: gemini-2.5-flash
             output_tokens: 300
           - id: powerful
             ecologits_provider: google_genai
