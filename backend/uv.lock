@@ -4,7 +4,7 @@ requires-python = ">=3.11, <4"
 
 [[package]]
 name = "ai-calculator-backend"
-version = "0.1.0"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "ecologits" },
@@ -22,7 +22,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ecologits", specifier = "==0.11.1" },
+    { name = "ecologits", specifier = "==0.11.3" },
     { name = "fastapi", specifier = "==0.139.0" },
     { name = "httpx", marker = "extra == 'dev'", specifier = "==0.28.1" },
     { name = "pydantic", specifier = "==2.13.4" },
@@ -95,16 +95,16 @@ wheels = [
 
 [[package]]
 name = "ecologits"
-version = "0.11.1"
+version = "0.11.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
     { name = "pydantic" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4b/4c/a7850b2dca7f148599aa4c55c049fc54244edff69b190b1d0c7a9e97ec8c/ecologits-0.11.1.tar.gz", hash = "sha256:d24df5c0202bd5925376143f5b78d7273cb015d17323e660723e07e6fad223c0", size = 1082759, upload-time = "2026-07-07T17:30:18.57Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/99/a2/89d5266c93e43f6f5267453fbabbe0554fe39145a36491a263c3994bcf41/ecologits-0.11.3.tar.gz", hash = "sha256:8887d7ac04a8368e73363f911a814f3a643e51bc0ead9da31179bd2cc03f5964", size = 1095300, upload-time = "2026-10-14T18:38:50.358Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c0/26/a84f8507ece76bf8beba850b5dd634dcf8446b5a95125c83ece205c8cc01/ecologits-0.11.1-py3-none-any.whl", hash = "sha256:a5d6b64f62a15a7c637b7cd195e1709f872e729bef020c2b64005a1a999973f2", size = 57085, upload-time = "2026-07-07T17:30:17.268Z" },
+    { url = "https://files.pythonhosted.org/packages/9e/51/2fa567b39b22d6bda8b7ae8e8738e9aeeac53131616223c5693feea38397/ecologits-0.11.3-py3-none-any.whl", hash = "sha256:c477b77a95c65abbc0ed475b62708ce64ada871b675df0261f345296b0a6facd", size = 57689, upload-time = "2026-10-14T18:38:48.686Z" },
 ]
 
 [[package]]
