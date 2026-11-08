@@ -51,6 +51,10 @@ docker compose up --build -d
 
 Docker Compose ne reconstruit et ne redémarre que les services dont l'image a changé.
 
+## Redémarrage automatique
+
+Les services `backend` et `frontend` ont `restart: unless-stopped` : ils repartent après un redémarrage du serveur ou du démon Docker. Un conteneur arrêté explicitement (`docker compose down` ou `docker compose stop`) ne redémarre pas seul ; relancer avec `docker compose up -d`.
+
 ## Arrêt
 
 ```bash
