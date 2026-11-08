@@ -47,6 +47,8 @@ def _to_profile_out(profile: ResolvedProfile) -> ProfileOut:
             ProfileVariantOut(values=v.values, impacts=_to_impacts_out(v.impacts))
             for v in profile.variants
         ],
+        models=profile.models,
+        output_tokens=profile.output_tokens,
     )
 
 

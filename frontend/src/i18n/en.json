@@ -46,9 +46,8 @@
     "providerSelect": "Provider",
     "profileSelect": "Profile",
     "profileUnsupported": "Not available for this provider",
-    "profileHint": { "eco": "For simple, recurring tasks", "balanced": "For a balance between performance and impact", "powerful": "Reserve for complex tasks", "research": "For critical, multi-step research", "image": "For image generation", "video": "For video generation", "video_fast": "For faster video generation" },
     "notAvailable": "Not available",
-    "frequencyPerDay": "Frequency per day",
+    "frequencyPerDay": "Average daily frequency",
     "detailsToggle": "Show/hide the impact details for this task",
     "cardImpactSummary": {
       "gwp": "Greenhouse gases",
@@ -69,11 +68,14 @@
       "eco": "Eco",
       "balanced": "Balanced",
       "powerful": "Powerful",
-      "research": "Deep research",
+      "research": "Research",
       "image": "Standard",
       "video": "Standard",
       "video_fast": "Fast"
     },
+    "assumptionTokens": "Calculation assumption: {{value}} tokens generated per action",
+    "perDayShort": "/day",
+    "customize": "Customize: {{values}}",
     "parameter": {
       "resolution": "Resolution",
       "duration_s": "Duration",

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import type { Impacts, ParameterValue, UseCase } from "../api/client";
+import type { Impacts, ParameterValue, Profile, UseCase } from "../api/client";
 import { RangeGauge } from "./RangeGauge";
 import { ImpactIcon, isImpactCriterion } from "./ImpactIcon";
 import { scaleImpacts } from "../domain/aggregate";
@@ -9,7 +9,7 @@ import {
   resolveParameters,
   resolveSelection,
 } from "../domain/calculator";
-import { formatNumber, scaleRange } from "../domain/units";
+import { formatInteger, formatNumber, scaleRange } from "../domain/units";
 import videoIcon from "../assets/use-cases/video.svg";
 import imageIcon from "../assets/use-cases/image.svg";
 import deepResearchIcon from "../assets/use-cases/deep_research.svg";
@@ -100,6 +100,24 @@ export function UseCaseCard({
   const dataNote = t(`useCases.${useCase.id}.dataNote`, { defaultValue: "" });
 
   const inputIdPrefix = `use-case-${useCase.id}`;
+  const supported = Boolean(currentMapping) && profiles.length > 0;
+  const customizable = currentProfile?.parameters ?? [];
+
+  function profileLabel(profile: Profile): string {
+    const tier = t(`calculator.tier.${profile.id}`, { defaultValue: profile.id });
+    const models = profile.models ?? [];
+    return models.length > 0 ? `${tier} (${models.join(", ")})` : tier;
+  }
+
+  function emit(next: Partial<CardState>) {
+    onChange({
+      providerId: currentMapping?.providerId ?? providerId,
+      profileId: currentProfile?.id ?? profileId,
+      frequencyPerDay,
+      parameters,
+      ...next,
+    });
+  }
 
   return (
     <article className="use-case-card">
@@ -107,178 +125,186 @@ export function UseCaseCard({
         {USE_CASE_ICONS[useCase.id] && (
           <img src={USE_CASE_ICONS[useCase.id]} alt="" role="img" />
         )}
-        <div>
+        <div className="use-case-card__title">
           <h3>{t(`useCases.${useCase.id}.name`)}</h3>
           <p className="use-case-card__subtitle">
             {t(useCase.subtitleKey ?? `useCases.${useCase.id}.subtitle`, { defaultValue: "" })}
           </p>
         </div>
-      </header>
-
-      {!currentMapping || profiles.length === 0 ? (
-        <p className="use-case-card__unsupported">
-          {t("calculator.profileUnsupported")}
-        </p>
-      ) : (
-        <>
-          <div className="use-case-card__form">
-            <div className="use-case-card__field">
-              <label htmlFor={`${inputIdPrefix}-provider`}>
-                {t("calculator.providerSelect")}
-              </label>
-              <select
-                id={`${inputIdPrefix}-provider`}
-                value={currentMapping.providerId}
-                onChange={(e) => {
-                  const nextMapping = offeredProviders.find(
-                    (pm) => pm.providerId === e.target.value,
-                  );
-                  const nextProfileId = nextMapping?.profiles[0]?.id ?? "";
-                  onChange({
-                    providerId: e.target.value,
-                    profileId: nextProfileId,
-                    frequencyPerDay,
-                    parameters,
-                  });
-                }}
-              >
-                {offeredProviders.map((pm) => (
-                  <option key={pm.providerId} value={pm.providerId}>
-                    {t(`providers.${pm.providerId}`, {
-                      defaultValue: pm.providerId,
-                    })}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="use-case-card__field">
-              <label htmlFor={`${inputIdPrefix}-profile`}>
-                {t("calculator.profileSelect")}
-              </label>
-              <select
-                id={`${inputIdPrefix}-profile`}
-                value={currentProfile?.id ?? ""}
-                onChange={(e) =>
-                  onChange({
-                    providerId: currentMapping.providerId,
-                    profileId: e.target.value,
-                    frequencyPerDay,
-                    parameters,
-                  })
-                }
-              >
-                {profiles.map((profile) => (
-                  <option key={profile.id} value={profile.id}>
-                    {t(`calculator.tier.${profile.id}`, {
-                      defaultValue: profile.id,
-                    })}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {(currentProfile?.parameters ?? []).map((parameter) => {
-              const selectId = `${inputIdPrefix}-parameter-${parameter.id}`;
-              return (
-                <div key={parameter.id} className="use-case-card__field">
-                  <label htmlFor={selectId}>
-                    {t(`calculator.parameter.${parameter.id}`, {
-                      defaultValue: parameter.id,
-                    })}
-                  </label>
-                  <select
-                    id={selectId}
-                    value={String(
-                      parameter.options.indexOf(parameterValues[parameter.id]),
-                    )}
-                    onChange={(e) =>
-                      onChange({
-                        providerId: currentMapping.providerId,
-                        profileId: currentProfile?.id ?? "",
-                        frequencyPerDay,
-                        parameters: {
-                          ...parameters,
-                          [parameter.id]: parameter.options[Number(e.target.value)],
-                        },
-                      })
-                    }
-                  >
-                    {parameter.options.map((option, index) => (
-                      <option key={String(option)} value={String(index)}>
-                        {optionLabel(parameter.id, option)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              );
-            })}
-
-            <div className="use-case-card__field">
-              <label htmlFor={`${inputIdPrefix}-frequency`}>
-                {t("calculator.frequencyPerDay")}
-              </label>
+        {supported && (
+          <div className="use-case-card__frequency">
+            <label htmlFor={`${inputIdPrefix}-frequency`}>
+              {t("calculator.frequencyPerDay")}
+            </label>
+            <div className="use-case-card__frequency-input">
               <input
                 id={`${inputIdPrefix}-frequency`}
                 type="number"
                 min={0}
                 value={frequencyPerDay}
-                onChange={(e) =>
-                  onChange({
-                    providerId: currentMapping.providerId,
-                    profileId: currentProfile?.id ?? "",
-                    frequencyPerDay: Number(e.target.value),
-                    parameters,
-                  })
-                }
+                onChange={(e) => emit({ frequencyPerDay: Number(e.target.value) })}
               />
+              <span className="use-case-card__frequency-unit" aria-hidden="true">
+                {t("calculator.perDayShort")}
+              </span>
             </div>
-            <p className="use-case-card__profile-hint">
-              {t(`calculator.profileHint.${currentProfile?.id}`, { defaultValue: "" })}
-            </p>
           </div>
+        )}
+      </header>
 
-          {scaledImpacts && (
-            <div className="use-case-card__primary-impacts">
-              <dl className="use-case-card__summary">
-                {SUMMARY_CRITERIA.map(({ key, unit }) => {
-                  const range = scaledImpacts[key];
-                  const value = range && scaleRange(range.min, range.max, unit);
-                  return (
-                    <div key={key}>
-                      <dt>
-                        <ImpactIcon
-                          criterion={key}
-                          title={t(`calculator.cardImpactSummary.${key}`)}
-                          className="use-case-card__summary-icon"
-                        />
-                      </dt>
-                      <dd>
-                        {value
-                          ? `${formatNumber((value.min + value.max) / 2, locale)} ${value.unit}`
-                          : t("calculator.notAvailable")}
-                      </dd>
-                    </div>
-                  );
-                })}
-              </dl>
-              {dataNote && (
-                <p className="use-case-card__data-note" role="note">
-                  <svg
-                    className="use-case-card__data-note-icon"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
+      {!supported || !currentMapping ? (
+        <p className="use-case-card__unsupported">
+          {t("calculator.profileUnsupported")}
+        </p>
+      ) : (
+        <>
+          <div className="use-case-card__main">
+            <div className="use-case-card__selection">
+              <div className="use-case-card__selects">
+                <div className="use-case-card__field">
+                  <label htmlFor={`${inputIdPrefix}-provider`}>
+                    {t("calculator.providerSelect")}
+                  </label>
+                  <select
+                    id={`${inputIdPrefix}-provider`}
+                    value={currentMapping.providerId}
+                    onChange={(e) => {
+                      const nextMapping = offeredProviders.find(
+                        (pm) => pm.providerId === e.target.value,
+                      );
+                      emit({
+                        providerId: e.target.value,
+                        profileId: nextMapping?.profiles[0]?.id ?? "",
+                      });
+                    }}
                   >
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 16v-4M12 8h.01" />
-                  </svg>
-                  <span>{dataNote}</span>
+                    {offeredProviders.map((pm) => (
+                      <option key={pm.providerId} value={pm.providerId}>
+                        {t(`providers.${pm.providerId}`, {
+                          defaultValue: pm.providerId,
+                        })}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="use-case-card__field">
+                  <label htmlFor={`${inputIdPrefix}-profile`}>
+                    {t("calculator.profileSelect")}
+                  </label>
+                  <select
+                    id={`${inputIdPrefix}-profile`}
+                    value={currentProfile?.id ?? ""}
+                    onChange={(e) => emit({ profileId: e.target.value })}
+                  >
+                    {profiles.map((profile) => (
+                      <option key={profile.id} value={profile.id}>
+                        {profileLabel(profile)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {currentProfile?.outputTokens != null && (
+                <p className="use-case-card__assumption">
+                  {t("calculator.assumptionTokens", {
+                    value: formatInteger(currentProfile.outputTokens, locale),
+                  })}
                 </p>
               )}
             </div>
+
+            {scaledImpacts && (
+              <div className="use-case-card__primary-impacts">
+                <dl className="use-case-card__summary">
+                  {SUMMARY_CRITERIA.map(({ key, unit }) => {
+                    const range = scaledImpacts[key];
+                    const value = range && scaleRange(range.min, range.max, unit);
+                    return (
+                      <div key={key}>
+                        <dt>
+                          <ImpactIcon
+                            criterion={key}
+                            title={t(`calculator.cardImpactSummary.${key}`)}
+                            className="use-case-card__summary-icon"
+                          />
+                        </dt>
+                        <dd>
+                          {value
+                            ? `${formatNumber((value.min + value.max) / 2, locale)} ${value.unit}`
+                            : t("calculator.notAvailable")}
+                        </dd>
+                      </div>
+                    );
+                  })}
+                </dl>
+                {dataNote && (
+                  <p className="use-case-card__data-note" role="note">
+                    <svg
+                      className="use-case-card__data-note-icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden="true"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 16v-4M12 8h.01" />
+                    </svg>
+                    <span>{dataNote}</span>
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {customizable.length > 0 && (
+            <details className="use-case-card__details use-case-card__customize">
+              <summary>
+                {t("calculator.customize", {
+                  values: customizable
+                    .map((parameter) =>
+                      optionLabel(parameter.id, parameterValues[parameter.id]),
+                    )
+                    .join(" · "),
+                })}
+              </summary>
+              <div className="use-case-card__parameters">
+                {customizable.map((parameter) => {
+                  const selectId = `${inputIdPrefix}-parameter-${parameter.id}`;
+                  return (
+                    <div key={parameter.id} className="use-case-card__field">
+                      <label htmlFor={selectId}>
+                        {t(`calculator.parameter.${parameter.id}`, {
+                          defaultValue: parameter.id,
+                        })}
+                      </label>
+                      <select
+                        id={selectId}
+                        value={String(
+                          parameter.options.indexOf(parameterValues[parameter.id]),
+                        )}
+                        onChange={(e) =>
+                          emit({
+                            parameters: {
+                              ...parameters,
+                              [parameter.id]:
+                                parameter.options[Number(e.target.value)],
+                            },
+                          })
+                        }
+                      >
+                        {parameter.options.map((option, index) => (
+                          <option key={String(option)} value={String(index)}>
+                            {optionLabel(parameter.id, option)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                })}
+              </div>
+            </details>
           )}
 
           {scaledImpacts && (
@@ -292,27 +318,27 @@ export function UseCaseCard({
                     {label}: {t("calculator.notAvailable")}
                   </p>
                 ) : (
-                    <RangeGauge
-                      key={key}
-                      min={value.min}
-                      max={value.max}
-                      unit={unit}
-                      label={
-                        isImpactCriterion(key) ? (
-                          <>
-                            <ImpactIcon
-                              criterion={key}
-                              title={label}
-                              className="impact-icon--detail use-case-card__detail-icon"
-                              decorative
-                            />
-                            <span>{label}</span>
-                          </>
-                        ) : (
-                          label
-                        )
-                      }
-                    />
+                  <RangeGauge
+                    key={key}
+                    min={value.min}
+                    max={value.max}
+                    unit={unit}
+                    label={
+                      isImpactCriterion(key) ? (
+                        <>
+                          <ImpactIcon
+                            criterion={key}
+                            title={label}
+                            className="impact-icon--detail use-case-card__detail-icon"
+                            decorative
+                          />
+                          <span>{label}</span>
+                        </>
+                      ) : (
+                        label
+                      )
+                    }
+                  />
                 );
               })}
             </details>

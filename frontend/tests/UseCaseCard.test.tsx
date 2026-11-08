@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import i18n from "../src/i18n";
 import { UseCaseCard } from "../src/components/UseCaseCard";
 import type { UseCase } from "../src/api/client";
+
+// Tests that need French switch to it explicitly; reset to the jsdom
+// default (English) so the language never leaks into the next test.
+afterEach(async () => {
+  await i18n.changeLanguage("en");
+});
 
 const ZERO_RANGE = { min: 0, max: 0 };
 const ZERO_IMPACTS = {
@@ -106,7 +112,7 @@ const VIDEO: UseCase = {
 };
 
 describe("UseCaseCard", () => {
-  it("groups the form, primary impacts, and details into layout zones", () => {
+  it("groups the card into header, main row and details zones", () => {
     render(
       <UseCaseCard
         useCase={EMAIL}
@@ -119,17 +125,116 @@ describe("UseCaseCard", () => {
     );
 
     const card = document.querySelector<HTMLElement>(".use-case-card");
-    const form = card?.querySelector(".use-case-card__form");
-    const primaryImpacts = card?.querySelector(
-      ".use-case-card__primary-impacts",
-    );
+    const header = card?.querySelector(".use-case-card__header");
+    const selects = card?.querySelector(".use-case-card__selects");
+    const main = card?.querySelector(".use-case-card__main");
     const details = card?.querySelector(".use-case-card__details");
 
-    expect(form).toContainElement(screen.getByLabelText(/fournisseur|provider/i));
-    expect(primaryImpacts).toContainElement(
+    // Frequency sits in the header, next to the title.
+    expect(header).toContainElement(screen.getByLabelText(/fréquence|frequency/i));
+    // Provider and profile share one row.
+    expect(selects).toContainElement(screen.getByLabelText(/fournisseur|provider/i));
+    expect(selects).toContainElement(screen.getByLabelText(/profil|profile/i));
+    // Primary impacts sit on the same main row.
+    expect(main).toContainElement(
       screen.getByTitle(/gaz à effet de serre|greenhouse gases/i),
     );
     expect(details?.parentElement).toBe(card);
+  });
+
+  it("labels the frequency as an average per day, visibly", async () => {
+    await i18n.changeLanguage("fr");
+    render(
+      <UseCaseCard
+        useCase={EMAIL}
+        availableProviderIds={["openai"]}
+        providerId="openai"
+        profileId="eco"
+        frequencyPerDay={1}
+        onChange={() => {}}
+      />,
+    );
+
+    const frequency = document.querySelector(".use-case-card__frequency");
+    expect(frequency).toHaveTextContent("Fréquence quotidienne moyenne");
+    expect(frequency).toHaveTextContent("/jour");
+    expect(screen.getByLabelText("Fréquence quotidienne moyenne")).toHaveValue(1);
+  });
+
+  it("states the token assumption of text profiles", async () => {
+    await i18n.changeLanguage("fr");
+    const useCase: UseCase = {
+      id: "email",
+      providers: [
+        {
+          providerId: "openai",
+          profiles: [{ id: "eco", impacts: ZERO_IMPACTS, outputTokens: 1000 }],
+        },
+        {
+          providerId: "google",
+          profiles: [{ id: "image", impacts: ZERO_IMPACTS, outputTokens: null }],
+        },
+      ],
+    };
+    const { rerender } = render(
+      <UseCaseCard
+        useCase={useCase}
+        availableProviderIds={["openai", "google"]}
+        providerId="openai"
+        profileId="eco"
+        frequencyPerDay={1}
+        onChange={() => {}}
+      />,
+    );
+
+    // French groups thousands with U+202F, which toHaveTextContent normalises.
+    expect(
+      document.querySelector(".use-case-card__assumption")?.textContent,
+    ).toBe("Hypothèse de calcul : 1\u202f000 tokens générés par action");
+
+    rerender(
+      <UseCaseCard
+        useCase={useCase}
+        availableProviderIds={["openai", "google"]}
+        providerId="google"
+        profileId="image"
+        frequencyPerDay={1}
+        onChange={() => {}}
+      />,
+    );
+
+    expect(document.querySelector(".use-case-card__assumption")).toBeNull();
+  });
+
+  it("names the model behind each profile when it is known", async () => {
+    await i18n.changeLanguage("fr");
+    const useCase: UseCase = {
+      id: "email",
+      providers: [
+        {
+          providerId: "openai",
+          profiles: [
+            { id: "eco", impacts: ZERO_IMPACTS, models: ["GPT-4o mini"] },
+            { id: "balanced", impacts: ZERO_IMPACTS, models: [] },
+          ],
+        },
+      ],
+    };
+    render(
+      <UseCaseCard
+        useCase={useCase}
+        availableProviderIds={["openai"]}
+        providerId="openai"
+        profileId="eco"
+        frequencyPerDay={1}
+        onChange={() => {}}
+      />,
+    );
+
+    const options = Array.from(
+      screen.getByLabelText("Profil").querySelectorAll("option"),
+    ).map((o) => o.textContent);
+    expect(options).toEqual(["Éco (GPT-4o mini)", "Équilibré"]);
   });
 
   it("shows large titled summary icons and smaller titled detail icons", async () => {
@@ -321,8 +426,8 @@ describe("UseCaseCard", () => {
     const user = userEvent.setup();
     render(<InteractiveUseCaseCard />);
 
-    await user.clear(screen.getByLabelText("Frequency per day"));
-    await user.type(screen.getByLabelText("Frequency per day"), "2");
+    await user.clear(screen.getByLabelText("Average daily frequency"));
+    await user.type(screen.getByLabelText("Average daily frequency"), "2");
 
     expect(summaryMetric(/greenhouse gases/i)).toHaveTextContent(
       "3.00 g CO2eq",
@@ -574,6 +679,25 @@ describe("UseCaseCard model parameters", () => {
     expect(summaryMetric(/^water$/i)).toHaveTextContent("110 mL");
   });
 
+  it("folds the parameters into a Customize menu that recalls the values", async () => {
+    await i18n.changeLanguage("fr");
+    const user = userEvent.setup();
+    render(<InteractiveVideoCard />);
+
+    const menu = document.querySelector<HTMLDetailsElement>(
+      ".use-case-card__customize",
+    );
+    expect(menu).not.toBeNull();
+    expect(menu!.open).toBe(false);
+    expect(menu).toContainElement(screen.getByLabelText("Résolution"));
+    const summary = menu!.querySelector("summary");
+    expect(summary).toHaveTextContent("Personnaliser : 720p · 8 s · Avec audio");
+
+    await user.selectOptions(screen.getByLabelText("Résolution"), "1080p");
+
+    expect(summary).toHaveTextContent("Personnaliser : 1080p · 8 s · Avec audio");
+  });
+
   it("shows no parameter select for profiles without parameters", async () => {
     await i18n.changeLanguage("en");
     render(
@@ -589,5 +713,8 @@ describe("UseCaseCard model parameters", () => {
 
     expect(screen.queryByLabelText("Resolution")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Duration")).not.toBeInTheDocument();
+    expect(
+      document.querySelector(".use-case-card__customize"),
+    ).not.toBeInTheDocument();
   });
 });

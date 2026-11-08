@@ -46,9 +46,8 @@
     "providerSelect": "Fournisseur",
     "profileSelect": "Profil",
     "profileUnsupported": "Non disponible pour ce fournisseur",
-    "profileHint": { "eco": "Pour les tâches simples et répétitives", "balanced": "Pour un bon équilibre entre performance et impact", "powerful": "À réserver aux tâches complexes", "research": "Pour les recherches critiques et multi-étapes", "image": "Pour générer une image", "video": "Pour générer une vidéo", "video_fast": "Pour générer une vidéo plus rapidement" },
     "notAvailable": "Non disponible",
-    "frequencyPerDay": "Fréquence par jour",
+    "frequencyPerDay": "Fréquence quotidienne moyenne",
     "detailsToggle": "Voir/Masquer le détail de vos impacts pour cette tâche",
     "cardImpactSummary": {
       "gwp": "Gaz à effet de serre",
@@ -69,11 +68,14 @@
       "eco": "Éco",
       "balanced": "Équilibré",
       "powerful": "Puissant",
-      "research": "Recherche approfondie",
+      "research": "Recherche",
       "image": "Standard",
       "video": "Standard",
       "video_fast": "Rapide"
     },
+    "assumptionTokens": "Hypothèse de calcul : {{value}} tokens générés par action",
+    "perDayShort": "/jour",
+    "customize": "Personnaliser : {{values}}",
     "parameter": {
       "resolution": "Résolution",
       "duration_s": "Durée",

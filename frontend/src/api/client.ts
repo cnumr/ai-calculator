@@ -62,6 +62,10 @@ export interface Profile {
   impacts: Impacts;
   parameters?: ProfileParameter[];
   variants?: ProfileVariant[];
+  /** Display names of the model(s) behind the profile, when known. */
+  models?: string[];
+  /** Generated tokens per action assumed for text profiles. */
+  outputTokens?: number | null;
 }
 
 export interface ProviderMapping {
@@ -100,6 +104,8 @@ interface UseCasesResponseBody {
           default: ParameterValue;
         }>;
         variants?: ProfileVariant[];
+        models?: string[];
+        output_tokens?: number | null;
       }>;
     }>;
   }>;
@@ -132,6 +138,8 @@ export async function fetchUseCases(): Promise<UseCasesCatalog> {
             defaultValue: param.default,
           })),
           variants: p.variants ?? [],
+          models: p.models ?? [],
+          outputTokens: p.output_tokens ?? null,
         })),
       })),
     })),

@@ -1,3 +1,25 @@
+# Display names of the models used below, shown next to each profile
+# ("Éco (GPT-4o mini)"). Keys are EcoLogits model ids (or, for static
+# profiles, the `model` they declare). Every model used must be listed.
+model_labels:
+  gpt-4o-mini: GPT-4o mini
+  gpt-4o: GPT-4o
+  gpt-4.1: GPT-4.1
+  o4-mini-deep-research: o4-mini Deep Research
+  claude-haiku-4-5: Claude Haiku 4.5
+  claude-sonnet-4-5: Claude Sonnet 4.5
+  claude-opus-4-8: Claude Opus 4.8
+  ministral-8b-latest: Ministral 8B
+  mistral-small-latest: Mistral Small
+  mistral-large-latest: Mistral Large
+  gemini-2.5-flash-lite: Gemini 2.5 Flash-Lite
+  gemini-2.5-flash: Gemini 2.5 Flash
+  gemini-2.5-pro: Gemini 2.5 Pro
+  gemini-2.5-flash-image: Gemini 2.5 Flash Image
+  dall-e-3: DALL·E 3
+  google/veo-3.0: Veo 3
+  google/veo-3.0-fast: Veo 3 Fast
+  openai/sora-2-pro: Sora 2 Pro
 providers:
   - id: openai
     selected_by_default: true
@@ -62,6 +84,7 @@ use_cases:
       - provider_id: google
         profiles:
           - id: image
+            model: gemini-2.5-flash-image
             static_impacts:
               gwp:
                 min: 0.012568
@@ -75,6 +98,7 @@ use_cases:
       - provider_id: openai
         profiles:
           - id: image
+            model: dall-e-3
             static_impacts:
               gwp:
                 min: 0.0125

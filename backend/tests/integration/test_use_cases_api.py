@@ -114,3 +114,17 @@ def test_get_use_cases_gives_text_profiles_empty_parameters():
     profile = email["providers"][0]["profiles"][0]
     assert profile["parameters"] == []
     assert profile["variants"] == []
+
+
+def test_get_use_cases_exposes_profile_model_names():
+    response = client.get("/api/use-cases")
+
+    body = response.json()
+    email = next(uc for uc in body["use_cases"] if uc["id"] == "email")
+    openai = next(p for p in email["providers"] if p["provider_id"] == "openai")
+    eco = next(p for p in openai["profiles"] if p["id"] == "eco")
+    assert eco["models"] == ["GPT-4o mini"]
+    assert eco["output_tokens"] == 300
+
+    video = next(uc for uc in body["use_cases"] if uc["id"] == "video")
+    assert video["providers"][0]["profiles"][0]["output_tokens"] is None

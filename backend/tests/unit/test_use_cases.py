@@ -7,6 +7,9 @@ from ai_calculator.domain.use_cases import (
 )
 
 VALID_YAML = """
+model_labels:
+  gpt-4o-mini: GPT-4o mini
+  dall-e-3: DALL·E 3
 providers:
   - id: openai
     selected_by_default: true
@@ -30,6 +33,7 @@ use_cases:
       - provider_id: google
         profiles:
           - id: image
+            model: dall-e-3
             static_impacts:
               gwp: {min: 0.0125, max: 0.0125}
               adpe: {min: 2.68e-07, max: 2.68e-07}
@@ -65,6 +69,9 @@ def test_load_catalog_resolves_llm_and_static_profiles(tmp_path):
 
 
 VIDEO_YAML = """
+model_labels:
+  google/veo-3.0: Veo 3
+  google/veo-3.0-fast: Veo 3 Fast
 providers:
   - id: google
     selected_by_default: true
@@ -170,6 +177,48 @@ def test_load_catalog_gives_text_profiles_no_parameters(tmp_path):
                 assert profile.variants == []
 
 
+def test_load_catalog_exposes_the_display_name_of_each_profile_model(tmp_path):
+    config_file = tmp_path / "use_cases.yaml"
+    config_file.write_text(VALID_YAML)
+
+    catalog = load_catalog(config_file)
+
+    email, image = catalog.use_cases
+    assert email.providers[0].profiles[0].models == ["GPT-4o mini"]
+    assert image.providers[0].profiles[0].models == ["DALL·E 3"]
+
+
+def test_load_catalog_exposes_output_tokens_of_text_profiles_only(tmp_path):
+    config_file = tmp_path / "use_cases.yaml"
+    config_file.write_text(VALID_YAML)
+
+    email, image = load_catalog(config_file).use_cases
+    assert email.providers[0].profiles[0].output_tokens == 300
+    assert image.providers[0].profiles[0].output_tokens is None
+
+
+def test_load_catalog_exposes_the_video_model_display_name(tmp_path):
+    profile = _load_video_profile(tmp_path)
+
+    assert profile.models == ["Veo 3"]
+
+
+def test_load_catalog_gives_no_model_to_static_profiles_without_one(tmp_path):
+    config_file = tmp_path / "use_cases.yaml"
+    config_file.write_text(VALID_YAML.replace("            model: dall-e-3\n", ""))
+
+    image = load_catalog(config_file).use_cases[1]
+    assert image.providers[0].profiles[0].models == []
+
+
+def test_load_catalog_raises_on_model_without_display_name(tmp_path):
+    config_file = tmp_path / "use_cases.yaml"
+    config_file.write_text(VALID_YAML.replace("  gpt-4o-mini: GPT-4o mini\n", ""))
+
+    with pytest.raises(UseCasesConfigError, match="gpt-4o-mini"):
+        load_catalog(config_file)
+
+
 def test_load_catalog_raises_on_unknown_ecologits_model(tmp_path):
     config_file = tmp_path / "use_cases.yaml"
     config_file.write_text(
@@ -247,3 +296,12 @@ def test_real_config_offers_google_and_openai_video_profiles():
                 "with_audio",
             }
             assert profile.impacts.energy is not None
+
+
+def test_real_config_names_the_model_of_every_profile():
+    catalog = load_catalog()
+
+    for use_case in catalog.use_cases:
+        for mapping in use_case.providers:
+            for profile in mapping.profiles:
+                assert len(profile.models) == 1, (use_case.id, mapping.provider_id)

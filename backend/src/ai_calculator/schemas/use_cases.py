@@ -34,6 +34,8 @@ class ProfileOut(BaseModel):
     impacts: ImpactsOut
     parameters: list[ProfileParameterOut]
     variants: list[ProfileVariantOut]
+    models: list[str]
+    output_tokens: int | None
 
 
 class ProviderMappingOut(BaseModel):

@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from itertools import product
 from pathlib import Path
 
@@ -57,6 +57,10 @@ class ResolvedProfile:
     impacts: UnitImpacts
     parameters: list[ProfileParameter] = field(default_factory=list)
     variants: list[ProfileVariant] = field(default_factory=list)
+    # Display names of the model(s) behind the profile, when known.
+    models: list[str] = field(default_factory=list)
+    # Generated tokens per action assumed for text profiles (None otherwise).
+    output_tokens: int | None = None
 
 
 @dataclass(frozen=True)
@@ -118,7 +122,9 @@ def _resolve_llm_profile(profile_id: str, profile: dict, context: str) -> Resolv
         raise UseCasesConfigError(f"{context}: {exc}") from exc
     except EcologitsComputationError as exc:
         raise UseCasesConfigError(f"{context}: {exc}") from exc
-    return ResolvedProfile(id=profile_id, impacts=impacts)
+    return ResolvedProfile(
+        id=profile_id, impacts=impacts, output_tokens=int(output_tokens)
+    )
 
 
 def _video_parameters(
@@ -171,14 +177,37 @@ def _resolve_video_profile(profile_id: str, video: dict, context: str) -> Resolv
     )
 
 
-def _resolve_profile(profile: dict, context: str) -> ResolvedProfile:
+def _profile_model_id(profile: dict) -> str | None:
+    if "static_impacts" in profile:
+        return profile.get("model")
+    if "ecologits_video" in profile:
+        return profile["ecologits_video"].get("model")
+    return profile.get("ecologits_model")
+
+
+def _resolve_profile_impacts(
+    profile_id: str, profile: dict, context: str
+) -> ResolvedProfile:
+    if "static_impacts" in profile:
+        return _resolve_static_profile(profile_id, profile["static_impacts"], context)
+    if "ecologits_video" in profile:
+        return _resolve_video_profile(profile_id, profile["ecologits_video"], context)
+    return _resolve_llm_profile(profile_id, profile, context)
+
+
+def _resolve_profile(
+    profile: dict, context: str, model_labels: dict[str, str]
+) -> ResolvedProfile:
     profile_id = _require(profile, "id", context)
     profile_context = f"{context} profile '{profile_id}'"
-    if "static_impacts" in profile:
-        return _resolve_static_profile(profile_id, profile["static_impacts"], profile_context)
-    if "ecologits_video" in profile:
-        return _resolve_video_profile(profile_id, profile["ecologits_video"], profile_context)
-    return _resolve_llm_profile(profile_id, profile, profile_context)
+    model_id = _profile_model_id(profile)
+    if model_id is not None and model_id not in model_labels:
+        raise UseCasesConfigError(
+            f"{profile_context}: model '{model_id}' has no display name in model_labels"
+        )
+    resolved = _resolve_profile_impacts(profile_id, profile, profile_context)
+    models = [str(model_labels[model_id])] if model_id is not None else []
+    return replace(resolved, models=models)
 
 
 def load_catalog(path: Path | None = None) -> Catalog:
@@ -206,6 +235,10 @@ def load_catalog(path: Path | None = None) -> Catalog:
         for p in raw_providers
     ]
 
+    model_labels = raw.get("model_labels") or {}
+    if not isinstance(model_labels, dict):
+        raise UseCasesConfigError(f"{config_path}: model_labels must be a mapping")
+
     raw_use_cases = _require(raw, "use_cases", str(config_path))
     use_cases = []
     for uc in raw_use_cases:
@@ -218,7 +251,7 @@ def load_catalog(path: Path | None = None) -> Catalog:
             provider_id = _require(pm, "provider_id", f"use case '{use_case_id}'")
             raw_profiles = _require(pm, "profiles", f"use case '{use_case_id}' provider '{provider_id}'")
             context = f"use case '{use_case_id}' provider '{provider_id}'"
-            profiles = [_resolve_profile(p, context) for p in raw_profiles]
+            profiles = [_resolve_profile(p, context, model_labels) for p in raw_profiles]
             provider_mappings.append(
                 ResolvedProviderMapping(provider_id=provider_id, profiles=profiles)
             )
