@@ -25,6 +25,11 @@ Le format s'inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 - Page calculateur restructurée en 3 sections numérotées reprenant la disposition du POC : (1) écosystème IA (fournisseurs, pleine largeur), (2) deux colonnes — cas d'usage à gauche, résultats individuels annuels + équivalences CO2 + répartition par fournisseur à droite, (3) deux colonnes — nombre de salariés à gauche, résultats entreprise annuels à droite.
 - Colonne de résultats des sections à deux colonnes rendue collante (`position: sticky`) pour rester visible pendant le défilement de la colonne principale (cartes de cas d'usage plus longues que les résultats).
 
+### Supprimé
+
+- Endpoint `POST /api/calculate` et son module d'extrapolation (`domain/extrapolation.py`) : la page calculateur agrège déjà les impacts côté front à partir de `GET /api/use-cases`, ce qui supprime une seconde implémentation de la même logique (et l'écart de 218/220 jours ouvrés entre les deux). Le calcul libre par l'API n'est plus disponible.
+- Fonction `calculate()` du client front (`frontend/src/api/client.ts`), devenue inutilisée.
+
 ### Corrigé
 
 - Le détail des impacts (`UseCaseCard`, panneau "Voir/Masquer le détail") reflète désormais la fréquence par jour de la carte au lieu de toujours afficher l'impact d'une seule action.

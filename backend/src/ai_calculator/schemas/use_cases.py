@@ -1,6 +1,17 @@
 from pydantic import BaseModel
 
-from .calculate import ImpactsOut
+
+class ImpactRangeOut(BaseModel):
+    min: float
+    max: float
+
+
+class ImpactsOut(BaseModel):
+    gwp: ImpactRangeOut | None
+    energy: ImpactRangeOut | None
+    adpe: ImpactRangeOut | None
+    pe: ImpactRangeOut | None
+    water: ImpactRangeOut | None
 
 
 class ProfileOut(BaseModel):
