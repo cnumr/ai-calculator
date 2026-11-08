@@ -16,10 +16,6 @@ Hors périmètre de cette spec : mentions légales et page « À propos » (text
 
 ## 1. Données et calculs
 
-### 1.1 Librairie EcoLogits (hors périmètre)
-
-Traité dans la PR #18 (montée de version 0.11.3, remplacement des modèles retirés). Rien à faire dans ce spec.
-
 ### 1.2 Modèles épinglés (demande de Brice)
 
 - Aujourd'hui les modèles sont codés en dur dans `backend/src/ai_calculator/data/use_cases.yaml`.
@@ -109,11 +105,10 @@ Remarque : le POC V1 n'a pas ces use cases. Les libellés finaux sont à valider
 
 ## Questions ouvertes
 
-1. Modèles de remplacement : valider Opus 4.8, Gemini 2.5 Flash et Flash-Lite, ou choisir d'autres modèles.
-2. Tokens par use case : quelle source fait foi (POC initial, EcoLogits, ou nouvelle hypothèse) ?
-3. Vidéo : durée de référence, modèle par défaut, audio, et inclusion de l'infrastructure.
-4. Image : la méthodologie fournit-elle une valeur par taille ?
-5. Écart API / EcoLogits : tester avant de corriger.
+1. Tokens par use case : quelle source fait foi (POC initial, EcoLogits, ou nouvelle hypothèse) ?
+2. Vidéo : durée de référence, modèle par défaut, audio, et inclusion de l'infrastructure.
+3. Image : la méthodologie fournit-elle une valeur par taille ?
+4. Écart API / EcoLogits : tester avant de corriger.
 
 ## Tests attendus
 
