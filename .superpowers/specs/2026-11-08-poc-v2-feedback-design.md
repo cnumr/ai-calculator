@@ -98,11 +98,6 @@ Remarque : le POC V1 n'a pas ces use cases. Les libellés finaux sont à valider
 - Profils : afficher le modèle directement. Une notion « léger / puissant » peut compléter, à valider.
 - Maximiser le nombre de use cases visibles sur une même page.
 
-## Ce qui est déjà fait
-
-- Mise à jour EcoLogits 0.11.3 : PR #18 vers `develop`, 20/20 tests backend.
-- Route de déploiement inchangée : `develop` puis `main`, après votre accord.
-
 ## Questions ouvertes
 
 ### À trancher
