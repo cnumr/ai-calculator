@@ -9,7 +9,6 @@ VALID_PAYLOAD = {
     "model": "gpt-4o-mini",
     "output_tokens": 200,
     "requests_per_day": 10,
-    "working_days_per_year": 220,
     "headcount": 50,
 }
 
