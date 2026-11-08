@@ -525,6 +525,13 @@ button {
   gap: 1rem;
 }
 
+/* Impacts shown do not match the selection yet (calculation in flight). */
+.use-case-card--pending .use-case-card__primary-impacts,
+.use-case-card--pending .use-case-card__details {
+  opacity: 0.55;
+  transition: opacity 0.2s;
+}
+
 .use-case-card__header {
   display: flex;
   flex-wrap: wrap;
@@ -913,4 +920,31 @@ button {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Results being recalculated: keep the last values, dimmed. */
+.calculator-results--pending {
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.calculator-results__loading {
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+}
+
+.calculator-results__error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.calculator-results__error p {
+  margin: 0;
 }

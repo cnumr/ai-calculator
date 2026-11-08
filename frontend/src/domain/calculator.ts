@@ -1,11 +1,17 @@
+/**
+ * Interface logic of the calculator: which provider, profile and parameter
+ * values each card actually uses, and the scenario sent to POST
+ * /api/calculate. The impacts themselves are computed by the backend.
+ */
 import type {
-  Impacts,
+  CalculateRequest,
   ParameterValue,
   Profile,
   ProviderMapping,
+  UsageRequest,
+  UsageResult,
   UseCase,
 } from "../api/client";
-import { scaleImpacts } from "./aggregate";
 
 export interface CardState {
   providerId: string;
@@ -67,44 +73,52 @@ export function resolveParameters(
 }
 
 /**
- * Impacts of a profile for the user's parameter choices: the matching
- * precomputed variant, or the profile's default impacts.
+ * The usage scenario to calculate: one usage per card that a selected
+ * provider offers, with the provider, profile and parameters it really uses.
  */
-export function resolveImpacts(
-  profile: Profile,
-  chosen: Record<string, ParameterValue>,
-): Impacts {
-  const values = resolveParameters(profile, chosen);
-  const variant = (profile.variants ?? []).find((v) =>
-    Object.entries(values).every(([id, value]) => v.values[id] === value),
-  );
-  return variant?.impacts ?? profile.impacts;
-}
-
-/**
- * Annual impacts of each card, attributed to the provider the card really
- * uses. Cards offered by no selected provider contribute nothing.
- */
-export function computeAnnualEntries(
+export function buildCalculateRequest(
   useCases: UseCase[],
   cardStates: Record<string, CardState>,
   availableProviderIds: Iterable<string>,
-  workingDaysPerYear: number,
-): Array<{ providerId: string; impacts: Impacts }> {
+  headcount: number,
+): CalculateRequest {
   const available = Array.from(availableProviderIds);
-  const entries: Array<{ providerId: string; impacts: Impacts }> = [];
+  const usages: UsageRequest[] = [];
   for (const useCase of useCases) {
     const state = cardStates[useCase.id];
     if (!state) continue;
     const { mapping, profile } = resolveSelection(useCase, available, state);
     if (!mapping || !profile) continue;
-    entries.push({
+    const usage: UsageRequest = {
+      kind: useCase.kind,
+      useCaseId: useCase.id,
       providerId: mapping.providerId,
-      impacts: scaleImpacts(
-        resolveImpacts(profile, state.parameters),
-        state.frequencyPerDay * workingDaysPerYear,
-      ),
-    });
+      profileId: profile.id,
+      frequencyPerDay: Math.max(0, state.frequencyPerDay || 0),
+    };
+    if (useCase.kind === "video") {
+      usage.parameters = resolveParameters(profile, state.parameters);
+    }
+    usages.push(usage);
   }
-  return entries;
+  return {
+    usages,
+    // The backend requires at least 1 (an empty or invalid field counts as 1).
+    headcount: Math.max(1, Math.floor(headcount) || 1),
+  };
+}
+
+/** Whether a calculated usage matches what the card currently asks for. */
+export function isUsageResultCurrent(
+  request: UsageRequest,
+  result: UsageResult,
+): boolean {
+  const parameters = request.parameters ?? {};
+  return (
+    result.useCaseId === request.useCaseId &&
+    result.providerId === request.providerId &&
+    result.profileId === request.profileId &&
+    result.frequencyPerDay === request.frequencyPerDay &&
+    Object.entries(parameters).every(([id, value]) => result.parameters[id] === value)
+  );
 }

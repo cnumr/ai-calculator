@@ -2,44 +2,48 @@ import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import i18next from "../src/i18n";
 import { Co2Equivalents } from "../src/components/Co2Equivalents";
+import type { Co2EquivalentQuantity } from "../src/api/client";
 
 afterEach(async () => {
   await i18next.changeLanguage("en");
 });
 
-describe("Co2Equivalents", () => {
-  it("renders one equivalence line per entry in the local dataset", async () => {
-    await i18next.changeLanguage("en");
-    render(<Co2Equivalents gwpKgCo2eq={2.18} />);
+// Quantities as computed by the backend.
+const equivalents = (streaming: number, smartphones: number, km: number): Co2EquivalentQuantity[] => [
+  { id: "streaming_hour", impactCo2Slug: "streamingvideo", quantity: streaming },
+  { id: "smartphone", impactCo2Slug: "smartphone", quantity: smartphones },
+  { id: "car_km", impactCo2Slug: "voiturethermique", quantity: km },
+];
 
-    expect(screen.getAllByRole("listitem")).toHaveLength(3);
-    // ImpactCO2 factors: 0.0640 kg/h streaming, 80.2 kg/smartphone,
-    // 0.142 kg/km thermal car -> 34 h, 0 smartphones, 15 km.
-    expect(screen.getByText("34 hours of video streaming")).toBeInTheDocument();
-    expect(screen.getByText("0 smartphones")).toBeInTheDocument();
-    expect(screen.getByText("15 km by car")).toBeInTheDocument();
+describe("Co2Equivalents", () => {
+  it("rounds and pluralises the quantities it receives", async () => {
+    await i18next.changeLanguage("en");
+    render(<Co2Equivalents equivalents={equivalents(34.05, 0.03, 15.3)} gwpKgCo2eq={2.18} />);
+
+    expect(screen.getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+      "34 hours of video streaming",
+      "0 smartphones",
+      "15 km by car",
+    ]);
   });
 
   it("formats and pluralises counts in French", async () => {
     await i18next.changeLanguage("fr");
-    // 100 kg -> 1 562 h streaming, 1 smartphone, 703 km.
-    render(<Co2Equivalents gwpKgCo2eq={100} />);
+    render(<Co2Equivalents equivalents={equivalents(1562.09, 1.25, 702.97)} gwpKgCo2eq={100} />);
 
-    const lines = screen.getAllByRole("listitem").map((li) => li.textContent);
     // French groups thousands with a narrow no-break space (U+202F).
-    expect(lines).toEqual([
-      "1\u202f562 heures de streaming vidéo",
+    expect(screen.getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+      "1 562 heures de streaming vidéo",
       "1 smartphone",
       "703 km en voiture",
     ]);
   });
 
-  it("links to the ImpactCO2 comparator with the dataset slugs and language", async () => {
+  it("links to the ImpactCO2 comparator with the slugs and language", async () => {
     await i18next.changeLanguage("fr");
-    render(<Co2Equivalents gwpKgCo2eq={12.345} />);
+    render(<Co2Equivalents equivalents={equivalents(1, 1, 1)} gwpKgCo2eq={12.345} />);
 
-    const link = screen.getByRole("link", { name: /impactco2/i });
-    expect(link).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /impactco2/i })).toHaveAttribute(
       "href",
       "https://impactco2.fr/outils/comparateur?value=12.35&comparisons=streamingvideo,smartphone,voiturethermique&language=fr",
     );

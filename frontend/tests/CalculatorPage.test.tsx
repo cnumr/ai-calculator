@@ -1,410 +1,372 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import i18next from "../src/i18n";
 import { CalculatorPage } from "../src/pages/CalculatorPage";
 import * as apiClient from "../src/api/client";
+import type {
+  CalculateRequest,
+  CalculateResult,
+  Impacts,
+  UseCasesCatalog,
+} from "../src/api/client";
 
 vi.mock("../src/api/client", async () => {
   const actual = await vi.importActual<typeof apiClient>("../src/api/client");
-  return {
-    ...actual,
-    fetchUseCases: vi.fn(),
-  };
+  return { ...actual, fetchUseCases: vi.fn(), calculate: vi.fn() };
 });
 
 const mockedFetchUseCases = vi.mocked(apiClient.fetchUseCases);
+const mockedCalculate = vi.mocked(apiClient.calculate);
 
-afterEach(() => {
-  vi.clearAllMocks();
-});
-
-const ZERO_RANGE = { min: 0, max: 0 };
-const ZERO_IMPACTS = {
-  gwp: ZERO_RANGE,
-  energy: ZERO_RANGE,
-  adpe: ZERO_RANGE,
-  pe: ZERO_RANGE,
-  water: ZERO_RANGE,
-};
-
-const CATALOG: apiClient.UseCasesCatalog = {
+// video is only offered by google; email falls back to openai without google.
+const CATALOG: UseCasesCatalog = {
   providers: [
     { id: "openai", selectedByDefault: true },
-    { id: "anthropic", selectedByDefault: true },
+    { id: "google", selectedByDefault: true },
   ],
   useCases: [
     {
-      id: "email",
-      defaultProviderId: "anthropic",
-      recommendedProfileId: "eco",
+      id: "video",
+      kind: "video",
+      defaultProviderId: "google",
+      recommendedProfileId: "video",
       providers: [
         {
-          providerId: "openai",
+          providerId: "google",
           profiles: [
             {
-              id: "eco",
-              impacts: { ...ZERO_IMPACTS, gwp: { min: 1, max: 2 } },
-            },
-          ],
-        },
-        {
-          providerId: "anthropic",
-          profiles: [
-            {
-              id: "eco",
-              impacts: { ...ZERO_IMPACTS, gwp: { min: 3, max: 4 } },
-            },
-          ],
-        },
-      ],
-    },
-  ],
-};
-
-describe("CalculatorPage", () => {
-  it("loads the catalogue once and renders one card per use case", async () => {
-    mockedFetchUseCases.mockResolvedValue(CATALOG);
-
-    render(<CalculatorPage />);
-
-    await waitFor(() =>
-      expect(
-        screen.getByText(/rédaction d'un email|writing an email/i),
-      ).toBeInTheDocument(),
-    );
-    expect(mockedFetchUseCases).toHaveBeenCalledTimes(1);
-  });
-
-  it("renders a chip per provider, initialised from selectedByDefault", async () => {
-    mockedFetchUseCases.mockResolvedValue(CATALOG);
-
-    render(<CalculatorPage />);
-
-    await waitFor(() =>
-      expect(
-        screen.getByRole("button", { name: /openai/i }),
-      ).toBeInTheDocument(),
-    );
-    expect(screen.getByRole("button", { name: /openai/i })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    expect(screen.getByRole("button", { name: /anthropic/i })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-  });
-
-  it("initializes each card with its catalogue provider and profile defaults", async () => {
-    mockedFetchUseCases.mockResolvedValue(CATALOG);
-
-    render(<CalculatorPage />);
-
-    await waitFor(() =>
-      expect(screen.getByLabelText(/fournisseur|provider/i)).toHaveValue(
-        "anthropic",
-      ),
-    );
-    expect(screen.getByLabelText(/profil|profile/i)).toHaveValue("eco");
-  });
-
-  it("switches a card's provider away from a deselected chip", async () => {
-    mockedFetchUseCases.mockResolvedValue(CATALOG);
-
-    render(<CalculatorPage />);
-
-    await waitFor(() =>
-      expect(
-        screen.getByRole("button", { name: /openai/i }),
-      ).toBeInTheDocument(),
-    );
-
-    await userEvent.selectOptions(
-      screen.getByLabelText(/fournisseur|provider/i),
-      "openai",
-    );
-    await userEvent.click(screen.getByRole("button", { name: /openai/i }));
-
-    const providerSelect = screen.getByLabelText(/fournisseur|provider/i);
-    expect(providerSelect).toHaveValue("anthropic");
-  });
-
-  it("shows a full-page error with retry when the catalogue fails to load", async () => {
-    mockedFetchUseCases.mockRejectedValueOnce(
-      new apiClient.ApiError(500, "boom"),
-    );
-    mockedFetchUseCases.mockResolvedValueOnce(CATALOG);
-
-    render(<CalculatorPage />);
-
-    await waitFor(() =>
-      expect(
-        screen.getByText(
-          /impossible de charger le catalogue|could not load the use case catalogue/i,
-        ),
-      ).toBeInTheDocument(),
-    );
-
-    await userEvent.click(
-      screen.getByRole("button", { name: /réessayer|retry/i }),
-    );
-
-    await waitFor(() =>
-      expect(
-        screen.getByText(/rédaction d'un email|writing an email/i),
-      ).toBeInTheDocument(),
-    );
-    expect(mockedFetchUseCases).toHaveBeenCalledTimes(2);
-  });
-
-  it("aggregates individual annual impact from the card's gwp and frequency", async () => {
-    mockedFetchUseCases.mockResolvedValue(CATALOG);
-
-    const { container } = render(<CalculatorPage />);
-
-    await waitFor(() =>
-      expect(
-        screen.getByText(/rédaction d'un email|writing an email/i),
-      ).toBeInTheDocument(),
-    );
-
-    // Default frequency is 1/day, 218 working days/year, Anthropic gwp max = 4 -> 872
-    await waitFor(() => {
-      const gauges = container.querySelectorAll(".range-gauge");
-      const found = Array.from(gauges).some((gauge) =>
-        gauge.textContent?.includes("872"),
-      );
-      expect(found).toBe(true);
-    });
-  });
-
-  it("shows the breakdown by provider with details for the other 4 indicators", async () => {
-    mockedFetchUseCases.mockResolvedValue(CATALOG);
-
-    render(<CalculatorPage />);
-
-    await waitFor(() =>
-      expect(
-        screen.getByText(/répartition par fournisseur|breakdown by provider/i),
-      ).toBeInTheDocument(),
-    );
-    expect(screen.getByText("100 %")).toBeInTheDocument();
-  });
-
-  it("resets card selections to catalogue defaults", async () => {
-    mockedFetchUseCases.mockResolvedValue(CATALOG);
-    const user = userEvent.setup();
-
-    render(<CalculatorPage />);
-
-    const provider = await screen.findByLabelText(/fournisseur|provider/i);
-    await user.selectOptions(provider, "openai");
-    await user.click(screen.getByRole("button", { name: /réinitialiser|reset/i }));
-
-    expect(provider).toHaveValue("anthropic");
-  });
-
-  it("shows the five impact icons in annual and provider detail grids", async () => {
-    mockedFetchUseCases.mockResolvedValue(CATALOG);
-
-    const { container } = render(<CalculatorPage />);
-
-    await waitFor(() =>
-      expect(container.querySelectorAll(".impacts-grid").length).toBeGreaterThan(
-        0,
-      ),
-    );
-
-    container.querySelectorAll(".impacts-grid").forEach((grid) => {
-      expect(grid.querySelectorAll(".impact-icon--detail")).toHaveLength(5);
-    });
-  });
-
-  it("shows a not-available message for null criteria in the annual totals", async () => {
-    const CATALOG_WITH_NULLS: apiClient.UseCasesCatalog = {
-      providers: [{ id: "google", selectedByDefault: true }],
-      useCases: [
-        {
-          id: "video",
-          providers: [
-            {
-              providerId: "google",
-              profiles: [
-                {
-                  id: "video",
-                  impacts: {
-                    gwp: { min: 1, max: 2 },
-                    energy: null,
-                    adpe: { min: 0.01, max: 0.02 },
-                    pe: null,
-                    water: null,
-                  },
-                },
+              id: "video",
+              parameters: [
+                { id: "resolution", options: ["720p", "1080p"], defaultValue: "720p" },
               ],
             },
           ],
         },
       ],
+    },
+    {
+      id: "email",
+      kind: "text",
+      defaultProviderId: "google",
+      recommendedProfileId: "eco",
+      providers: [
+        { providerId: "openai", profiles: [{ id: "eco" }] },
+        { providerId: "google", profiles: [{ id: "eco" }] },
+      ],
+    },
+  ],
+};
+
+/* A stand-in for the backend: kg CO2eq per action, GHG only. */
+const UNIT_GWP_KG: Record<string, number> = {
+  "video:google:video:720p": 1,
+  "video:google:video:1080p": 2,
+  "email:openai:eco:": 10,
+  "email:google:eco:": 100,
+};
+const ZERO = { min: 0, max: 0 };
+const gwpKg = (kg: number): Impacts => ({
+  gwp: { min: kg, max: kg },
+  energy: ZERO,
+  adpe: ZERO,
+  pe: ZERO,
+  water: ZERO,
+});
+
+function fakeResult(request: CalculateRequest, scale = 1): CalculateResult {
+  const usages = request.usages.map((u) => {
+    const parameters = u.parameters ?? {};
+    const unit =
+      UNIT_GWP_KG[`${u.useCaseId}:${u.providerId}:${u.profileId}:${parameters.resolution ?? ""}`] *
+      scale;
+    const daily = unit * u.frequencyPerDay;
+    return {
+      useCaseId: u.useCaseId,
+      providerId: u.providerId,
+      profileId: u.profileId,
+      frequencyPerDay: u.frequencyPerDay,
+      parameters,
+      unitImpacts: gwpKg(unit),
+      dailyImpacts: gwpKg(daily),
+      annualImpacts: gwpKg(daily * 218),
     };
-    mockedFetchUseCases.mockResolvedValue(CATALOG_WITH_NULLS);
+  });
+  const total = usages.reduce((sum, u) => sum + u.annualImpacts.gwp!.max, 0);
+  const byProvider = new Map<string, number>();
+  usages.forEach((u) =>
+    byProvider.set(u.providerId, (byProvider.get(u.providerId) ?? 0) + u.annualImpacts.gwp!.max),
+  );
+  return {
+    workingDaysPerYear: 218,
+    usages,
+    individualAnnual: gwpKg(total),
+    enterpriseAnnual: gwpKg(total * request.headcount),
+    providerBreakdown: [...byProvider].map(([providerId, kg]) => ({
+      providerId,
+      annualImpacts: gwpKg(kg),
+      gwpSharePercent: total === 0 ? 0 : (kg / total) * 100,
+    })),
+    co2Equivalents: [
+      { id: "car_km", impactCo2Slug: "voiturethermique", quantity: total / 0.142 },
+    ],
+  };
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
+}
+
+const individualSummary = () =>
+  document.querySelectorAll(".gwp-summary__value")[0]?.textContent;
+const enterpriseSummary = () =>
+  document.querySelectorAll(".gwp-summary__value")[1]?.textContent;
+const lastRequest = () => mockedCalculate.mock.calls.at(-1)![0];
+const card = (title: RegExp) =>
+  screen.getByRole("heading", { name: title }).closest("article")!;
+const cardGwp = (title: RegExp) =>
+  within(card(title)).getByTitle(/greenhouse gases/i).closest("div")!;
+
+beforeEach(async () => {
+  await i18next.changeLanguage("en");
+  mockedFetchUseCases.mockResolvedValue(CATALOG);
+  mockedCalculate.mockImplementation(async (request) => fakeResult(request));
+});
+
+afterEach(() => {
+  vi.clearAllMocks();
+});
+
+async function renderLoaded() {
+  const view = render(<CalculatorPage />);
+  // video 1 kg + email (google) 100 kg per day, over 218 days = 22 018 kg
+  await waitFor(() => expect(individualSummary()).toBe("22.0 t CO2eq"));
+  return view;
+}
+
+describe("CalculatorPage catalogue", () => {
+  it("loads the catalogue once and renders one card per use case", async () => {
+    await renderLoaded();
+
+    expect(mockedFetchUseCases).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("heading", { name: /video generation/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /writing an email/i })).toBeInTheDocument();
+  });
+
+  it("renders a chip per provider, initialised from selectedByDefault", async () => {
+    await renderLoaded();
+
+    expect(screen.getByRole("button", { name: /openai/i })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /google/i })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("initializes each card with its catalogue provider and profile defaults", async () => {
+    await renderLoaded();
+
+    expect(within(card(/writing an email/i)).getByLabelText("Provider")).toHaveValue("google");
+    expect(within(card(/writing an email/i)).getByLabelText("Profile")).toHaveValue("eco");
+  });
+
+  it("shows a full-page error with retry when the catalogue fails to load", async () => {
+    mockedFetchUseCases.mockRejectedValueOnce(new apiClient.ApiError(500, "boom"));
 
     render(<CalculatorPage />);
 
-    await waitFor(() =>
-      expect(
-        screen.getByText(/génération de vidéos|video generation/i, {
-          selector: "h3",
-        }),
-      ).toBeInTheDocument(),
-    );
+    await userEvent.click(await screen.findByRole("button", { name: /retry/i }));
 
-    await waitFor(() => {
-      expect(
-        screen.getAllByText(/non disponible|not available/i).length,
-      ).toBeGreaterThan(0);
+    expect(await screen.findByRole("heading", { name: /writing an email/i })).toBeInTheDocument();
+    expect(mockedFetchUseCases).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("CalculatorPage calculation (POST /api/calculate)", () => {
+  it("sends the scenario of the cards and the headcount", async () => {
+    await renderLoaded();
+
+    expect(lastRequest()).toEqual({
+      headcount: 1,
+      usages: [
+        {
+          kind: "video",
+          useCaseId: "video",
+          providerId: "google",
+          profileId: "video",
+          frequencyPerDay: 1,
+          parameters: { resolution: "720p" },
+        },
+        {
+          kind: "text",
+          useCaseId: "email",
+          providerId: "google",
+          profileId: "eco",
+          frequencyPerDay: 1,
+        },
+      ],
+    });
+  });
+
+  it("shows the daily impacts of each card and the breakdown returned", async () => {
+    await renderLoaded();
+
+    expect(cardGwp(/video generation/i)).toHaveTextContent("1.00 kg CO2eq");
+    expect(cardGwp(/writing an email/i)).toHaveTextContent("100 kg CO2eq");
+    const breakdown = document.querySelector(".provider-breakdown")!;
+    expect(breakdown).toHaveTextContent("Google");
+    expect(breakdown).toHaveTextContent("100 %");
+  });
+
+  it("shows the CO2 equivalents returned", async () => {
+    await renderLoaded();
+
+    // 22 018 kg / 0.142 kg per km
+    expect(screen.getByText("155,056 km by car")).toBeInTheDocument();
+  });
+
+  it("recalculates with the new frequency", async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+
+    const frequency = within(card(/writing an email/i)).getByLabelText("Average daily frequency");
+    await user.clear(frequency);
+    await user.type(frequency, "3");
+
+    // video 1 + email 3 x 100 = 301 kg per day x 218
+    await waitFor(() => expect(individualSummary()).toBe("65.6 t CO2eq"));
+    expect(lastRequest().usages[1].frequencyPerDay).toBe(3);
+  });
+
+  it("waits for typing to settle before calling the backend", async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+    const callsBefore = mockedCalculate.mock.calls.length;
+
+    await user.type(
+      within(card(/writing an email/i)).getByLabelText("Average daily frequency"),
+      "234",
+    );
+    await waitFor(() => expect(lastRequest().usages[1].frequencyPerDay).toBe(1234));
+
+    // One request for the settled value, not one per keystroke.
+    expect(mockedCalculate.mock.calls.length - callsBefore).toBe(1);
+  });
+
+  it("recalculates with the chosen video parameters", async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+
+    await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
+
+    await waitFor(() => expect(cardGwp(/video generation/i)).toHaveTextContent("2.00 kg CO2eq"));
+    expect(lastRequest().usages[0].parameters).toEqual({ resolution: "1080p" });
+    expect(individualSummary()).toBe("22.2 t CO2eq");
+  });
+
+  it("sends the headcount and shows the enterprise total returned", async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+
+    const headcount = screen.getByLabelText(/headcount/i);
+    await user.clear(headcount);
+    await user.type(headcount, "50");
+
+    await waitFor(() => expect(enterpriseSummary()).toBe("1,101 t CO2eq"));
+    expect(lastRequest().headcount).toBe(50);
+  });
+
+  it("keeps the last result and offers a retry when the calculation fails", async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+    mockedCalculate.mockRejectedValueOnce(new apiClient.ApiError(500, "boom"));
+
+    await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/error/i);
+    expect(individualSummary()).toBe("22.0 t CO2eq");
+
+    await user.click(within(alert).getByRole("button", { name: /retry/i }));
+
+    await waitFor(() => expect(individualSummary()).toBe("22.2 t CO2eq"));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("ignores a late response to an outdated scenario", async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+    const late = deferred<CalculateResult>();
+    mockedCalculate.mockImplementationOnce(() => late.promise);
+
+    const resolution = within(card(/video generation/i)).getByLabelText("Resolution");
+    await user.selectOptions(resolution, "1080p");
+    await waitFor(() =>
+      expect(lastRequest().usages[0].parameters).toEqual({ resolution: "1080p" }),
+    );
+    const outdated = mockedCalculate.mock.calls.at(-1)!;
+
+    // While the 1080p calculation is in flight, the card is marked busy.
+    expect(card(/video generation/i)).toHaveAttribute("aria-busy", "true");
+
+    await user.selectOptions(resolution, "720p");
+    await waitFor(() => expect(outdated[1]!.aborted).toBe(true));
+    await waitFor(() => expect(card(/video generation/i)).not.toHaveAttribute("aria-busy"));
+
+    // The outdated answer (scaled x10) arrives last: it must not be shown.
+    late.resolve(fakeResult(outdated[0], 10));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(cardGwp(/video generation/i)).toHaveTextContent("1.00 kg CO2eq");
+    expect(individualSummary()).toBe("22.0 t CO2eq");
+  });
+
+  it("shows the five impact icons in annual and provider detail grids", async () => {
+    const { container } = await renderLoaded();
+
+    const grids = container.querySelectorAll(".impacts-grid");
+    expect(grids.length).toBeGreaterThan(0);
+    grids.forEach((grid) => {
+      expect(grid.querySelectorAll(".impact-icon--detail")).toHaveLength(5);
     });
   });
 });
 
-describe("CalculatorPage annual totals stay consistent with the cards", () => {
-  const range = (value: number) => ({ min: value, max: value });
-  const gwpOnly = (value: number) => ({ ...ZERO_IMPACTS, gwp: range(value) });
-
-  // video is only offered by google; email falls back to openai without google.
-  const TWO_PROVIDER_CATALOG: apiClient.UseCasesCatalog = {
-    providers: [
-      { id: "openai", selectedByDefault: true },
-      { id: "google", selectedByDefault: true },
-    ],
-    useCases: [
-      {
-        id: "video",
-        defaultProviderId: "google",
-        recommendedProfileId: "video",
-        providers: [
-          { providerId: "google", profiles: [{ id: "video", impacts: gwpOnly(1) }] },
-        ],
-      },
-      {
-        id: "email",
-        defaultProviderId: "google",
-        recommendedProfileId: "eco",
-        providers: [
-          { providerId: "openai", profiles: [{ id: "eco", impacts: gwpOnly(10) }] },
-          { providerId: "google", profiles: [{ id: "eco", impacts: gwpOnly(100) }] },
-        ],
-      },
-    ],
-  };
-
-  function individualSummary(container: HTMLElement) {
-    return container.querySelector(".gwp-summary__value")?.textContent;
-  }
-
-  function breakdownText(container: HTMLElement) {
-    return container.querySelector(".provider-breakdown ul")?.textContent ?? "";
-  }
-
-  it("keeps the totals after a reset with no prior change", async () => {
-    mockedFetchUseCases.mockResolvedValue(TWO_PROVIDER_CATALOG);
+describe("CalculatorPage keeps the scenario consistent with the cards", () => {
+  it("sends the default scenario again after a reset", async () => {
     const user = userEvent.setup();
+    await renderLoaded();
+    const initial = lastRequest();
 
-    const { container } = render(<CalculatorPage />);
+    await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
+    await waitFor(() => expect(individualSummary()).toBe("22.2 t CO2eq"));
+    await user.click(screen.getByRole("button", { name: /reset/i }));
 
-    // (1 + 100) kg x 218 days = 22 018 kg
-    await waitFor(() =>
-      expect(individualSummary(container)).toBe("22.0 t CO2eq"),
-    );
-    await user.click(screen.getByRole("button", { name: /réinitialiser|reset/i }));
-
-    expect(individualSummary(container)).toBe("22.0 t CO2eq");
+    await waitFor(() => expect(individualSummary()).toBe("22.0 t CO2eq"));
+    expect(lastRequest()).toEqual(initial);
   });
 
-  it("drops a card no longer offered by any selected provider from the totals", async () => {
-    mockedFetchUseCases.mockResolvedValue(TWO_PROVIDER_CATALOG);
+  it("drops a card no longer offered by any selected provider", async () => {
     const user = userEvent.setup();
-
-    const { container } = render(<CalculatorPage />);
-    await waitFor(() =>
-      expect(individualSummary(container)).toBe("22.0 t CO2eq"),
-    );
+    await renderLoaded();
 
     await user.click(screen.getByRole("button", { name: /google/i }));
 
-    // video is unsupported, email falls back to openai: 10 kg x 218 = 2 180 kg
-    expect(individualSummary(container)).toBe("2.18 t CO2eq");
+    // video is unsupported, email falls back to openai: 10 kg x 218
+    await waitFor(() => expect(individualSummary()).toBe("2.18 t CO2eq"));
+    expect(lastRequest().usages.map((u) => u.useCaseId)).toEqual(["email"]);
   });
 
   it("attributes a card to the provider it falls back to", async () => {
-    mockedFetchUseCases.mockResolvedValue(TWO_PROVIDER_CATALOG);
     const user = userEvent.setup();
-
-    const { container } = render(<CalculatorPage />);
-    await waitFor(() =>
-      expect(individualSummary(container)).toBe("22.0 t CO2eq"),
-    );
+    await renderLoaded();
 
     await user.click(screen.getByRole("button", { name: /google/i }));
 
-    expect(breakdownText(container)).toMatch(/OpenAI/);
-    expect(breakdownText(container)).not.toMatch(/Google/);
-  });
-});
-
-describe("CalculatorPage model parameters", () => {
-  const gwpKg = (value: number) => ({
-    ...ZERO_IMPACTS,
-    gwp: { min: value, max: value },
-  });
-
-  const VIDEO_CATALOG: apiClient.UseCasesCatalog = {
-    providers: [{ id: "google", selectedByDefault: true }],
-    useCases: [
-      {
-        id: "video",
-        defaultProviderId: "google",
-        recommendedProfileId: "video",
-        providers: [
-          {
-            providerId: "google",
-            profiles: [
-              {
-                id: "video",
-                impacts: gwpKg(1),
-                parameters: [
-                  { id: "resolution", options: ["720p", "1080p"], defaultValue: "720p" },
-                ],
-                variants: [
-                  { values: { resolution: "720p" }, impacts: gwpKg(1) },
-                  { values: { resolution: "1080p" }, impacts: gwpKg(2) },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  };
-
-  it("updates the annual total when a card parameter changes", async () => {
-    await i18next.changeLanguage("en");
-    mockedFetchUseCases.mockResolvedValue(VIDEO_CATALOG);
-    const user = userEvent.setup();
-
-    const { container } = render(<CalculatorPage />);
-
-    // 1 kg x 218 days
+    await waitFor(() => expect(lastRequest().usages[0].providerId).toBe("openai"));
     await waitFor(() =>
-      expect(
-        container.querySelector(".gwp-summary__value")?.textContent,
-      ).toBe("218 kg CO2eq"),
+      expect(document.querySelector(".provider-breakdown ul")).toHaveTextContent("OpenAI"),
     );
-
-    await user.selectOptions(screen.getByLabelText("Resolution"), "1080p");
-
-    expect(container.querySelector(".gwp-summary__value")?.textContent).toBe(
-      "436 kg CO2eq",
-    );
+    expect(document.querySelector(".provider-breakdown ul")).not.toHaveTextContent("Google");
   });
 });

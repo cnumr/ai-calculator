@@ -1,117 +1,183 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ApiError, fetchUseCases } from "../src/api/client";
+import { ApiError, calculate, fetchUseCases } from "../src/api/client";
+
+function stubFetch(body: unknown, ok = true, status = 200) {
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok,
+    status,
+    json: () => Promise.resolve(body),
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("fetchUseCases", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it("converts catalogue defaults and provider fields to camelCase", async () => {
-    const body = {
-      providers: [{ id: "openai", selected_by_default: true }],
-      use_cases: [
-        {
-          id: "email",
-          default_provider: "openai",
-          recommended_tier: "eco",
-          providers: [
-            {
-              provider_id: "openai",
-              profiles: [
-                {
-                  id: "eco",
-                  impacts: {
-                    gwp: { min: 1, max: 2 },
-                    energy: { min: 0, max: 0 },
-                    adpe: { min: 0, max: 0 },
-                    pe: { min: 0, max: 0 },
-                    water: { min: 0, max: 0 },
-                  },
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(body),
-      }),
-    );
-
-    const catalog = await fetchUseCases();
-
-    expect(catalog.providers).toEqual([
-      { id: "openai", selectedByDefault: true },
-    ]);
-    expect(catalog.useCases[0]).toMatchObject({
-      defaultProviderId: "openai",
-      recommendedProfileId: "eco",
-    });
-    expect(catalog.useCases[0].providers[0].providerId).toBe("openai");
-    expect(catalog.useCases[0].providers[0].profiles[0].impacts.gwp).toEqual({
-      min: 1,
-      max: 2,
-    });
-  });
-
-  it("keeps profile parameters and variants, defaulting to none", async () => {
-    const impacts = {
-      gwp: { min: 1, max: 2 },
-      energy: null,
-      adpe: null,
-      pe: null,
-      water: null,
-    };
-    const body = {
+  it("converts the catalogue to camelCase, with kinds and profile details", async () => {
+    stubFetch({
       providers: [{ id: "google", selected_by_default: true }],
       use_cases: [
         {
           id: "video",
+          kind: "video",
+          default_provider: "google",
+          recommended_tier: "video",
           providers: [
             {
               provider_id: "google",
               profiles: [
                 {
                   id: "video",
-                  impacts,
                   parameters: [
                     { id: "resolution", options: ["720p", "1080p"], default: "720p" },
                   ],
-                  variants: [{ values: { resolution: "1080p" }, impacts }],
+                  models: ["Veo 3"],
+                  output_tokens: null,
                 },
-                { id: "legacy", impacts },
+                { id: "legacy" },
               ],
             },
           ],
         },
       ],
-    };
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(body) }),
-    );
+    });
 
-    const [video, legacy] = (await fetchUseCases()).useCases[0].providers[0]
-      .profiles;
+    const catalog = await fetchUseCases();
 
-    expect(video.parameters).toEqual([
-      { id: "resolution", options: ["720p", "1080p"], defaultValue: "720p" },
-    ]);
-    expect(video.variants).toEqual([{ values: { resolution: "1080p" }, impacts }]);
-    expect(legacy.parameters).toEqual([]);
-    expect(legacy.variants).toEqual([]);
+    expect(catalog.providers).toEqual([{ id: "google", selectedByDefault: true }]);
+    expect(catalog.useCases[0]).toMatchObject({
+      id: "video",
+      kind: "video",
+      defaultProviderId: "google",
+      recommendedProfileId: "video",
+    });
+    const [video, legacy] = catalog.useCases[0].providers[0].profiles;
+    expect(video).toEqual({
+      id: "video",
+      parameters: [{ id: "resolution", options: ["720p", "1080p"], defaultValue: "720p" }],
+      models: ["Veo 3"],
+      outputTokens: null,
+    });
+    expect(legacy).toEqual({ id: "legacy", parameters: [], models: [], outputTokens: null });
   });
 
   it("throws ApiError when the response is not ok", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({ ok: false, status: 500 }),
-    );
+    stubFetch({}, false, 500);
 
     await expect(fetchUseCases()).rejects.toBeInstanceOf(ApiError);
+  });
+});
+
+describe("calculate", () => {
+  const ZERO = { min: 0, max: 0 };
+  const impacts = { gwp: { min: 1, max: 2 }, energy: ZERO, adpe: ZERO, pe: null, water: ZERO };
+  const response = {
+    working_days_per_year: 218,
+    usages: [
+      {
+        use_case_id: "video",
+        provider_id: "google",
+        profile_id: "video",
+        frequency_per_day: 1,
+        parameters: { resolution: "1080p", duration_s: 8, with_audio: true },
+        unit_impacts: impacts,
+        daily_impacts: impacts,
+        annual_impacts: impacts,
+      },
+    ],
+    individual_annual: impacts,
+    enterprise_annual: impacts,
+    provider_breakdown: [
+      { provider_id: "google", annual_impacts: impacts, gwp_share_percent: 100 },
+    ],
+    co2_equivalents: [{ id: "car_km", impact_co2_slug: "voiturethermique", quantity: 7.5 }],
+  };
+
+  it("posts the scenario in snake_case, with parameters for video usages only", async () => {
+    const fetchMock = stubFetch(response);
+    const controller = new AbortController();
+
+    await calculate(
+      {
+        headcount: 10,
+        usages: [
+          {
+            kind: "video",
+            useCaseId: "video",
+            providerId: "google",
+            profileId: "video",
+            frequencyPerDay: 1,
+            parameters: { resolution: "1080p" },
+          },
+          {
+            kind: "text",
+            useCaseId: "email",
+            providerId: "openai",
+            profileId: "eco",
+            frequencyPerDay: 3,
+            parameters: { ignored: true },
+          },
+        ],
+      },
+      controller.signal,
+    );
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/calculate");
+    expect(init.method).toBe("POST");
+    expect(init.signal).toBe(controller.signal);
+    expect(JSON.parse(init.body)).toEqual({
+      headcount: 10,
+      usages: [
+        {
+          kind: "video",
+          use_case_id: "video",
+          provider_id: "google",
+          profile_id: "video",
+          frequency_per_day: 1,
+          parameters: { resolution: "1080p" },
+        },
+        {
+          kind: "text",
+          use_case_id: "email",
+          provider_id: "openai",
+          profile_id: "eco",
+          frequency_per_day: 3,
+        },
+      ],
+    });
+  });
+
+  it("converts the result to camelCase", async () => {
+    stubFetch(response);
+
+    const result = await calculate({ headcount: 1, usages: [] });
+
+    expect(result.workingDaysPerYear).toBe(218);
+    expect(result.usages[0]).toMatchObject({
+      useCaseId: "video",
+      providerId: "google",
+      profileId: "video",
+      frequencyPerDay: 1,
+      parameters: { resolution: "1080p", duration_s: 8, with_audio: true },
+      dailyImpacts: impacts,
+    });
+    expect(result.providerBreakdown).toEqual([
+      { providerId: "google", annualImpacts: impacts, gwpSharePercent: 100 },
+    ]);
+    expect(result.co2Equivalents).toEqual([
+      { id: "car_km", impactCo2Slug: "voiturethermique", quantity: 7.5 },
+    ]);
+  });
+
+  it("throws ApiError when the calculation is rejected", async () => {
+    stubFetch({ detail: "resolution '4k' is not supported" }, false, 422);
+
+    await expect(calculate({ headcount: 1, usages: [] })).rejects.toMatchObject({
+      status: 422,
+    });
   });
 });

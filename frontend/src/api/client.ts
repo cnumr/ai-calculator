@@ -43,6 +43,9 @@ export interface CatalogProvider {
 
 export type ParameterValue = string | number | boolean;
 
+/** How a use case's impacts are computed, and which parameters it accepts. */
+export type UseCaseKind = "text" | "video" | "image";
+
 /** A setting the user can change for a profile (e.g. video resolution). */
 export interface ProfileParameter {
   id: string;
@@ -50,18 +53,9 @@ export interface ProfileParameter {
   defaultValue: ParameterValue;
 }
 
-/** Precomputed impacts for one combination of parameter values. */
-export interface ProfileVariant {
-  values: Record<string, ParameterValue>;
-  impacts: Impacts;
-}
-
 export interface Profile {
   id: string;
-  /** Impacts of the default parameter values. */
-  impacts: Impacts;
   parameters?: ProfileParameter[];
-  variants?: ProfileVariant[];
   /** Display names of the model(s) behind the profile, when known. */
   models?: string[];
   /** Generated tokens per action assumed for text profiles. */
@@ -75,6 +69,7 @@ export interface ProviderMapping {
 
 export interface UseCase {
   id: string;
+  kind: UseCaseKind;
   subtitleKey?: string;
   defaultProviderId?: string;
   recommendedProfileId?: string;
@@ -90,6 +85,7 @@ interface UseCasesResponseBody {
   providers: Array<{ id: string; selected_by_default: boolean }>;
   use_cases: Array<{
     id: string;
+    kind: UseCaseKind;
     subtitle_key?: string;
     default_provider?: string;
     recommended_tier?: string;
@@ -97,13 +93,11 @@ interface UseCasesResponseBody {
       provider_id: string;
       profiles: Array<{
         id: string;
-        impacts: Impacts;
         parameters?: Array<{
           id: string;
           options: ParameterValue[];
           default: ParameterValue;
         }>;
-        variants?: ProfileVariant[];
         models?: string[];
         output_tokens?: number | null;
       }>;
@@ -124,6 +118,7 @@ export async function fetchUseCases(): Promise<UseCasesCatalog> {
     })),
     useCases: body.use_cases.map((uc) => ({
       id: uc.id,
+      kind: uc.kind,
       subtitleKey: uc.subtitle_key,
       defaultProviderId: uc.default_provider,
       recommendedProfileId: uc.recommended_tier,
@@ -131,17 +126,142 @@ export async function fetchUseCases(): Promise<UseCasesCatalog> {
         providerId: pm.provider_id,
         profiles: pm.profiles.map((p) => ({
           id: p.id,
-          impacts: p.impacts,
           parameters: (p.parameters ?? []).map((param) => ({
             id: param.id,
             options: param.options,
             defaultValue: param.default,
           })),
-          variants: p.variants ?? [],
           models: p.models ?? [],
           outputTokens: p.output_tokens ?? null,
         })),
       })),
+    })),
+  };
+}
+
+/* ------------------------------------------------------------------------ */
+/* POST /api/calculate                                                       */
+/* ------------------------------------------------------------------------ */
+
+/** One daily usage of a use case, as sent to the calculation. */
+export interface UsageRequest {
+  kind: UseCaseKind;
+  useCaseId: string;
+  providerId: string;
+  profileId: string;
+  frequencyPerDay: number;
+  /** Only for video usages. */
+  parameters?: Record<string, ParameterValue>;
+}
+
+export interface CalculateRequest {
+  usages: UsageRequest[];
+  headcount: number;
+}
+
+export interface UsageResult {
+  useCaseId: string;
+  providerId: string;
+  profileId: string;
+  frequencyPerDay: number;
+  /** Parameter values actually used (defaults filled in). */
+  parameters: Record<string, ParameterValue>;
+  unitImpacts: Impacts;
+  dailyImpacts: Impacts;
+  annualImpacts: Impacts;
+}
+
+export interface ProviderShare {
+  providerId: string;
+  annualImpacts: Impacts;
+  gwpSharePercent: number;
+}
+
+export interface Co2EquivalentQuantity {
+  id: string;
+  impactCo2Slug: string;
+  /** Raw quantity: rounding is up to the display. */
+  quantity: number;
+}
+
+export interface CalculateResult {
+  workingDaysPerYear: number;
+  usages: UsageResult[];
+  individualAnnual: Impacts;
+  enterpriseAnnual: Impacts;
+  providerBreakdown: ProviderShare[];
+  co2Equivalents: Co2EquivalentQuantity[];
+}
+
+interface CalculateResponseBody {
+  working_days_per_year: number;
+  usages: Array<{
+    use_case_id: string;
+    provider_id: string;
+    profile_id: string;
+    frequency_per_day: number;
+    parameters: Record<string, ParameterValue>;
+    unit_impacts: Impacts;
+    daily_impacts: Impacts;
+    annual_impacts: Impacts;
+  }>;
+  individual_annual: Impacts;
+  enterprise_annual: Impacts;
+  provider_breakdown: Array<{
+    provider_id: string;
+    annual_impacts: Impacts;
+    gwp_share_percent: number;
+  }>;
+  co2_equivalents: Array<{ id: string; impact_co2_slug: string; quantity: number }>;
+}
+
+export async function calculate(
+  request: CalculateRequest,
+  signal?: AbortSignal,
+): Promise<CalculateResult> {
+  const response = await fetch(`${API_BASE}/api/calculate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      headcount: request.headcount,
+      usages: request.usages.map((u) => ({
+        kind: u.kind,
+        use_case_id: u.useCaseId,
+        provider_id: u.providerId,
+        profile_id: u.profileId,
+        frequency_per_day: u.frequencyPerDay,
+        ...(u.kind === "video" ? { parameters: u.parameters ?? {} } : {}),
+      })),
+    }),
+    signal,
+  });
+  if (!response.ok) {
+    throw new ApiError(response.status, "Failed to calculate impacts");
+  }
+  const body: CalculateResponseBody = await response.json();
+  return {
+    workingDaysPerYear: body.working_days_per_year,
+    usages: body.usages.map((u) => ({
+      useCaseId: u.use_case_id,
+      providerId: u.provider_id,
+      profileId: u.profile_id,
+      frequencyPerDay: u.frequency_per_day,
+      parameters: u.parameters,
+      unitImpacts: u.unit_impacts,
+      dailyImpacts: u.daily_impacts,
+      annualImpacts: u.annual_impacts,
+    })),
+    individualAnnual: body.individual_annual,
+    enterpriseAnnual: body.enterprise_annual,
+    providerBreakdown: body.provider_breakdown.map((s) => ({
+      providerId: s.provider_id,
+      annualImpacts: s.annual_impacts,
+      gwpSharePercent: s.gwp_share_percent,
+    })),
+    co2Equivalents: body.co2_equivalents.map((e) => ({
+      id: e.id,
+      impactCo2Slug: e.impact_co2_slug,
+      quantity: e.quantity,
     })),
   };
 }

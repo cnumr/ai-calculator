@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import lru_cache
 
 from ecologits.estimations.video import video_impacts
 from ecologits.tracers.utils import ImpactsOutput, llm_impacts
@@ -53,6 +54,8 @@ def _to_unit_impacts(result: ImpactsOutput, provider: str, model_name: str) -> U
     )
 
 
+# Impacts only depend on the arguments: cache them (errors are not cached).
+@lru_cache(maxsize=1024)
 def compute_unit_impacts(
     provider: str, model_name: str, output_tokens: int
 ) -> UnitImpacts:
@@ -65,6 +68,8 @@ def compute_unit_impacts(
     return _to_unit_impacts(result, provider, model_name)
 
 
+# Impacts only depend on the arguments: cache them (errors are not cached).
+@lru_cache(maxsize=1024)
 def compute_video_unit_impacts(
     model_name: str, resolution: str, duration_s: float, with_audio: bool
 ) -> UnitImpacts:

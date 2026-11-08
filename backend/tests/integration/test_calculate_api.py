@@ -1,20 +1,129 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from ai_calculator.main import app
 
 client = TestClient(app)
 
-VALID_PAYLOAD = {
-    "provider": "openai",
-    "model": "gpt-4o-mini",
-    "output_tokens": 200,
-    "requests_per_day": 10,
-    "headcount": 50,
+EMAIL = {
+    "kind": "text",
+    "use_case_id": "email",
+    "provider_id": "openai",
+    "profile_id": "eco",
+    "frequency_per_day": 3,
+}
+VIDEO = {
+    "kind": "video",
+    "use_case_id": "video",
+    "provider_id": "google",
+    "profile_id": "video",
+    "frequency_per_day": 1,
+    "parameters": {"resolution": "1080p"},
+}
+IMAGE = {
+    "kind": "image",
+    "use_case_id": "image",
+    "provider_id": "google",
+    "profile_id": "image",
+    "frequency_per_day": 2,
 }
 
 
-def test_legacy_calculate_endpoint_is_removed():
-    # L'agrégation annuelle est faite côté front à partir de GET /api/use-cases.
-    response = client.post("/api/calculate", json=VALID_PAYLOAD)
+def test_calculate_returns_usages_totals_breakdown_and_equivalents():
+    response = client.post(
+        "/api/calculate", json={"headcount": 10, "usages": [EMAIL, VIDEO, IMAGE]}
+    )
 
-    assert response.status_code == 404
+    assert response.status_code == 200
+    body = response.json()
+    assert body["working_days_per_year"] == 218
+    assert [u["use_case_id"] for u in body["usages"]] == ["email", "video", "image"]
+    email = body["usages"][0]
+    assert email["frequency_per_day"] == 3
+    assert email["daily_impacts"]["gwp"]["max"] == pytest.approx(
+        email["unit_impacts"]["gwp"]["max"] * 3
+    )
+    assert email["annual_impacts"]["gwp"]["max"] == pytest.approx(
+        email["daily_impacts"]["gwp"]["max"] * 218
+    )
+    individual_max = body["individual_annual"]["gwp"]["max"]
+    assert individual_max == pytest.approx(
+        sum(u["annual_impacts"]["gwp"]["max"] for u in body["usages"])
+    )
+    assert body["enterprise_annual"]["gwp"]["max"] == pytest.approx(individual_max * 10)
+    assert {s["provider_id"] for s in body["provider_breakdown"]} == {"openai", "google"}
+    assert sum(s["gwp_share_percent"] for s in body["provider_breakdown"]) == pytest.approx(100)
+    assert {e["impact_co2_slug"] for e in body["co2_equivalents"]} == {
+        "streamingvideo",
+        "smartphone",
+        "voiturethermique",
+    }
+
+
+def test_calculate_fills_in_video_parameter_defaults():
+    response = client.post("/api/calculate", json={"usages": [VIDEO]})
+
+    assert response.json()["usages"][0]["parameters"] == {
+        "resolution": "1080p",
+        "duration_s": 8,
+        "with_audio": True,
+    }
+
+
+def test_calculate_keeps_null_for_criteria_a_usage_does_not_measure():
+    body = client.post("/api/calculate", json={"usages": [IMAGE]}).json()
+
+    assert body["usages"][0]["annual_impacts"]["energy"] is None
+    assert body["individual_annual"]["energy"] == {"min": 0.0, "max": 0.0}
+
+
+def test_calculate_defaults_headcount_to_one():
+    body = client.post("/api/calculate", json={"usages": [EMAIL]}).json()
+
+    assert body["enterprise_annual"] == body["individual_annual"]
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        # parameters are only accepted for video usages
+        {"usages": [{**EMAIL, "parameters": {"resolution": "720p"}}]},
+        # unknown video parameter
+        {"usages": [{**VIDEO, "parameters": {"fps": 30}}]},
+        # unknown kind
+        {"usages": [{**EMAIL, "kind": "audio"}]},
+        {"usages": [{**EMAIL, "frequency_per_day": -1}]},
+        {"usages": [EMAIL], "headcount": 0},
+        {"usages": [EMAIL] * 51},
+    ],
+)
+def test_calculate_rejects_malformed_requests(payload):
+    assert client.post("/api/calculate", json=payload).status_code == 422
+
+
+@pytest.mark.parametrize(
+    "usage, message",
+    [
+        ({**EMAIL, "profile_id": "unknown"}, "profile 'unknown'"),
+        ({**EMAIL, "kind": "video"}, "kind 'video'"),
+        ({**VIDEO, "parameters": {"resolution": "4k"}}, "resolution"),
+        ({**VIDEO, "parameters": {"duration_s": 12}}, "duration_s"),
+    ],
+)
+def test_calculate_explains_invalid_selections(usage, message):
+    response = client.post("/api/calculate", json={"usages": [usage]})
+
+    assert response.status_code == 422
+    assert message in response.json()["detail"]
+
+
+def test_openapi_documents_parameters_per_use_case_kind():
+    schemas = client.get("/openapi.json").json()["components"]["schemas"]
+
+    assert "parameters" in schemas["VideoUsageIn"]["properties"]
+    assert "parameters" not in schemas["TextUsageIn"]["properties"]
+    assert set(schemas["VideoParametersIn"]["properties"]) == {
+        "resolution",
+        "duration_s",
+        "with_audio",
+    }

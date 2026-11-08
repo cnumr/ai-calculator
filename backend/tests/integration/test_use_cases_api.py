@@ -27,18 +27,6 @@ def test_get_use_cases_reflects_selected_by_default():
     assert providers_by_id["mistral"]["selected_by_default"] is False
 
 
-def test_get_use_cases_profile_carries_five_indicators_min_max():
-    response = client.get("/api/use-cases")
-
-    body = response.json()
-    email = next(uc for uc in body["use_cases"] if uc["id"] == "email")
-    openai_mapping = next(p for p in email["providers"] if p["provider_id"] == "openai")
-    eco_profile = next(p for p in openai_mapping["profiles"] if p["id"] == "eco")
-    for criterion in ("gwp", "energy", "adpe", "pe", "water"):
-        assert criterion in eco_profile["impacts"]
-        assert eco_profile["impacts"][criterion]["max"] >= eco_profile["impacts"][criterion]["min"]
-
-
 def test_get_use_cases_omits_unsupported_provider_combinations():
     response = client.get("/api/use-cases")
 
@@ -52,30 +40,6 @@ def test_get_use_cases_omits_unsupported_provider_combinations():
     assert image_provider_ids == {"google", "openai"}
 
 
-def test_get_use_cases_returns_null_for_unmeasured_static_criteria():
-    response = client.get("/api/use-cases")
-
-    body = response.json()
-    image = next(uc for uc in body["use_cases"] if uc["id"] == "image")
-    google_mapping = next(p for p in image["providers"] if p["provider_id"] == "google")
-    profile = google_mapping["profiles"][0]
-    assert profile["impacts"]["gwp"] is not None
-    assert profile["impacts"]["adpe"] is not None
-    assert profile["impacts"]["energy"] is None
-    assert profile["impacts"]["water"] is None
-    assert profile["impacts"]["pe"] is None
-
-
-def test_get_use_cases_returns_all_criteria_for_ecologits_video():
-    response = client.get("/api/use-cases")
-
-    body = response.json()
-    video = next(uc for uc in body["use_cases"] if uc["id"] == "video")
-    profile = video["providers"][0]["profiles"][0]
-    for criterion in ("gwp", "energy", "adpe", "pe", "water"):
-        assert profile["impacts"][criterion] is not None
-
-
 def test_get_use_cases_includes_cors_header_for_allowed_origin():
     response = client.get(
         "/api/use-cases", headers={"Origin": "http://localhost:5173"}
@@ -84,7 +48,7 @@ def test_get_use_cases_includes_cors_header_for_allowed_origin():
     assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
 
 
-def test_get_use_cases_serialises_video_parameters_and_variants():
+def test_get_use_cases_serialises_video_parameters():
     response = client.get("/api/use-cases")
 
     body = response.json()
@@ -97,13 +61,6 @@ def test_get_use_cases_serialises_video_parameters_and_variants():
         {"id": "duration_s", "options": [5, 8, 10], "default": 8},
         {"id": "with_audio", "options": [True, False], "default": True},
     ]
-    assert len(profile["variants"]) == 12
-    default_variant = next(
-        v
-        for v in profile["variants"]
-        if v["values"] == {"resolution": "720p", "duration_s": 8, "with_audio": True}
-    )
-    assert default_variant["impacts"] == profile["impacts"]
 
 
 def test_get_use_cases_gives_text_profiles_empty_parameters():
@@ -113,7 +70,6 @@ def test_get_use_cases_gives_text_profiles_empty_parameters():
     email = next(uc for uc in body["use_cases"] if uc["id"] == "email")
     profile = email["providers"][0]["profiles"][0]
     assert profile["parameters"] == []
-    assert profile["variants"] == []
 
 
 def test_get_use_cases_exposes_profile_model_names():
@@ -128,3 +84,22 @@ def test_get_use_cases_exposes_profile_model_names():
 
     video = next(uc for uc in body["use_cases"] if uc["id"] == "video")
     assert video["providers"][0]["profiles"][0]["output_tokens"] is None
+
+
+def test_get_use_cases_declares_the_kind_of_each_use_case():
+    body = client.get("/api/use-cases").json()
+
+    kinds = {uc["id"]: uc["kind"] for uc in body["use_cases"]}
+    assert kinds["video"] == "video"
+    assert kinds["image"] == "image"
+    assert kinds["email"] == "text"
+
+
+def test_get_use_cases_exposes_no_impacts():
+    # Impacts are computed by POST /api/calculate.
+    body = client.get("/api/use-cases").json()
+
+    for use_case in body["use_cases"]:
+        for mapping in use_case["providers"]:
+            for profile in mapping["profiles"]:
+                assert set(profile) == {"id", "parameters", "models", "output_tokens"}

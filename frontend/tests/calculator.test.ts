@@ -1,57 +1,62 @@
 import { describe, expect, it } from "vitest";
-import type { Impacts, Profile, UseCase } from "../src/api/client";
+import type { Profile, UsageRequest, UsageResult, UseCase } from "../src/api/client";
 import {
-  computeAnnualEntries,
-  resolveImpacts,
+  CardState,
+  buildCalculateRequest,
+  isUsageResultCurrent,
   resolveParameters,
   resolveSelection,
 } from "../src/domain/calculator";
 
-const ZERO = { min: 0, max: 0 };
-const gwpOnly = (value: number): Impacts => ({
-  gwp: { min: value, max: value },
-  energy: ZERO,
-  adpe: ZERO,
-  pe: ZERO,
-  water: ZERO,
-});
+const VIDEO_PROFILE: Profile = {
+  id: "video",
+  parameters: [
+    { id: "resolution", options: ["720p", "1080p"], defaultValue: "720p" },
+    { id: "duration_s", options: [5, 8, 10], defaultValue: 8 },
+  ],
+};
 
+// video is only offered by google; email falls back to openai without google.
 const VIDEO: UseCase = {
   id: "video",
-  providers: [
-    { providerId: "google", profiles: [{ id: "video", impacts: gwpOnly(1) }] },
-  ],
+  kind: "video",
+  providers: [{ providerId: "google", profiles: [VIDEO_PROFILE] }],
 };
 
 const EMAIL: UseCase = {
   id: "email",
+  kind: "text",
   providers: [
-    {
-      providerId: "openai",
-      profiles: [
-        { id: "eco", impacts: gwpOnly(10) },
-        { id: "powerful", impacts: gwpOnly(20) },
-      ],
-    },
-    { providerId: "google", profiles: [{ id: "eco", impacts: gwpOnly(100) }] },
+    { providerId: "openai", profiles: [{ id: "eco" }, { id: "powerful" }] },
+    { providerId: "google", profiles: [{ id: "eco" }] },
   ],
 };
 
+const state = (overrides: Partial<CardState> = {}): CardState => ({
+  providerId: "google",
+  profileId: "eco",
+  frequencyPerDay: 1,
+  parameters: {},
+  ...overrides,
+});
+
 describe("resolveSelection", () => {
   it("keeps the stored provider and profile when still offered", () => {
-    const { mapping, profile } = resolveSelection(EMAIL, ["openai", "google"], {
-      providerId: "openai",
-      profileId: "powerful",
-    });
+    const { mapping, profile } = resolveSelection(
+      EMAIL,
+      ["openai", "google"],
+      state({ providerId: "openai", profileId: "powerful" }),
+    );
     expect(mapping?.providerId).toBe("openai");
     expect(profile?.id).toBe("powerful");
   });
 
   it("falls back to the first offered provider and profile", () => {
-    const { mapping, profile } = resolveSelection(EMAIL, ["openai"], {
-      providerId: "google",
-      profileId: "missing",
-    });
+    const { mapping, profile } = resolveSelection(
+      EMAIL,
+      ["openai"],
+      state({ providerId: "google", profileId: "missing" }),
+    );
     expect(mapping?.providerId).toBe("openai");
     expect(profile?.id).toBe("eco");
   });
@@ -60,59 +65,13 @@ describe("resolveSelection", () => {
     const { offeredProviders, mapping, profile } = resolveSelection(
       VIDEO,
       ["openai"],
-      { providerId: "google", profileId: "video" },
+      state({ profileId: "video" }),
     );
     expect(offeredProviders).toEqual([]);
     expect(mapping).toBeUndefined();
     expect(profile).toBeUndefined();
   });
 });
-
-describe("computeAnnualEntries", () => {
-  const states = {
-    video: { providerId: "google", profileId: "video", frequencyPerDay: 1, parameters: {} },
-    email: { providerId: "google", profileId: "eco", frequencyPerDay: 2, parameters: {} },
-  };
-
-  it("scales each card by frequency and working days", () => {
-    const entries = computeAnnualEntries(
-      [VIDEO, EMAIL],
-      states,
-      ["openai", "google"],
-      10,
-    );
-    expect(entries).toEqual([
-      { providerId: "google", impacts: gwpOnly(10) },
-      { providerId: "google", impacts: gwpOnly(2000) },
-    ]);
-  });
-
-  it("skips unsupported cards and attributes fallbacks to the provider used", () => {
-    const entries = computeAnnualEntries([VIDEO, EMAIL], states, ["openai"], 10);
-    expect(entries).toEqual([{ providerId: "openai", impacts: gwpOnly(200) }]);
-  });
-
-  it("ignores use cases without a card state", () => {
-    expect(computeAnnualEntries([VIDEO], {}, ["google"], 10)).toEqual([]);
-  });
-});
-
-const VIDEO_PROFILE: Profile = {
-  id: "video",
-  impacts: gwpOnly(8),
-  parameters: [
-    { id: "resolution", options: ["720p", "1080p"], defaultValue: "720p" },
-    { id: "duration_s", options: [5, 8, 10], defaultValue: 8 },
-  ],
-  variants: [
-    { values: { resolution: "720p", duration_s: 5 }, impacts: gwpOnly(5) },
-    { values: { resolution: "720p", duration_s: 8 }, impacts: gwpOnly(8) },
-    { values: { resolution: "720p", duration_s: 10 }, impacts: gwpOnly(10) },
-    { values: { resolution: "1080p", duration_s: 5 }, impacts: gwpOnly(15) },
-    { values: { resolution: "1080p", duration_s: 8 }, impacts: gwpOnly(18) },
-    { values: { resolution: "1080p", duration_s: 10 }, impacts: gwpOnly(20) },
-  ],
-};
 
 describe("resolveParameters", () => {
   it("uses the defaults when nothing was chosen", () => {
@@ -137,47 +96,121 @@ describe("resolveParameters", () => {
   });
 
   it("returns no values for a profile without parameters", () => {
-    expect(resolveParameters({ id: "eco", impacts: gwpOnly(1) }, { a: 1 })).toEqual({});
+    expect(resolveParameters({ id: "eco" }, { a: 1 })).toEqual({});
   });
 });
 
-describe("resolveImpacts", () => {
-  it("returns the impacts of the variant matching the chosen values", () => {
-    expect(
-      resolveImpacts(VIDEO_PROFILE, { resolution: "1080p", duration_s: 10 }),
-    ).toEqual(gwpOnly(20));
-  });
+describe("buildCalculateRequest", () => {
+  const states = {
+    video: state({ profileId: "video", parameters: { resolution: "1080p" } }),
+    email: state({ frequencyPerDay: 3 }),
+  };
 
-  it("returns the default impacts when nothing was chosen", () => {
-    expect(resolveImpacts(VIDEO_PROFILE, {})).toEqual(gwpOnly(8));
-  });
+  it("sends one usage per card, with its kind and frequency", () => {
+    const request = buildCalculateRequest([VIDEO, EMAIL], states, ["openai", "google"], 50);
 
-  it("returns the profile impacts for a profile without variants", () => {
-    expect(resolveImpacts({ id: "eco", impacts: gwpOnly(1) }, {})).toEqual(
-      gwpOnly(1),
-    );
-  });
-});
-
-describe("computeAnnualEntries with parameters", () => {
-  it("uses the variant matching the card's chosen parameters", () => {
-    const useCase: UseCase = {
-      id: "video",
-      providers: [{ providerId: "google", profiles: [VIDEO_PROFILE] }],
-    };
-    const entries = computeAnnualEntries(
-      [useCase],
-      {
-        video: {
+    expect(request).toEqual({
+      headcount: 50,
+      usages: [
+        {
+          kind: "video",
+          useCaseId: "video",
           providerId: "google",
           profileId: "video",
           frequencyPerDay: 1,
-          parameters: { resolution: "1080p", duration_s: 5 },
+          parameters: { resolution: "1080p", duration_s: 8 },
         },
-      },
+        {
+          kind: "text",
+          useCaseId: "email",
+          providerId: "google",
+          profileId: "eco",
+          frequencyPerDay: 3,
+        },
+      ],
+    });
+  });
+
+  it("drops cards that no selected provider offers", () => {
+    const request = buildCalculateRequest([VIDEO, EMAIL], states, ["openai"], 1);
+
+    expect(request.usages.map((u) => u.useCaseId)).toEqual(["email"]);
+  });
+
+  it("sends the provider a card falls back to", () => {
+    const request = buildCalculateRequest([VIDEO, EMAIL], states, ["openai"], 1);
+
+    expect(request.usages[0]).toMatchObject({ providerId: "openai", profileId: "eco" });
+  });
+
+  it("ignores use cases without a card state", () => {
+    expect(buildCalculateRequest([VIDEO], {}, ["google"], 1).usages).toEqual([]);
+  });
+
+  it("is identical for identical card states (a reset sends the same scenario)", () => {
+    const first = buildCalculateRequest([VIDEO, EMAIL], states, ["google"], 1);
+    const again = buildCalculateRequest(
+      [VIDEO, EMAIL],
+      structuredClone(states),
       ["google"],
-      10,
+      1,
     );
-    expect(entries).toEqual([{ providerId: "google", impacts: gwpOnly(150) }]);
+
+    expect(again).toEqual(first);
+  });
+
+  it.each([
+    [0, 1],
+    [Number.NaN, 1],
+    [12.7, 12],
+  ])("sends a valid headcount (%s -> %s)", (headcount, expected) => {
+    expect(buildCalculateRequest([], {}, [], headcount).headcount).toBe(expected);
+  });
+
+  it("never sends a negative or invalid frequency", () => {
+    const request = buildCalculateRequest(
+      [EMAIL],
+      { email: state({ frequencyPerDay: Number.NaN }) },
+      ["google"],
+      1,
+    );
+
+    expect(request.usages[0].frequencyPerDay).toBe(0);
+  });
+});
+
+describe("isUsageResultCurrent", () => {
+  const usage: UsageRequest = {
+    kind: "video",
+    useCaseId: "video",
+    providerId: "google",
+    profileId: "video",
+    frequencyPerDay: 2,
+    parameters: { resolution: "1080p" },
+  };
+  const ZERO = { min: 0, max: 0 };
+  const impacts = { gwp: ZERO, energy: ZERO, adpe: ZERO, pe: ZERO, water: ZERO };
+  const result: UsageResult = {
+    useCaseId: "video",
+    providerId: "google",
+    profileId: "video",
+    frequencyPerDay: 2,
+    parameters: { resolution: "1080p", duration_s: 8 },
+    unitImpacts: impacts,
+    dailyImpacts: impacts,
+    annualImpacts: impacts,
+  };
+
+  it("is current when the selection, frequency and parameters match", () => {
+    expect(isUsageResultCurrent(usage, result)).toBe(true);
+  });
+
+  it.each([
+    ["provider", { providerId: "openai" }],
+    ["profile", { profileId: "video_fast" }],
+    ["frequency", { frequencyPerDay: 3 }],
+    ["parameter", { parameters: { resolution: "720p" } }],
+  ])("is stale when the %s changed", (_, change) => {
+    expect(isUsageResultCurrent({ ...usage, ...change }, result)).toBe(false);
   });
 });

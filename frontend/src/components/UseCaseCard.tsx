@@ -2,10 +2,8 @@ import { useTranslation } from "react-i18next";
 import type { Impacts, ParameterValue, Profile, UseCase } from "../api/client";
 import { RangeGauge } from "./RangeGauge";
 import { ImpactIcon, isImpactCriterion } from "./ImpactIcon";
-import { scaleImpacts } from "../domain/aggregate";
 import {
   CardState,
-  resolveImpacts,
   resolveParameters,
   resolveSelection,
 } from "../domain/calculator";
@@ -51,6 +49,13 @@ interface UseCaseCardProps {
   frequencyPerDay: number;
   /** Parameter values chosen by the user (see CardState.parameters). */
   parameters?: Record<string, ParameterValue>;
+  /**
+   * Impacts for the day (one action × frequency), computed by the backend;
+   * null before the first calculation.
+   */
+  dailyImpacts?: Impacts | null;
+  /** True while the shown impacts do not match the current selection yet. */
+  pending?: boolean;
   onChange: (next: CardState) => void;
 }
 
@@ -61,6 +66,8 @@ export function UseCaseCard({
   profileId,
   frequencyPerDay,
   parameters = {},
+  dailyImpacts = null,
+  pending = false,
   onChange,
 }: UseCaseCardProps) {
   const { t, i18n } = useTranslation();
@@ -78,9 +85,7 @@ export function UseCaseCard({
   const parameterValues = currentProfile
     ? resolveParameters(currentProfile, parameters)
     : {};
-  const scaledImpacts = currentProfile
-    ? scaleImpacts(resolveImpacts(currentProfile, parameters), frequencyPerDay)
-    : null;
+  const scaledImpacts = currentProfile ? dailyImpacts : null;
 
   function optionLabel(parameterId: string, value: ParameterValue): string {
     if (parameterId === "duration_s") {
@@ -120,7 +125,10 @@ export function UseCaseCard({
   }
 
   return (
-    <article className="use-case-card">
+    <article
+      className={`use-case-card${pending ? " use-case-card--pending" : ""}`}
+      aria-busy={pending || undefined}
+    >
       <header className="use-case-card__header">
         {USE_CASE_ICONS[useCase.id] && (
           <img src={USE_CASE_ICONS[useCase.id]} alt="" role="img" />
@@ -214,11 +222,11 @@ export function UseCaseCard({
               )}
             </div>
 
-            {scaledImpacts && (
+            {currentProfile && (
               <div className="use-case-card__primary-impacts">
                 <dl className="use-case-card__summary">
                   {SUMMARY_CRITERIA.map(({ key, unit }) => {
-                    const range = scaledImpacts[key];
+                    const range = scaledImpacts ? scaledImpacts[key] : undefined;
                     const value = range && scaleRange(range.min, range.max, unit);
                     return (
                       <div key={key}>
@@ -230,9 +238,11 @@ export function UseCaseCard({
                           />
                         </dt>
                         <dd>
-                          {value
-                            ? `${formatNumber((value.min + value.max) / 2, locale)} ${value.unit}`
-                            : t("calculator.notAvailable")}
+                          {range === undefined
+                            ? "…"
+                            : value
+                              ? `${formatNumber((value.min + value.max) / 2, locale)} ${value.unit}`
+                              : t("calculator.notAvailable")}
                         </dd>
                       </div>
                     );

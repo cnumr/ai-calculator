@@ -31,6 +31,11 @@ providers:
     selected_by_default: true
   - id: microsoft_copilot
     selected_by_default: true
+# Each use case declares its kind, which sets how its impacts are computed
+# and which parameters POST /api/calculate accepts for it:
+#   text  -> EcoLogits LLM (ecologits_model + output_tokens), no parameter
+#   video -> EcoLogits video (ecologits_video), resolution / duration / audio
+#   image -> static_impacts declared below, no parameter
 use_cases:
   # Video: computed by EcoLogits (estimations.video) for one generated clip.
   # The user can change resolution, duration and audio: their options come
@@ -41,6 +46,7 @@ use_cases:
   # Replaces the POC V1 static value (veo-2, 377 g CO2eq, no published
   # source; veo-2 is not modelled by EcoLogits).
   - id: video
+    kind: video
     default_provider: google
     recommended_tier: video
     providers:
@@ -78,6 +84,7 @@ use_cases:
   # missing source on the card (i18n key useCases.image.dataNote). Candidate
   # source reviewed: Luccioni et al., "Power Hungry Processing" (FAccT 2024).
   - id: image
+    kind: image
     default_provider: google
     recommended_tier: image
     providers:
@@ -110,6 +117,7 @@ use_cases:
               water: null
               pe: null
   - id: deep_research
+    kind: text
     default_provider: openai
     recommended_tier: research
     providers:
@@ -190,6 +198,7 @@ use_cases:
   # id shortened from the design spec's "meeting_summary" to match the
   # pre-existing asset filename (assets/use-cases/meet_summary.svg)
   - id: meet_summary
+    kind: text
     default_provider: microsoft_copilot
     recommended_tier: eco
     providers:
@@ -268,6 +277,7 @@ use_cases:
             ecologits_model: claude-sonnet-4-5
             output_tokens: 8000
   - id: doc_small
+    kind: text
     default_provider: openai
     recommended_tier: eco
     providers:
@@ -346,6 +356,7 @@ use_cases:
             ecologits_model: claude-sonnet-4-5
             output_tokens: 3000
   - id: doc_large
+    kind: text
     default_provider: openai
     recommended_tier: balanced
     providers:
@@ -424,6 +435,7 @@ use_cases:
             ecologits_model: claude-sonnet-4-5
             output_tokens: 15000
   - id: ai_query
+    kind: text
     default_provider: google
     recommended_tier: eco
     providers:
@@ -502,6 +514,7 @@ use_cases:
             ecologits_model: claude-sonnet-4-5
             output_tokens: 1000
   - id: email
+    kind: text
     default_provider: microsoft_copilot
     recommended_tier: eco
     providers:

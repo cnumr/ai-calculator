@@ -74,6 +74,7 @@
       "video_fast": "Rapide"
     },
     "assumptionTokens": "Hypothèse de calcul : {{value}} tokens générés par action",
+    "calculating": "Calcul en cours…",
     "perDayShort": "/jour",
     "customize": "Personnaliser : {{values}}",
     "parameter": {
