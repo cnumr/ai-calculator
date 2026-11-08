@@ -278,8 +278,8 @@ describe("UseCaseCard", () => {
       ),
     );
 
-    expect(screen.getByText(/min 3\.00 gCO2eq/)).toBeInTheDocument();
-    expect(screen.getByText(/max 6\.00 gCO2eq/)).toBeInTheDocument();
+    expect(screen.getByText(/min 3\.00 g CO2eq/)).toBeInTheDocument();
+    expect(screen.getByText(/max 6\.00 g CO2eq/)).toBeInTheDocument();
   });
 
   it("shows scaled midpoint GHG and water values without opening details", () => {
@@ -302,7 +302,7 @@ describe("UseCaseCard", () => {
       within(summary!)
         .getByTitle(/greenhouse gases|gaz à effet de serre/i)
         .closest<HTMLDivElement>("div"),
-    ).toHaveTextContent(/3\.00 gCO2eq/);
+    ).toHaveTextContent(/3\.00 g CO2eq/);
     expect(
       within(summary!)
         .getByTitle(/water|eau/i)
@@ -324,7 +324,7 @@ describe("UseCaseCard", () => {
     await user.type(screen.getByLabelText("Frequency per day"), "2");
 
     expect(summaryMetric(/greenhouse gases/i)).toHaveTextContent(
-      "3.00 gCO2eq",
+      "3.00 g CO2eq",
     );
     expect(summaryMetric(/^water$/i)).toHaveTextContent("3.00 mL");
   });
@@ -337,9 +337,9 @@ describe("UseCaseCard", () => {
     await user.selectOptions(screen.getByLabelText("Profil"), "powerful");
 
     expect(summaryMetric(/gaz à effet de serre/i)).toHaveTextContent(
-      "6.50 gCO2eq",
+      "6,50 g CO2eq",
     );
-    expect(summaryMetric(/^eau$/i)).toHaveTextContent("6.50 mL");
+    expect(summaryMetric(/^eau$/i)).toHaveTextContent("6,50 mL");
   });
 
   it("updates the visible summary when the provider changes", async () => {
@@ -348,14 +348,14 @@ describe("UseCaseCard", () => {
     render(<InteractiveUseCaseCard />);
 
     expect(summaryMetric(/greenhouse gases/i)).toHaveTextContent(
-      "1.50 gCO2eq",
+      "1.50 g CO2eq",
     );
     expect(summaryMetric(/^water$/i)).toHaveTextContent("1.50 mL");
 
     await user.selectOptions(screen.getByLabelText("Provider"), "anthropic");
 
     expect(summaryMetric(/greenhouse gases/i)).toHaveTextContent(
-      "3.50 gCO2eq",
+      "3.50 g CO2eq",
     );
     expect(summaryMetric(/^water$/i)).toHaveTextContent("3.50 mL");
     expect(
@@ -444,6 +444,44 @@ describe("UseCaseCard", () => {
     expect(
       within(details!).getAllByText(/non disponible|not available/i),
     ).toHaveLength(3);
-    expect(screen.getByText(/min 370 gCO2eq/)).toBeInTheDocument();
+    expect(screen.getByText(/min 370 g CO2eq/)).toBeInTheDocument();
+  });
+});
+
+describe("UseCaseCard data-source note", () => {
+  const IMAGE: UseCase = {
+    id: "image",
+    providers: [
+      { providerId: "google", profiles: [{ id: "image", impacts: ZERO_IMPACTS }] },
+    ],
+  };
+
+  function renderCard(useCase: UseCase, providerId: string, profileId: string) {
+    render(
+      <UseCaseCard
+        useCase={useCase}
+        availableProviderIds={[providerId]}
+        providerId={providerId}
+        profileId={profileId}
+        frequencyPerDay={1}
+        onChange={() => {}}
+      />,
+    );
+  }
+
+  it("warns that image values have no published source", async () => {
+    await i18n.changeLanguage("fr");
+    renderCard(IMAGE, "google", "image");
+
+    expect(screen.getByRole("note")).toHaveTextContent(
+      "Valeur indicative, sans source publiée à ce jour.",
+    );
+  });
+
+  it("shows no note for use cases computed by EcoLogits", async () => {
+    await i18n.changeLanguage("en");
+    renderCard(EMAIL, "openai", "eco");
+
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
 });

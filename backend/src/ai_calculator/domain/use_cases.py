@@ -9,6 +9,7 @@ from ai_calculator.domain.impacts import (
     ModelNotFoundError,
     UnitImpacts,
     compute_unit_impacts,
+    compute_video_unit_impacts,
 )
 
 DEFAULT_USE_CASES_PATH = (
@@ -94,11 +95,30 @@ def _resolve_llm_profile(profile_id: str, profile: dict, context: str) -> Resolv
     return ResolvedProfile(id=profile_id, impacts=impacts)
 
 
+def _resolve_video_profile(profile_id: str, video: dict, context: str) -> ResolvedProfile:
+    model = _require(video, "model", context)
+    resolution = _require(video, "resolution", context)
+    duration_s = _require(video, "duration_s", context)
+    with_audio = _require(video, "with_audio", context)
+    try:
+        impacts = compute_video_unit_impacts(
+            model_name=str(model),
+            resolution=str(resolution),
+            duration_s=float(duration_s),
+            with_audio=bool(with_audio),
+        )
+    except (ModelNotFoundError, EcologitsComputationError) as exc:
+        raise UseCasesConfigError(f"{context}: {exc}") from exc
+    return ResolvedProfile(id=profile_id, impacts=impacts)
+
+
 def _resolve_profile(profile: dict, context: str) -> ResolvedProfile:
     profile_id = _require(profile, "id", context)
     profile_context = f"{context} profile '{profile_id}'"
     if "static_impacts" in profile:
         return _resolve_static_profile(profile_id, profile["static_impacts"], profile_context)
+    if "ecologits_video" in profile:
+        return _resolve_video_profile(profile_id, profile["ecologits_video"], profile_context)
     return _resolve_llm_profile(profile_id, profile, profile_context)
 
 

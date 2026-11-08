@@ -11,7 +11,11 @@
   },
   "useCases": {
     "video": { "name": "Video generation", "subtitle": "Veo, Runway, Sora..." },
-    "image": { "name": "Image generation", "subtitle": "Illustrations and visuals" },
+    "image": {
+      "name": "Image generation",
+      "subtitle": "Illustrations and visuals",
+      "dataNote": "Indicative value, no published source yet."
+    },
     "deep_research": { "name": "Deep research", "subtitle": "Multi-step research" },
     "meet_summary": { "name": "Meeting summary", "subtitle": "Meet, Teams, video calls" },
     "doc_small": { "name": "Writing a short document", "subtitle": "Notes and short summaries" },
@@ -82,9 +86,11 @@
     "retry": "Retry",
     "reset": "Reset",
     "co2Equivalent": {
-      "car_km": "{{count}} km by car",
-      "streaming_hour": "{{count}} hours of video streaming"
-      ,"smartphone": "{{count}} smartphone"
+      "car_km": "{{value}} km by car",
+      "streaming_hour_one": "{{value}} hour of video streaming",
+      "streaming_hour_other": "{{value}} hours of video streaming",
+      "smartphone_one": "{{value}} smartphone",
+      "smartphone_other": "{{value}} smartphones"
     }
     ,"co2EquivalentsHeading": "Individual equivalents",
     "compareOnImpactCo2": "Compare on ImpactCO2.fr"

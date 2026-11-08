@@ -1,14 +1,19 @@
 import { useTranslation } from "react-i18next";
-// kgCo2eqPerUnit values in co2-equivalents.json are illustrative placeholders;
-// replace with exact figures from ImpactCO2's equivalents.csv before merging.
-import equivalents from "../data/co2-equivalents.json";
+// Emission factors from ImpactCO2 (ADEME); source and update procedure are
+// recorded in the JSON file itself.
+import co2Equivalents from "../data/co2-equivalents.json";
+import { formatInteger } from "../domain/units";
+
+const { equivalents } = co2Equivalents;
+const IMPACT_CO2_SLUGS = equivalents.map((eq) => eq.impactCo2Slug).join(",");
 
 interface Co2EquivalentsProps {
   gwpKgCo2eq: number;
 }
 
 export function Co2Equivalents({ gwpKgCo2eq }: Co2EquivalentsProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language;
 
   return (
     <section className="co2-equivalents" aria-labelledby="co2-equivalents-heading">
@@ -25,12 +30,15 @@ export function Co2Equivalents({ gwpKgCo2eq }: Co2EquivalentsProps) {
                   {eq.id === "smartphone" && <><rect x="7" y="3" width="10" height="18" rx="2" /><path d="M10 6h4M11 18h2" /></>}
                 </svg>
               </span>
-             {t(`calculator.co2Equivalent.${eq.id}`, { count })}
+             {t(`calculator.co2Equivalent.${eq.id}`, {
+               count,
+               value: formatInteger(count, locale),
+             })}
             </li>
           );
         })}
       </ul>
-      <a className="co2-equivalents__link" href={`https://impactco2.fr/outils/comparateur?value=${gwpKgCo2eq.toFixed(2)}&comparisons=streamingvideo,smartphone,voiturethermique&language=fr`} target="_blank" rel="noreferrer">
+      <a className="co2-equivalents__link" href={`https://impactco2.fr/outils/comparateur?value=${gwpKgCo2eq.toFixed(2)}&comparisons=${IMPACT_CO2_SLUGS}&language=${locale}`} target="_blank" rel="noreferrer">
         {t("calculator.compareOnImpactCo2")}
       </a>
     </section>

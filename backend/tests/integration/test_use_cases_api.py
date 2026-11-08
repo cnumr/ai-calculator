@@ -56,14 +56,24 @@ def test_get_use_cases_returns_null_for_unmeasured_static_criteria():
     response = client.get("/api/use-cases")
 
     body = response.json()
-    video = next(uc for uc in body["use_cases"] if uc["id"] == "video")
-    google_mapping = next(p for p in video["providers"] if p["provider_id"] == "google")
+    image = next(uc for uc in body["use_cases"] if uc["id"] == "image")
+    google_mapping = next(p for p in image["providers"] if p["provider_id"] == "google")
     profile = google_mapping["profiles"][0]
     assert profile["impacts"]["gwp"] is not None
     assert profile["impacts"]["adpe"] is not None
     assert profile["impacts"]["energy"] is None
     assert profile["impacts"]["water"] is None
     assert profile["impacts"]["pe"] is None
+
+
+def test_get_use_cases_returns_all_criteria_for_ecologits_video():
+    response = client.get("/api/use-cases")
+
+    body = response.json()
+    video = next(uc for uc in body["use_cases"] if uc["id"] == "video")
+    profile = video["providers"][0]["profiles"][0]
+    for criterion in ("gwp", "energy", "adpe", "pe", "water"):
+        assert profile["impacts"][criterion] is not None
 
 
 def test_get_use_cases_includes_cors_header_for_allowed_origin():

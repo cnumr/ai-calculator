@@ -314,11 +314,11 @@ describe("CalculatorPage annual totals stay consistent with the cards", () => {
 
     // (1 + 100) kg x 218 days = 22 018 kg
     await waitFor(() =>
-      expect(individualSummary(container)).toBe("22.0 tCO2eq"),
+      expect(individualSummary(container)).toBe("22.0 t CO2eq"),
     );
     await user.click(screen.getByRole("button", { name: /réinitialiser|reset/i }));
 
-    expect(individualSummary(container)).toBe("22.0 tCO2eq");
+    expect(individualSummary(container)).toBe("22.0 t CO2eq");
   });
 
   it("drops a card no longer offered by any selected provider from the totals", async () => {
@@ -327,13 +327,13 @@ describe("CalculatorPage annual totals stay consistent with the cards", () => {
 
     const { container } = render(<CalculatorPage />);
     await waitFor(() =>
-      expect(individualSummary(container)).toBe("22.0 tCO2eq"),
+      expect(individualSummary(container)).toBe("22.0 t CO2eq"),
     );
 
     await user.click(screen.getByRole("button", { name: /google/i }));
 
     // video is unsupported, email falls back to openai: 10 kg x 218 = 2 180 kg
-    expect(individualSummary(container)).toBe("2.18 tCO2eq");
+    expect(individualSummary(container)).toBe("2.18 t CO2eq");
   });
 
   it("attributes a card to the provider it falls back to", async () => {
@@ -342,7 +342,7 @@ describe("CalculatorPage annual totals stay consistent with the cards", () => {
 
     const { container } = render(<CalculatorPage />);
     await waitFor(() =>
-      expect(individualSummary(container)).toBe("22.0 tCO2eq"),
+      expect(individualSummary(container)).toBe("22.0 t CO2eq"),
     );
 
     await user.click(screen.getByRole("button", { name: /google/i }));

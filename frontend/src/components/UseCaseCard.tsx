@@ -59,7 +59,8 @@ export function UseCaseCard({
   frequencyPerDay,
   onChange,
 }: UseCaseCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language;
 
   const {
     offeredProviders,
@@ -73,6 +74,9 @@ export function UseCaseCard({
   const scaledImpacts = currentProfile
     ? scaleImpacts(currentProfile.impacts, frequencyPerDay)
     : null;
+
+  // Optional per-use-case caveat about where its impact values come from.
+  const dataNote = t(`useCases.${useCase.id}.dataNote`, { defaultValue: "" });
 
   const inputIdPrefix = `use-case-${useCase.id}`;
 
@@ -191,13 +195,29 @@ export function UseCaseCard({
                       </dt>
                       <dd>
                         {value
-                          ? `${formatNumber((value.min + value.max) / 2)} ${value.unit}`
+                          ? `${formatNumber((value.min + value.max) / 2, locale)} ${value.unit}`
                           : t("calculator.notAvailable")}
                       </dd>
                     </div>
                   );
                 })}
               </dl>
+              {dataNote && (
+                <p className="use-case-card__data-note" role="note">
+                  <svg
+                    className="use-case-card__data-note-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 16v-4M12 8h.01" />
+                  </svg>
+                  <span>{dataNote}</span>
+                </p>
+              )}
             </div>
           )}
 

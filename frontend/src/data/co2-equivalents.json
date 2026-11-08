@@ -1,5 +1,34 @@
-[
-  { "id": "streaming_hour", "kgCo2eqPerUnit": 0.064 },
-  { "id": "smartphone", "kgCo2eqPerUnit": 80.5 },
-  { "id": "car_km", "kgCo2eqPerUnit": 0.1423 }
-]
+{
+  "source": {
+    "name": "ImpactCO2 (ADEME)",
+    "dataset": "https://impactco2.fr/equivalents.csv",
+    "retrievedOn": "2026-11-08",
+    "update": "Copy the value column of each slug from the dataset; slugs are ImpactCO2 identifiers."
+  },
+  "equivalents": [
+    {
+      "id": "streaming_hour",
+      "impactCo2Slug": "streamingvideo",
+      "kgCo2eqPerUnit": 0.06401675291000002,
+      "unit": "1 hour of video streaming (ImpactCO2 default parameters)",
+      "basis": "Base Empreinte ADEME",
+      "url": "https://impactco2.fr/outils/usagenumerique/streamingvideo"
+    },
+    {
+      "id": "smartphone",
+      "impactCo2Slug": "smartphone",
+      "kgCo2eqPerUnit": 80.155343125,
+      "unit": "1 smartphone, full life cycle (manufacturing, 2.5 years of use, end of life)",
+      "basis": "Étude ADEME / ARCEP, mise à jour 2025",
+      "url": "https://impactco2.fr/outils/numerique/smartphone"
+    },
+    {
+      "id": "car_km",
+      "impactCo2Slug": "voiturethermique",
+      "kgCo2eqPerUnit": 0.14225341222954335,
+      "unit": "1 km in an average thermal car (manufacturing and fuel)",
+      "basis": "Modélisation de l'empreinte carbone de la voiture, 2025",
+      "url": "https://impactco2.fr/outils/transport/voiturethermique"
+    }
+  ]
+}

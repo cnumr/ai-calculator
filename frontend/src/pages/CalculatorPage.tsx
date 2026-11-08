@@ -111,7 +111,8 @@ function ProviderBreakdown({
 }: {
   breakdown: Record<string, Impacts>;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language;
   const entries = Object.entries(breakdown);
   if (entries.length === 0) return null;
 
@@ -135,12 +136,12 @@ function ProviderBreakdown({
               <strong>
                 {t(`providers.${providerId}`, { defaultValue: providerId })}
               </strong>{" "}
-              {formatNumber(scaled.min)} – {formatNumber(scaled.max)}{" "}
+              {formatNumber(scaled.min, locale)} – {formatNumber(scaled.max, locale)}{" "}
               {scaled.unit}
               <span className="provider-breakdown__share">
-                {formatNumber(percentage)} %
+                {formatNumber(percentage, locale)} %
               </span>
-              <meter min="0" max="100" value={percentage} aria-label={`${t(`providers.${providerId}`, { defaultValue: providerId })}: ${formatNumber(percentage)} %`} />
+              <meter min="0" max="100" value={percentage} aria-label={`${t(`providers.${providerId}`, { defaultValue: providerId })}: ${formatNumber(percentage, locale)} %`} />
             </li>
           );
         })}

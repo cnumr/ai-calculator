@@ -64,6 +64,71 @@ def test_load_catalog_resolves_llm_and_static_profiles(tmp_path):
     assert static_profile.impacts.pe is None
 
 
+def test_load_catalog_resolves_video_profiles_with_ecologits(tmp_path):
+    config_file = tmp_path / "use_cases.yaml"
+    config_file.write_text(
+        """
+providers:
+  - id: google
+    selected_by_default: true
+use_cases:
+  - id: video
+    default_provider: google
+    recommended_tier: video
+    providers:
+      - provider_id: google
+        profiles:
+          - id: video
+            ecologits_video:
+              model: google/veo-3.0
+              resolution: 720p
+              duration_s: 8
+              with_audio: true
+"""
+    )
+
+    catalog = load_catalog(config_file)
+
+    profile = catalog.use_cases[0].providers[0].profiles[0]
+    assert profile.id == "video"
+    for range_ in (
+        profile.impacts.gwp,
+        profile.impacts.energy,
+        profile.impacts.adpe,
+        profile.impacts.pe,
+        profile.impacts.water,
+    ):
+        assert range_ is not None
+        assert range_.max >= range_.min > 0
+
+
+def test_load_catalog_raises_on_unknown_video_model(tmp_path):
+    config_file = tmp_path / "use_cases.yaml"
+    config_file.write_text(
+        """
+providers:
+  - id: google
+    selected_by_default: true
+use_cases:
+  - id: video
+    default_provider: google
+    recommended_tier: video
+    providers:
+      - provider_id: google
+        profiles:
+          - id: video
+            ecologits_video:
+              model: google/veo-2
+              resolution: 720p
+              duration_s: 8
+              with_audio: true
+"""
+    )
+
+    with pytest.raises(UseCasesConfigError):
+        load_catalog(config_file)
+
+
 def test_load_catalog_raises_on_unknown_ecologits_model(tmp_path):
     config_file = tmp_path / "use_cases.yaml"
     config_file.write_text(
@@ -122,3 +187,14 @@ def test_load_catalog_default_path_loads_real_config():
 
     assert len(catalog.providers) == 5
     assert len(catalog.use_cases) == 8
+
+
+def test_real_config_computes_video_with_ecologits():
+    catalog = load_catalog()
+
+    video = next(uc for uc in catalog.use_cases if uc.id == "video")
+    profile = video.providers[0].profiles[0]
+    # Every criterion is available once video comes from EcoLogits.
+    assert profile.impacts.energy is not None
+    assert profile.impacts.water is not None
+    assert profile.impacts.pe is not None

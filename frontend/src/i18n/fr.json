@@ -11,7 +11,11 @@
   },
   "useCases": {
     "video": { "name": "Génération de vidéos", "subtitle": "Veo, Runway, Sora..." },
-    "image": { "name": "Génération d'images", "subtitle": "Illustrations et visuels" },
+    "image": {
+      "name": "Génération d'images",
+      "subtitle": "Illustrations et visuels",
+      "dataNote": "Valeur indicative, sans source publiée à ce jour."
+    },
     "deep_research": { "name": "Recherche approfondie", "subtitle": "Recherche multi-étapes" },
     "meet_summary": { "name": "Résumé de réunion", "subtitle": "Meet, Teams, visioconférence" },
     "doc_small": { "name": "Rédaction d'un document court", "subtitle": "Notes et synthèses courtes" },
@@ -82,9 +86,11 @@
     "retry": "Réessayer",
     "reset": "Réinitialiser",
     "co2Equivalent": {
-      "car_km": "{{count}} km en voiture",
-      "streaming_hour": "{{count}} heures de streaming vidéo"
-      ,"smartphone": "{{count}} smartphone"
+      "car_km": "{{value}} km en voiture",
+      "streaming_hour_one": "{{value}} heure de streaming vidéo",
+      "streaming_hour_other": "{{value}} heures de streaming vidéo",
+      "smartphone_one": "{{value}} smartphone",
+      "smartphone_other": "{{value}} smartphones"
     }
     ,"co2EquivalentsHeading": "Équivalences individuelles",
     "compareOnImpactCo2": "Comparer sur ImpactCO2.fr"

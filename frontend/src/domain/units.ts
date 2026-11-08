@@ -3,18 +3,20 @@ interface UnitStep {
   factor: number;
 }
 
+// Keys are base-unit identifiers used across the app (e.g. "kgCO2eq");
+// `unit` is the label displayed to users.
 const LADDERS: Record<string, UnitStep[]> = {
   kgCO2eq: [
-    { unit: "mgCO2eq", factor: 1e6 },
-    { unit: "gCO2eq", factor: 1e3 },
-    { unit: "kgCO2eq", factor: 1 },
-    { unit: "tCO2eq", factor: 1e-3 },
+    { unit: "mg CO2eq", factor: 1e6 },
+    { unit: "g CO2eq", factor: 1e3 },
+    { unit: "kg CO2eq", factor: 1 },
+    { unit: "t CO2eq", factor: 1e-3 },
   ],
   kgSbeq: [
-    { unit: "mgSbeq", factor: 1e6 },
-    { unit: "gSbeq", factor: 1e3 },
-    { unit: "kgSbeq", factor: 1 },
-    { unit: "tSbeq", factor: 1e-3 },
+    { unit: "mg Sbeq", factor: 1e6 },
+    { unit: "g Sbeq", factor: 1e3 },
+    { unit: "kg Sbeq", factor: 1 },
+    { unit: "t Sbeq", factor: 1e-3 },
   ],
   kWh: [
     { unit: "Wh", factor: 1e3 },
@@ -66,11 +68,26 @@ export function scaleRange(
   return { min: min * step.factor, max: max * step.factor, unit: step.unit };
 }
 
-export function formatNumber(value: number): string {
+/**
+ * Formats a value with three significant digits (no scientific notation),
+ * using the decimal and grouping separators of `locale` (e.g. "1,20" in
+ * French, "1.20" in English).
+ */
+export function formatNumber(value: number, locale: string): string {
   if (value === 0) {
     return "0";
   }
   const exponent = Math.floor(Math.log10(Math.abs(value)));
   const decimals = Math.min(20, Math.max(0, 2 - exponent));
-  return value.toFixed(decimals);
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value);
+}
+
+/** Formats a value rounded to an integer, grouped according to `locale`. */
+export function formatInteger(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(
+    value,
+  );
 }

@@ -8,7 +8,8 @@ interface GwpSummaryProps {
 }
 
 export function GwpSummary({ impact, scope }: GwpSummaryProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language;
   if (!impact) return null;
 
   const range = scaleRange(impact.min, impact.max, "kgCO2eq");
@@ -18,12 +19,12 @@ export function GwpSummary({ impact, scope }: GwpSummaryProps) {
     <section className="gwp-summary" aria-labelledby={`gwp-summary-${scope}`}>
       <h3 id={`gwp-summary-${scope}`}>{t(`calculator.gwpSummary.${scope}`)}</h3>
       <p className="gwp-summary__value">
-        {formatNumber(midpoint)} <span>{range.unit}</span>
+        {formatNumber(midpoint, locale)} <span>{range.unit}</span>
       </p>
       <p className="gwp-summary__range">
         {t("calculator.gwpSummary.range", {
-          min: formatNumber(range.min),
-          max: formatNumber(range.max),
+          min: formatNumber(range.min, locale),
+          max: formatNumber(range.max, locale),
           unit: range.unit,
         })}
       </p>

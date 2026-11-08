@@ -10,6 +10,11 @@ providers:
   - id: microsoft_copilot
     selected_by_default: true
 use_cases:
+  # Video: computed by EcoLogits (estimations.video) for one generated clip.
+  # Reference clip: 8 s (Veo's native length), 720p, with audio. The
+  # datacenter is the model provider's EcoLogits configuration.
+  # Replaces the POC V1 static value (veo-2, 377 g CO2eq, no published
+  # source; veo-2 is not modelled by EcoLogits).
   - id: video
     default_provider: google
     recommended_tier: video
@@ -17,16 +22,19 @@ use_cases:
       - provider_id: google
         profiles:
           - id: video
-            static_impacts:
-              gwp:
-                min: 0.377061
-                max: 0.377061
-              adpe:
-                min: 8.102e-06
-                max: 8.102e-06
-              energy: null
-              water: null
-              pe: null
+            ecologits_video:
+              model: google/veo-3.0
+              resolution: 720p
+              duration_s: 8
+              with_audio: true
+  # Image: EcoLogits does not model image generation. These static values
+  # (per generated image, kg CO2eq and kg Sbeq) come from the POC V1
+  # (https://ia-calculator.greenit.eco, entries "gemini-2.5-flash-image" and
+  # "dall-e-3", 12 568 mg / 12 500 mg CO2eq), which cites no published source
+  # and states that they include a broader infrastructure estimate.
+  # Kept deliberately until a published source is adopted; the UI flags the
+  # missing source on the card (i18n key useCases.image.dataNote). Candidate
+  # source reviewed: Luccioni et al., "Power Hungry Processing" (FAccT 2024).
   - id: image
     default_provider: google
     recommended_tier: image
