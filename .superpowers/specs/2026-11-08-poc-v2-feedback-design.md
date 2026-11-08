@@ -26,6 +26,7 @@ Hors périmètre de cette spec : mentions légales et page « À propos » (text
 
 - Brice signale que les tokens ne correspondent ni à son POC initial ni à EcoLogits (ex. mail : 300 tokens chez nous, 250 chez EcoLogits).
 - **À confirmer par l'équipe** : le nombre de tokens de chaque use case. Sans cette décision, les écarts entre notre calculateur et EcoLogits restent inexpliqués.
+- Remarque de Renaud (non remontée par Brice) : si le use case ne change pas mais que le modèle évolue, le nombre de tokens peut évoluer aussi. Le tokenizer, la longueur des réponses et le raisonnement interne varient selon le modèle. Une valeur de tokens par use case n'est donc valable que pour le modèle avec lequel elle a été mesurée. Ordres de grandeur à vérifier, non mesurés.
 
 ### 1.4 Écart avec l'interface EcoLogits
 
