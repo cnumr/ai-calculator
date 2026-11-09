@@ -14,6 +14,7 @@ Voir [README.md](README.md) pour le cahier des charges complet.
 - Le back s'appuie sur la librairie Python [EcoLogits](https://github.com/genai-impact/ecologits) (mlco2/genai-impact) pour convertir un nombre de tokens en impacts (GWP, Eau, ADPe, Énergie, PE).
 - Toute la logique métier (calcul des impacts, extrapolation annuelle, totaux, répartition, équivalences CO2) vit côté back, exposée par `POST /api/calculate`. Le front ne fait que l'interface et l'affichage : ne pas y réintroduire de calcul d'impact.
 - Pour l'ergonomie du front, s'appuyer sur le skill Claude Code `frontend-design`.
+- Écoconception (skills GreenIT) : appliquer `ecodesign` dès qu'on définit une fonctionnalité, un parcours, un modèle de données ou une dépendance, et `ecocode` à toute écriture ou modification de code front, back, build ou configuration (cache, nginx, Docker). Lancer `audit-ecoconception` avant chaque release (merge de `develop` sur `main`) et après toute évolution notable de l'interface.
 - Le front doit être bilingue (FR/EN).
 - Se référer au projet [ai-footprint](https://github.com/hrenaud/ai-footprint) pour le mécanisme de résolution de modèles via Hugging Face (référentiel de modèles enrichi).
 - On ne travaille jamais directement sur `main`. Chaque changement part d'une branche `feat/*` (fonctionnalité) ou `fix/*` (correctif), mergée sur `develop` pour y être testée, puis `develop` est mergée sur `main` via une pull request. C'est ce merge sur `main` qui déclenche le processus de release (voir `docs/DEVELOPMENT.md`).
