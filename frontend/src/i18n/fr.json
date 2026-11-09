@@ -20,7 +20,7 @@
     "doc_small": { "name": "Rédaction d'un document court", "subtitle": "Notes et synthèses courtes" },
     "doc_large": { "name": "Rédaction d'un document long", "subtitle": "Rapports, PDF, articles" },
     "ai_query": { "name": "Question à un assistant IA", "subtitle": "Chat et assistant" },
-    "email": { "name": "Rédaction d'un email", "subtitle": "Gmail, Outlook, agenda" }
+    "email": { "name": "Rédaction d'un mail court", "subtitle": "Gmail, Outlook, agenda" }
   },
   "calculator": {
     "title": "Calculateur d'impacts",

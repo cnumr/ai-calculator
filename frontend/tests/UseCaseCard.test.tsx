@@ -127,7 +127,7 @@ describe("UseCaseCard layout", () => {
   it("renders the use case name and its picto", () => {
     renderEmail();
 
-    expect(screen.getByText(/rédaction d'un email|writing an email/i)).toBeInTheDocument();
+    expect(screen.getByText(/rédaction d'un mail court|writing a short email/i)).toBeInTheDocument();
     expect(screen.getByRole("img", { hidden: true })).toBeInTheDocument();
   });
 

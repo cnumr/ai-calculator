@@ -158,7 +158,7 @@ async function renderDefault() {
 /** The page with each card used once a day. */
 async function renderLoaded() {
   const view = await renderDefault();
-  for (const title of [/video generation/i, /writing an email/i]) {
+  for (const title of [/video generation/i, /writing a short email/i]) {
     fireEvent.change(within(card(title)).getByLabelText("Average daily frequency"), {
       target: { value: "1" },
     });
@@ -174,7 +174,7 @@ describe("CalculatorPage catalogue", () => {
 
     expect(mockedFetchUseCases).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("heading", { name: /video generation/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /writing an email/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /writing a short email/i })).toBeInTheDocument();
   });
 
   it("renders a chip per provider, initialised from selectedByDefault", async () => {
@@ -187,8 +187,8 @@ describe("CalculatorPage catalogue", () => {
   it("initializes each card with its catalogue provider and profile defaults", async () => {
     await renderLoaded();
 
-    expect(within(card(/writing an email/i)).getByLabelText("Provider")).toHaveValue("google");
-    expect(within(card(/writing an email/i)).getByLabelText("Profile")).toHaveValue("eco");
+    expect(within(card(/writing a short email/i)).getByLabelText("Provider")).toHaveValue("google");
+    expect(within(card(/writing a short email/i)).getByLabelText("Profile")).toHaveValue("eco");
   });
 
   it("shows a full-page error with retry when the catalogue fails to load", async () => {
@@ -198,7 +198,7 @@ describe("CalculatorPage catalogue", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: /retry/i }));
 
-    expect(await screen.findByRole("heading", { name: /writing an email/i })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /writing a short email/i })).toBeInTheDocument();
     expect(mockedFetchUseCases).toHaveBeenCalledTimes(2);
   });
 });
@@ -207,7 +207,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
   it("starts every card at a frequency of 0", async () => {
     await renderDefault();
 
-    for (const title of [/video generation/i, /writing an email/i]) {
+    for (const title of [/video generation/i, /writing a short email/i]) {
       expect(within(card(title)).getByLabelText("Average daily frequency")).toHaveValue(0);
       expect(cardGwp(title)).toHaveTextContent("0 kg CO2eq");
     }
@@ -243,7 +243,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     await renderLoaded();
 
     expect(cardGwp(/video generation/i)).toHaveTextContent("1.00 kg CO2eq");
-    expect(cardGwp(/writing an email/i)).toHaveTextContent("100 kg CO2eq");
+    expect(cardGwp(/writing a short email/i)).toHaveTextContent("100 kg CO2eq");
     const breakdown = document.querySelector(".provider-breakdown")!;
     expect(breakdown).toHaveTextContent("Google");
     expect(breakdown).toHaveTextContent("100 %");
@@ -268,7 +268,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     const user = userEvent.setup();
     await renderLoaded();
 
-    const frequency = within(card(/writing an email/i)).getByLabelText("Average daily frequency");
+    const frequency = within(card(/writing a short email/i)).getByLabelText("Average daily frequency");
     await user.clear(frequency);
     await user.type(frequency, "3");
 
@@ -283,7 +283,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     const callsBefore = mockedCalculate.mock.calls.length;
 
     await user.type(
-      within(card(/writing an email/i)).getByLabelText("Average daily frequency"),
+      within(card(/writing a short email/i)).getByLabelText("Average daily frequency"),
       "234",
     );
     await waitFor(() => expect(lastRequest().usages[1].frequencyPerDay).toBe(1234));

@@ -20,7 +20,7 @@
     "doc_small": { "name": "Writing a short document", "subtitle": "Notes and short summaries" },
     "doc_large": { "name": "Writing a long document", "subtitle": "Reports, PDFs, articles" },
     "ai_query": { "name": "Query to an AI assistant", "subtitle": "Chat and assistant" },
-    "email": { "name": "Writing an email", "subtitle": "Gmail, Outlook, calendar" }
+    "email": { "name": "Writing a short email", "subtitle": "Gmail, Outlook, calendar" }
   },
   "calculator": {
     "title": "Impact calculator",
