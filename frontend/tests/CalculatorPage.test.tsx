@@ -128,6 +128,13 @@ const enterpriseSummary = () =>
 const lastRequest = () => mockedCalculate.mock.calls.at(-1)![0];
 const card = (title: RegExp) =>
   screen.getByRole("heading", { name: title }).closest("article")!;
+/** Opens a card's "Customize" menu: its fields only exist once it is open. */
+async function openCustomize(title: RegExp) {
+  fireEvent.click(card(title).querySelector(".use-case-card__customize summary")!);
+  await waitFor(() =>
+    expect(card(title).querySelector(".use-case-card__parameters")).not.toBeNull(),
+  );
+}
 const cardGwp = (title: RegExp) =>
   within(card(title)).getByTitle(/greenhouse gases/i).closest("div")!;
 
@@ -289,6 +296,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     const user = userEvent.setup();
     await renderLoaded();
 
+    await openCustomize(/video generation/i);
     await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
 
     await waitFor(() => expect(cardGwp(/video generation/i)).toHaveTextContent("2.00 kg CO2eq"));
@@ -313,6 +321,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     await renderLoaded();
     mockedCalculate.mockRejectedValueOnce(new apiClient.ApiError(500, "boom"));
 
+    await openCustomize(/video generation/i);
     await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
 
     const alert = await screen.findByRole("alert");
@@ -331,6 +340,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     const late = deferred<CalculateResult>();
     mockedCalculate.mockImplementationOnce(() => late.promise);
 
+    await openCustomize(/video generation/i);
     const resolution = within(card(/video generation/i)).getByLabelText("Resolution");
     await user.selectOptions(resolution, "1080p");
     await waitFor(() =>
@@ -352,6 +362,19 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     expect(individualSummary()).toBe("22.0 t CO2eq");
   });
 
+  it("renders the breakdown details only once their panel is opened", async () => {
+    await renderLoaded();
+    const breakdown = document.querySelector<HTMLElement>(".provider-breakdown")!;
+
+    // Closed: no per-provider grid in the DOM (RWEB_0046).
+    expect(breakdown.querySelector(".impacts-grid")).toBeNull();
+
+    fireEvent.click(within(breakdown).getByText(/show\/hide the impact details/i));
+
+    await waitFor(() => expect(breakdown.querySelectorAll(".impacts-grid")).toHaveLength(1));
+    expect(breakdown.querySelector(".impacts-grid")).toHaveTextContent("Google");
+  });
+
   it("shows the five impact icons in annual and provider detail grids", async () => {
     const { container } = await renderLoaded();
 
@@ -369,6 +392,7 @@ describe("CalculatorPage keeps the scenario consistent with the cards", () => {
     await renderLoaded();
     const initial = mockedCalculate.mock.calls[0][0];
 
+    await openCustomize(/video generation/i);
     await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
     await waitFor(() => expect(individualSummary()).toBe("22.2 t CO2eq"));
     await user.click(screen.getByRole("button", { name: /reset/i }));

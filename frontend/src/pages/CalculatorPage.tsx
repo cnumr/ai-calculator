@@ -13,6 +13,7 @@ import { ImpactIcon, isImpactCriterion } from "../components/ImpactIcon";
 import { Co2Equivalents } from "../components/Co2Equivalents";
 import { GwpSummary } from "../components/GwpSummary";
 import { ProviderLogo } from "../components/ProviderLogo";
+import { LazyDetails } from "../components/LazyDetails";
 import {
   CardState,
   buildCalculateRequest,
@@ -147,16 +148,17 @@ function ProviderBreakdown({ shares }: { shares: ProviderShare[] }) {
           );
         })}
       </ul>
-      <details>
-        <summary>{t("calculator.detailsToggle")}</summary>
-        {shares.map(({ providerId, annualImpacts }) => (
-          <ImpactsGrid
-            key={providerId}
-            impacts={annualImpacts}
-            title={t(`providers.${providerId}`, { defaultValue: providerId })}
-          />
-        ))}
-      </details>
+      <LazyDetails summary={t("calculator.detailsToggle")}>
+        {() =>
+          shares.map(({ providerId, annualImpacts }) => (
+            <ImpactsGrid
+              key={providerId}
+              impacts={annualImpacts}
+              title={t(`providers.${providerId}`, { defaultValue: providerId })}
+            />
+          ))
+        }
+      </LazyDetails>
     </section>
   );
 }

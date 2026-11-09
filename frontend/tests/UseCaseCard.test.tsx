@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import i18n from "../src/i18n";
@@ -83,6 +83,14 @@ function summaryMetric(label: RegExp) {
 }
 
 const detailsToggle = /voir\/masquer le détail|show\/hide the impact details/i;
+
+/** Opens a card's "Customize" menu: its fields only exist once it is open. */
+async function openCustomize(user = userEvent.setup()) {
+  await user.click(document.querySelector(".use-case-card__customize summary")!);
+  await waitFor(() =>
+    expect(document.querySelector(".use-case-card__parameters")).not.toBeNull(),
+  );
+}
 
 describe("UseCaseCard layout", () => {
   it("puts provider, profile and frequency on one row, results below", () => {
@@ -257,6 +265,20 @@ describe("UseCaseCard impacts (computed by the backend)", () => {
     expect(screen.getByText(/min 370 g CO2eq/)).toBeInTheDocument();
   });
 
+  it("renders the impact details only once their panel is opened", async () => {
+    const user = userEvent.setup();
+    renderEmail();
+
+    // Closed: no gauge in the DOM (RWEB_0046).
+    expect(document.querySelector(".range-gauge")).toBeNull();
+
+    await user.click(screen.getByText(detailsToggle));
+    await waitFor(() => expect(document.querySelectorAll(".range-gauge")).toHaveLength(5));
+
+    await user.click(screen.getByText(detailsToggle));
+    await waitFor(() => expect(document.querySelector(".range-gauge")).toBeNull());
+  });
+
   it("shows a placeholder before the first calculation", () => {
     renderEmail({ dailyImpacts: null });
 
@@ -419,6 +441,7 @@ describe("UseCaseCard model parameters", () => {
   it("shows one select per parameter, initialised from the defaults", async () => {
     await i18n.changeLanguage("fr");
     render(<InteractiveVideoCard />);
+    await openCustomize();
 
     expect(screen.getByLabelText("Résolution")).toHaveDisplayValue("720p");
     expect(screen.getByLabelText("Durée")).toHaveDisplayValue("8 s");
@@ -434,6 +457,7 @@ describe("UseCaseCard model parameters", () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
     render(<InteractiveVideoCard onChange={onChange} />);
+    await openCustomize(user);
 
     await user.selectOptions(screen.getByLabelText("Resolution"), "1080p");
     await user.selectOptions(screen.getByLabelText("Duration"), "5 s");
@@ -454,10 +478,13 @@ describe("UseCaseCard model parameters", () => {
     const menu = document.querySelector<HTMLDetailsElement>(".use-case-card__customize");
     expect(menu).not.toBeNull();
     expect(menu!.open).toBe(false);
-    expect(menu).toContainElement(screen.getByLabelText("Résolution"));
+    // Closed: the fields are not rendered at all (RWEB_0046).
+    expect(screen.queryByLabelText("Résolution")).not.toBeInTheDocument();
     const summary = menu!.querySelector("summary");
     expect(summary).toHaveTextContent("Personnaliser : 720p · 8 s · Avec audio");
 
+    await openCustomize(user);
+    expect(menu).toContainElement(screen.getByLabelText("Résolution"));
     await user.selectOptions(screen.getByLabelText("Résolution"), "1080p");
 
     expect(summary).toHaveTextContent("Personnaliser : 1080p · 8 s · Avec audio");
@@ -507,6 +534,7 @@ describe("UseCaseCard model parameters", () => {
     const summary = document.querySelector(".use-case-card__customize summary")!;
     // French groups thousands with U+202F, which toHaveTextContent normalises.
     expect(summary.textContent).toBe("Personnaliser : 1\u202f000 tokens générés");
+    await openCustomize(user);
     const tokens = screen.getByLabelText("Tokens générés par action");
     expect(tokens).toHaveValue(1000);
     expect(tokens).toHaveAccessibleDescription(/Valeur par défaut : 1.000 tokens générés/);

@@ -9,6 +9,7 @@ import type {
 import { RangeGauge } from "./RangeGauge";
 import { ImpactIcon, isImpactCriterion } from "./ImpactIcon";
 import { ProviderLogo } from "./ProviderLogo";
+import { LazyDetails } from "./LazyDetails";
 import {
   CardState,
   resolveParameters,
@@ -348,26 +349,30 @@ export function UseCaseCard({
           </div>
 
           {customizable.length > 0 && (
-            <details className="use-case-card__details use-case-card__customize">
-              <summary>
-                {t("calculator.customize", {
-                  values: customizable
-                    .map((parameter) =>
-                      optionLabel(parameter.id, parameterValues[parameter.id]),
-                    )
-                    .join(" · "),
-                })}
-              </summary>
-              <div className="use-case-card__parameters">
-                {customizable.map(renderParameter)}
-              </div>
-            </details>
+            <LazyDetails
+              className="use-case-card__details use-case-card__customize"
+              summary={t("calculator.customize", {
+                values: customizable
+                  .map((parameter) =>
+                    optionLabel(parameter.id, parameterValues[parameter.id]),
+                  )
+                  .join(" · "),
+              })}
+            >
+              {() => (
+                <div className="use-case-card__parameters">
+                  {customizable.map(renderParameter)}
+                </div>
+              )}
+            </LazyDetails>
           )}
 
           {impacts && (
-            <details className="use-case-card__details">
-              <summary>{t("calculator.detailsToggle")}</summary>
-              {CRITERIA.map(({ key, unit }) => {
+            <LazyDetails
+              className="use-case-card__details"
+              summary={t("calculator.detailsToggle")}
+            >
+              {() => CRITERIA.map(({ key, unit }) => {
                 const value = impacts[key];
                 const label = t(`calculator.criterion.${key}`);
                 return value === null ? (
@@ -398,7 +403,7 @@ export function UseCaseCard({
                   />
                 );
               })}
-            </details>
+            </LazyDetails>
           )}
         </>
       )}
