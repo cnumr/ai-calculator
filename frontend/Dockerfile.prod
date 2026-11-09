@@ -8,6 +8,13 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
+# Précompression des fichiers texte (GreenIT RWEB_0076) : nginx les sert tels
+# quels (gzip_static), sans recompresser à chaque requête. Les fichiers
+# d'origine sont conservés pour les clients qui n'acceptent pas gzip.
+RUN find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.html' \
+        -o -name '*.svg' -o -name '*.json' \) -size +1k \
+        -exec sh -c 'gzip -9 -c "$1" > "$1.gz"' _ {} \;
+
 FROM nginx:1.27-alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html

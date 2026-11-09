@@ -76,6 +76,13 @@ docker compose ps
 
 Le script `scripts/verify-prod-compose.sh` (exécutable depuis la racine du dépôt) automatise ce dernier contrôle : il échoue si le backend venait à publier un port sur l'hôte.
 
+Le script `scripts/verify-compression.sh` vérifie, sur la stack lancée, que les fichiers texte sont servis compressés (écoconception, GreenIT RWEB_0076) : JS et CSS du build et catalogue JSON de l'API en gzip pour un navigateur qui l'accepte, JS en clair pour un client qui ne l'accepte pas. Les fichiers statiques sont précompressés au build (`frontend/Dockerfile.prod`) et servis tels quels par nginx (`gzip_static`) ; les réponses de l'API sont compressées à la volée.
+
+```bash
+scripts/verify-compression.sh                       # http://localhost:${HTTP_PORT:-80}
+scripts/verify-compression.sh https://mon-domaine   # ou une autre URL de base
+```
+
 ## Variables d'environnement
 
 | Variable    | Service  | Défaut | Rôle                                                              |
