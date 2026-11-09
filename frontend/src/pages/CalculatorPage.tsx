@@ -4,8 +4,8 @@ import {
   Impacts,
   ProviderShare,
   UseCasesCatalog,
-  fetchUseCases,
 } from "../api/client";
+import { loadCatalog as loadSharedCatalog } from "../api/catalogStore";
 import { ProviderChips } from "../components/ProviderChips";
 import { UseCaseCard } from "../components/UseCaseCard";
 import { RangeGauge } from "../components/RangeGauge";
@@ -190,7 +190,7 @@ export function CalculatorPage() {
   const loadCatalog = useCallback(() => {
     setLoadError(false);
     setCatalog(null);
-    fetchUseCases()
+    loadSharedCatalog()
       .then((loaded) => {
         setCatalog(loaded);
         setSelectedProviders(

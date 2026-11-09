@@ -112,3 +112,12 @@ def test_get_use_cases_exposes_the_methodological_source():
     assert sources["email"]["version"]
     assert sources["video"]["id"] == "ecologits_video"
     assert sources["image"] == {"id": "unsourced", "version": None, "url": None}
+
+
+def test_get_use_cases_lists_the_data_sources_and_their_versions():
+    body = client.get("/api/use-cases").json()
+
+    sources = {s["id"]: s for s in body["data_sources"]}
+    assert set(sources) == {"ecologits", "impactco2"}
+    assert sources["ecologits"]["version"]
+    assert sources["impactco2"]["retrieved_on"]

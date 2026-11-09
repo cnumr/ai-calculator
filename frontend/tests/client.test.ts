@@ -19,6 +19,9 @@ describe("fetchUseCases", () => {
   it("converts the catalogue to camelCase, with kinds and profile details", async () => {
     stubFetch({
       providers: [{ id: "google", selected_by_default: true }],
+      data_sources: [
+        { id: "ecologits", name: "EcoLogits", version: "0.11.3", retrieved_on: null, url: "https://ecologits.ai/" },
+      ],
       use_cases: [
         {
           id: "video",
@@ -52,6 +55,9 @@ describe("fetchUseCases", () => {
     const catalog = await fetchUseCases();
 
     expect(catalog.providers).toEqual([{ id: "google", selectedByDefault: true }]);
+    expect(catalog.dataSources).toEqual([
+      { id: "ecologits", name: "EcoLogits", version: "0.11.3", retrievedOn: null, url: "https://ecologits.ai/" },
+    ]);
     expect(catalog.useCases[0]).toMatchObject({
       id: "video",
       kind: "video",

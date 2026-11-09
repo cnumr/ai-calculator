@@ -48,6 +48,16 @@ class CatalogProviderOut(BaseModel):
     selected_by_default: bool
 
 
+class DataSourceOut(BaseModel):
+    id: str
+    name: str
+    version: str | None
+    retrieved_on: str | None
+    url: str
+
+
 class UseCasesResponse(BaseModel):
     providers: list[CatalogProviderOut]
     use_cases: list[UseCaseOut]
+    # External data sources behind the calculations, with their version.
+    data_sources: list[DataSourceOut]

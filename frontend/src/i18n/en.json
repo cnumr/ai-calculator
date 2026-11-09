@@ -131,6 +131,13 @@
     "title": "Legal notice",
     "body": "Publisher: cnumr. Hosting: TBD."
   },
+  "footer": {
+    "greenit": "GreenIT.fr association",
+    "github": "Source code on GitHub",
+    "sources": "Data sources:",
+    "retrievedOn": "retrieved on {{date}}",
+    "navLabel": "Site pages"
+  },
   "nav": {
     "calculator": "Calculator",
     "methodology": "Methodology",

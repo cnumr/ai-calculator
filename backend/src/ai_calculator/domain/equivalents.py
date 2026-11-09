@@ -28,9 +28,19 @@ class Co2EquivalentQuantity:
     quantity: float
 
 
+def _read(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+@cache
+def equivalents_source(path: Path = DEFAULT_EQUIVALENTS_PATH) -> dict:
+    """Provenance of the equivalence factors (name, dataset, retrieval date)."""
+    return _read(path)["source"]
+
+
 @cache
 def load_equivalents(path: Path = DEFAULT_EQUIVALENTS_PATH) -> tuple[Co2Equivalent, ...]:
-    data = json.loads(path.read_text(encoding="utf-8"))
+    data = _read(path)
     return tuple(
         Co2Equivalent(
             id=entry["id"],

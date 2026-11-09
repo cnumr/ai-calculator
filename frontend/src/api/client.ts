@@ -89,13 +89,32 @@ export interface UseCase {
   providers: ProviderMapping[];
 }
 
+/** An external data source behind the calculations (shown in the footer). */
+export interface DataSource {
+  id: string;
+  name: string;
+  /** Library version, e.g. EcoLogits. */
+  version: string | null;
+  /** Date the dataset was copied (YYYY-MM-DD), e.g. ImpactCO2. */
+  retrievedOn: string | null;
+  url: string;
+}
+
 export interface UseCasesCatalog {
   providers: CatalogProvider[];
   useCases: UseCase[];
+  dataSources?: DataSource[];
 }
 
 interface UseCasesResponseBody {
   providers: Array<{ id: string; selected_by_default: boolean }>;
+  data_sources?: Array<{
+    id: string;
+    name: string;
+    version: string | null;
+    retrieved_on: string | null;
+    url: string;
+  }>;
   use_cases: Array<{
     id: string;
     kind: UseCaseKind;
@@ -130,6 +149,13 @@ export async function fetchUseCases(): Promise<UseCasesCatalog> {
     providers: body.providers.map((p) => ({
       id: p.id,
       selectedByDefault: p.selected_by_default,
+    })),
+    dataSources: (body.data_sources ?? []).map((s) => ({
+      id: s.id,
+      name: s.name,
+      version: s.version,
+      retrievedOn: s.retrieved_on,
+      url: s.url,
     })),
     useCases: body.use_cases.map((uc) => ({
       id: uc.id,

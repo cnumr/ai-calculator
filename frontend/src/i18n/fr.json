@@ -131,6 +131,13 @@
     "title": "Mentions légales",
     "body": "Éditeur : cnumr. Hébergement : à préciser."
   },
+  "footer": {
+    "greenit": "Association GreenIT.fr",
+    "github": "Code source sur GitHub",
+    "sources": "Sources de données :",
+    "retrievedOn": "relevé du {{date}}",
+    "navLabel": "Pages du site"
+  },
   "nav": {
     "calculator": "Calculateur",
     "methodology": "Méthodologie",
