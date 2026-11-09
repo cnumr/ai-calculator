@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { formatNumber, scaleRange } from "../domain/units";
 
 export function gaugePositions(
@@ -26,6 +27,7 @@ interface RangeGaugeProps {
 export function RangeGauge({ min, max, unit, label }: RangeGaugeProps) {
   const { fillLeftPct, fillRightPct, tickLeftPct } = gaugePositions(min, max);
   const scaled = scaleRange(min, max, unit);
+  const locale = useTranslation().i18n.language;
 
   return (
     <div className="range-gauge">
@@ -42,10 +44,10 @@ export function RangeGauge({ min, max, unit, label }: RangeGaugeProps) {
       </div>
       <div className="range-gauge__bounds">
         <span>
-          min {formatNumber(scaled.min)} {scaled.unit}
+          min {formatNumber(scaled.min, locale)} {scaled.unit}
         </span>
         <span>
-          max {formatNumber(scaled.max)} {scaled.unit}
+          max {formatNumber(scaled.max, locale)} {scaled.unit}
         </span>
       </div>
     </div>

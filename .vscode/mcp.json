@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "greenit": {
+      "url": "https://mcp-115-bp.greenit.eco/mcp",
+      "headers": {
+        "Authorization": "Bearer TOKEN"
+      }
+    }
+  }
+}

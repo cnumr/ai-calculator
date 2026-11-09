@@ -5,6 +5,7 @@ import { MethodologyPage } from "./pages/MethodologyPage";
 import { AboutPage } from "./pages/AboutPage";
 import { LegalNoticePage } from "./pages/LegalNoticePage";
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
+import { Footer } from "./components/Footer";
 
 export function App() {
   const { t } = useTranslation();
@@ -32,6 +33,7 @@ export function App() {
             <Route path="/mentions-legales" element={<LegalNoticePage />} />
           </Routes>
         </main>
+        <Footer />
       </div>
     </BrowserRouter>
   );

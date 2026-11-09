@@ -11,7 +11,10 @@
   },
   "useCases": {
     "video": { "name": "Génération de vidéos", "subtitle": "Veo, Runway, Sora..." },
-    "image": { "name": "Génération d'images", "subtitle": "Illustrations et visuels" },
+    "image": {
+      "name": "Génération d'images",
+      "subtitle": "Illustrations et visuels"
+    },
     "deep_research": { "name": "Recherche approfondie", "subtitle": "Recherche multi-étapes" },
     "meet_summary": { "name": "Résumé de réunion", "subtitle": "Meet, Teams, visioconférence" },
     "doc_small": { "name": "Rédaction d'un document court", "subtitle": "Notes et synthèses courtes" },
@@ -42,9 +45,8 @@
     "providerSelect": "Fournisseur",
     "profileSelect": "Profil",
     "profileUnsupported": "Non disponible pour ce fournisseur",
-    "profileHint": { "eco": "Pour les tâches simples et répétitives", "balanced": "Pour un bon équilibre entre performance et impact", "powerful": "À réserver aux tâches complexes", "research": "Pour les recherches critiques et multi-étapes", "image": "Pour générer une image", "video": "Pour générer une vidéo" },
     "notAvailable": "Non disponible",
-    "frequencyPerDay": "Fréquence par jour",
+    "frequencyPerDay": "Fréquence quotidienne moyenne",
     "detailsToggle": "Voir/Masquer le détail de vos impacts pour cette tâche",
     "cardImpactSummary": {
       "gwp": "Gaz à effet de serre",
@@ -65,9 +67,35 @@
       "eco": "Éco",
       "balanced": "Équilibré",
       "powerful": "Puissant",
-      "research": "Recherche approfondie",
+      "research": "Recherche",
       "image": "Standard",
-      "video": "Standard"
+      "video": "Standard",
+      "video_fast": "Rapide"
+    },
+    "calculating": "Calcul en cours…",
+    "source": {
+      "ecologits_llm": "Source : EcoLogits {{version}}, modélisation de l'inférence des LLM.",
+      "ecologits_video": "Source : EcoLogits {{version}}, modélisation de la génération vidéo.",
+      "unsourced": "Valeur indicative, sans source publiée à ce jour."
+    },
+    "sourceLink": "Méthodologie",
+    "newTab": "nouvel onglet",
+    "parameterDefault": "Valeur par défaut : {{value}}",
+    "perDayShort": "/jour",
+    "customize": "Personnaliser : {{values}}",
+    "parameter": {
+      "output_tokens": "Tokens générés par action",
+      "resolution": "Résolution",
+      "duration_s": "Durée",
+      "with_audio": "Audio"
+    },
+    "parameterOption": {
+      "output_tokens": "{{value}} tokens générés",
+      "duration_s": "{{value}} s",
+      "with_audio": {
+        "true": "Avec audio",
+        "false": "Sans audio"
+      }
     },
     "criterion": {
       "gwp": "Gaz à effet de serre",
@@ -82,9 +110,11 @@
     "retry": "Réessayer",
     "reset": "Réinitialiser",
     "co2Equivalent": {
-      "car_km": "{{count}} km en voiture",
-      "streaming_hour": "{{count}} heures de streaming vidéo"
-      ,"smartphone": "{{count}} smartphone"
+      "car_km": "{{value}} km en voiture",
+      "streaming_hour_one": "{{value}} heure de streaming vidéo",
+      "streaming_hour_other": "{{value}} heures de streaming vidéo",
+      "smartphone_one": "{{value}} smartphone",
+      "smartphone_other": "{{value}} smartphones"
     }
     ,"co2EquivalentsHeading": "Équivalences individuelles",
     "compareOnImpactCo2": "Comparer sur ImpactCO2.fr"
@@ -100,6 +130,13 @@
   "legal": {
     "title": "Mentions légales",
     "body": "Éditeur : cnumr. Hébergement : à préciser."
+  },
+  "footer": {
+    "greenit": "Association GreenIT.fr",
+    "github": "Code source sur GitHub",
+    "sources": "Sources de données :",
+    "retrievedOn": "relevé du {{date}}",
+    "navLabel": "Pages du site"
   },
   "nav": {
     "calculator": "Calculateur",

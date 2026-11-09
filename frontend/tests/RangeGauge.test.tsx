@@ -39,14 +39,14 @@ describe("RangeGauge", () => {
       />,
     );
 
-    expect(screen.getByText(/0.0100 mgSbeq/)).toBeInTheDocument();
-    expect(screen.getByText(/0.0200 mgSbeq/)).toBeInTheDocument();
+    expect(screen.getByText(/0.0100 mg Sbeq/)).toBeInTheDocument();
+    expect(screen.getByText(/0.0200 mg Sbeq/)).toBeInTheDocument();
   });
 
   it("scales large values up to a coarser unit", () => {
     render(<RangeGauge min={1500} max={2500} unit="kgCO2eq" label="GWP" />);
 
-    expect(screen.getByText(/1.50 tCO2eq/)).toBeInTheDocument();
-    expect(screen.getByText(/2.50 tCO2eq/)).toBeInTheDocument();
+    expect(screen.getByText(/1.50 t CO2eq/)).toBeInTheDocument();
+    expect(screen.getByText(/2.50 t CO2eq/)).toBeInTheDocument();
   });
 });

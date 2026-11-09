@@ -1,5 +1,0 @@
-[
-  { "id": "streaming_hour", "kgCo2eqPerUnit": 0.064 },
-  { "id": "smartphone", "kgCo2eqPerUnit": 80.5 },
-  { "id": "car_km", "kgCo2eqPerUnit": 0.1423 }
-]

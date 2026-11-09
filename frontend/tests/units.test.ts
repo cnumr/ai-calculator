@@ -1,50 +1,69 @@
 import { describe, expect, it } from "vitest";
-import { formatNumber, scaleRange } from "../src/domain/units";
+import { formatInteger, formatNumber, scaleRange } from "../src/domain/units";
 
 describe("formatNumber", () => {
   it("formats zero as 0", () => {
-    expect(formatNumber(0)).toBe("0");
+    expect(formatNumber(0, "en")).toBe("0");
   });
 
-  it("keeps two decimals for values around 1", () => {
-    expect(formatNumber(1.2)).toBe("1.20");
+  it("keeps three significant digits for values around 1", () => {
+    expect(formatNumber(1.2, "en")).toBe("1.20");
+  });
+
+  it("uses a decimal comma in French", () => {
+    expect(formatNumber(1.2, "fr")).toBe("1,20");
+    expect(formatNumber(22.018, "fr")).toBe("22,0");
+  });
+
+  it("groups thousands according to the language", () => {
+    expect(formatNumber(1234, "en")).toBe("1,234");
+    // French groups with a narrow no-break space (U+202F).
+    expect(formatNumber(1234, "fr")).toBe("1\u202f234");
   });
 
   it("never uses scientific notation for very small values", () => {
-    const result = formatNumber(0.0000001);
+    const result = formatNumber(0.0000001, "en");
     expect(result).not.toMatch(/e/i);
     expect(result).toBe("0.000000100");
   });
 
   it("never uses scientific notation for very large values", () => {
-    const result = formatNumber(123456789);
+    const result = formatNumber(123456789, "en");
     expect(result).not.toMatch(/e/i);
+    expect(result).toBe("123,456,789");
+  });
+});
+
+describe("formatInteger", () => {
+  it("rounds and groups according to the language", () => {
+    expect(formatInteger(1234.6, "en")).toBe("1,235");
+    expect(formatInteger(1234.6, "fr")).toBe("1\u202f235");
   });
 });
 
 describe("scaleRange", () => {
   it("keeps the base unit when values are already in a readable range", () => {
     const result = scaleRange(1.2, 3.4, "kgCO2eq");
-    expect(result).toEqual({ min: 1.2, max: 3.4, unit: "kgCO2eq" });
+    expect(result).toEqual({ min: 1.2, max: 3.4, unit: "kg CO2eq" });
   });
 
   it("scales tiny kgCO2eq values down to grams", () => {
     const result = scaleRange(0.001, 0.005, "kgCO2eq");
-    expect(result.unit).toBe("gCO2eq");
+    expect(result.unit).toBe("g CO2eq");
     expect(result.min).toBeCloseTo(1);
     expect(result.max).toBeCloseTo(5);
   });
 
   it("scales large kgCO2eq values up to tonnes", () => {
     const result = scaleRange(1500, 2500, "kgCO2eq");
-    expect(result.unit).toBe("tCO2eq");
+    expect(result.unit).toBe("t CO2eq");
     expect(result.min).toBeCloseTo(1.5);
     expect(result.max).toBeCloseTo(2.5);
   });
 
   it("scales tiny kgSbeq (ADPe) values down to milligrams", () => {
     const result = scaleRange(0.00000001, 0.00000002, "kgSbeq");
-    expect(result.unit).toBe("mgSbeq");
+    expect(result.unit).toBe("mg Sbeq");
     expect(result.min).toBeCloseTo(0.01);
     expect(result.max).toBeCloseTo(0.02);
   });

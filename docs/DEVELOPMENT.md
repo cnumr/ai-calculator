@@ -111,15 +111,34 @@ cd frontend
 npm test
 ```
 
-Les deux suites doivent passer avant tout merge (voir [AGENTS.md](../AGENTS.md) pour les conventions TDD du projet).
+**End-to-end (Playwright)**, contre l'application lancée (back et front, par exemple via `docker-compose.dev.yml`) :
+
+```bash
+cd frontend
+npx playwright install chromium   # une fois
+npm run test:e2e
+```
+
+Les suites unitaires back et front doivent passer avant tout merge (voir [AGENTS.md](../AGENTS.md) pour les conventions TDD du projet).
 
 ## Structure du dépôt
 
 ```
-backend/    API FastAPI stateless (EcoLogits pour le calcul d'impacts)
-frontend/   SPA React + Vite, bilingue FR/EN
+backend/    API FastAPI stateless : toute la logique métier (calcul des impacts)
+  src/ai_calculator/
+    api/      Routes : GET /api/use-cases (catalogue), POST /api/calculate (scénario)
+    domain/   Catalogue (use_cases.py), calcul du scénario (scenario.py),
+              appels EcoLogits (impacts.py, video.py), équivalences CO2,
+              sources méthodologiques
+    data/     use_cases.yaml (catalogue), co2_equivalents.json (ImpactCO2)
+frontend/   SPA React + Vite, bilingue FR/EN : interface et affichage,
+            sans calcul d'impact (le scénario est envoyé à POST /api/calculate)
 docs/       Documentation (ce fichier)
 ```
+
+### Faire évoluer le catalogue
+
+Le catalogue des cas d'usage se modifie dans `backend/src/ai_calculator/data/use_cases.yaml` (commentaires en tête de fichier). Chaque cas d'usage déclare son `kind` (`text`, `video` ou `image`), qui fixe son mode de calcul et ses paramètres réglables. Le fichier est validé au démarrage du back : un modèle inconnu d'EcoLogits, un modèle sans libellé dans `model_labels` ou une valeur par défaut non supportée empêchent le démarrage, avec un message explicite. Un nouveau cas d'usage demande aussi ses libellés FR/EN (`frontend/src/i18n/`) et son picto (`frontend/src/assets/use-cases/`).
 
 ## Processus de release
 
@@ -139,6 +158,13 @@ npx changeset
 ```
 
 Répondre aux questions (bump `patch`/`minor`/`major`, résumé du changement en une phrase — ce résumé alimente directement le `CHANGELOG.md`). Committer le fichier généré dans `.changeset/`.
+
+Si le changement a été réalisé avec un assistant IA, terminer le changeset par une ligne indiquant les tokens consommés et le ou les modèles utilisés. Avec Claude Code, `scripts/claude-usage.py` la produit à partir des journaux de session locaux :
+
+```bash
+scripts/claude-usage.py --since 2026-11-09T15:45 --until 2026-11-09T16:30   # heure locale
+# _Réalisé avec Claude Code — Claude Opus 5.5 : ≈ 3,4 M tokens (dont 3,3 M relus en cache, 31 k générés)._
+```
 
 **Automatisation (`.github/workflows/release.yml`)** :
 
