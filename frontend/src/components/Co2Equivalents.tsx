@@ -1,21 +1,25 @@
 import { useTranslation } from "react-i18next";
-// kgCo2eqPerUnit values in co2-equivalents.json are illustrative placeholders;
-// replace with exact figures from ImpactCO2's equivalents.csv before merging.
-import equivalents from "../data/co2-equivalents.json";
+import type { Co2EquivalentQuantity } from "../api/client";
+import { formatInteger } from "../domain/units";
 
 interface Co2EquivalentsProps {
+  /** Quantities computed by the backend (ImpactCO2 factors). */
+  equivalents: Co2EquivalentQuantity[];
+  /** GHG they correspond to, used to open the ImpactCO2 comparator. */
   gwpKgCo2eq: number;
 }
 
-export function Co2Equivalents({ gwpKgCo2eq }: Co2EquivalentsProps) {
-  const { t } = useTranslation();
+export function Co2Equivalents({ equivalents, gwpKgCo2eq }: Co2EquivalentsProps) {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language;
+  const slugs = equivalents.map((eq) => eq.impactCo2Slug).join(",");
 
   return (
     <section className="co2-equivalents" aria-labelledby="co2-equivalents-heading">
       <h3 id="co2-equivalents-heading">{t("calculator.co2EquivalentsHeading")}</h3>
       <ul>
         {equivalents.map((eq) => {
-          const count = Math.round(gwpKgCo2eq / eq.kgCo2eqPerUnit);
+          const count = Math.round(eq.quantity);
           return (
             <li key={eq.id}>
               <span className="co2-equivalents__icon" aria-hidden="true">
@@ -25,12 +29,15 @@ export function Co2Equivalents({ gwpKgCo2eq }: Co2EquivalentsProps) {
                   {eq.id === "smartphone" && <><rect x="7" y="3" width="10" height="18" rx="2" /><path d="M10 6h4M11 18h2" /></>}
                 </svg>
               </span>
-             {t(`calculator.co2Equivalent.${eq.id}`, { count })}
+             {t(`calculator.co2Equivalent.${eq.id}`, {
+               count,
+               value: formatInteger(count, locale),
+             })}
             </li>
           );
         })}
       </ul>
-      <a className="co2-equivalents__link" href={`https://impactco2.fr/outils/comparateur?value=${gwpKgCo2eq.toFixed(2)}&comparisons=streamingvideo,smartphone,voiturethermique&language=fr`} target="_blank" rel="noreferrer">
+      <a className="co2-equivalents__link" href={`https://impactco2.fr/outils/comparateur?value=${gwpKgCo2eq.toFixed(2)}&comparisons=${slugs}&language=${locale}`} target="_blank" rel="noreferrer">
         {t("calculator.compareOnImpactCo2")}
       </a>
     </section>

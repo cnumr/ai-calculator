@@ -11,7 +11,10 @@
   },
   "useCases": {
     "video": { "name": "Video generation", "subtitle": "Veo, Runway, Sora..." },
-    "image": { "name": "Image generation", "subtitle": "Illustrations and visuals" },
+    "image": {
+      "name": "Image generation",
+      "subtitle": "Illustrations and visuals"
+    },
     "deep_research": { "name": "Deep research", "subtitle": "Multi-step research" },
     "meet_summary": { "name": "Meeting summary", "subtitle": "Meet, Teams, video calls" },
     "doc_small": { "name": "Writing a short document", "subtitle": "Notes and short summaries" },
@@ -42,9 +45,8 @@
     "providerSelect": "Provider",
     "profileSelect": "Profile",
     "profileUnsupported": "Not available for this provider",
-    "profileHint": { "eco": "For simple, recurring tasks", "balanced": "For a balance between performance and impact", "powerful": "Reserve for complex tasks", "research": "For critical, multi-step research", "image": "For image generation", "video": "For video generation" },
     "notAvailable": "Not available",
-    "frequencyPerDay": "Frequency per day",
+    "frequencyPerDay": "Average daily frequency",
     "detailsToggle": "Show/hide the impact details for this task",
     "cardImpactSummary": {
       "gwp": "Greenhouse gases",
@@ -65,9 +67,35 @@
       "eco": "Eco",
       "balanced": "Balanced",
       "powerful": "Powerful",
-      "research": "Deep research",
+      "research": "Research",
       "image": "Standard",
-      "video": "Standard"
+      "video": "Standard",
+      "video_fast": "Fast"
+    },
+    "calculating": "Calculating…",
+    "source": {
+      "ecologits_llm": "Source: EcoLogits {{version}}, LLM inference model.",
+      "ecologits_video": "Source: EcoLogits {{version}}, video generation model.",
+      "unsourced": "Indicative value, no published source yet."
+    },
+    "sourceLink": "Methodology",
+    "newTab": "new tab",
+    "parameterDefault": "Default value: {{value}}",
+    "perDayShort": "/day",
+    "customize": "Customize: {{values}}",
+    "parameter": {
+      "output_tokens": "Generated tokens per action",
+      "resolution": "Resolution",
+      "duration_s": "Duration",
+      "with_audio": "Audio"
+    },
+    "parameterOption": {
+      "output_tokens": "{{value}} generated tokens",
+      "duration_s": "{{value}} s",
+      "with_audio": {
+        "true": "With audio",
+        "false": "Without audio"
+      }
     },
     "criterion": {
       "gwp": "Greenhouse gases",
@@ -82,9 +110,11 @@
     "retry": "Retry",
     "reset": "Reset",
     "co2Equivalent": {
-      "car_km": "{{count}} km by car",
-      "streaming_hour": "{{count}} hours of video streaming"
-      ,"smartphone": "{{count}} smartphone"
+      "car_km": "{{value}} km by car",
+      "streaming_hour_one": "{{value}} hour of video streaming",
+      "streaming_hour_other": "{{value}} hours of video streaming",
+      "smartphone_one": "{{value}} smartphone",
+      "smartphone_other": "{{value}} smartphones"
     }
     ,"co2EquivalentsHeading": "Individual equivalents",
     "compareOnImpactCo2": "Compare on ImpactCO2.fr"
@@ -100,6 +130,13 @@
   "legal": {
     "title": "Legal notice",
     "body": "Publisher: cnumr. Hosting: TBD."
+  },
+  "footer": {
+    "greenit": "GreenIT.fr association",
+    "github": "Source code on GitHub",
+    "sources": "Data sources:",
+    "retrievedOn": "retrieved on {{date}}",
+    "navLabel": "Site pages"
   },
   "nav": {
     "calculator": "Calculator",

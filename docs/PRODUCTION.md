@@ -67,14 +67,31 @@ docker compose down
 # Le front répond
 curl -I http://localhost:${HTTP_PORT:-80}/
 
-# L'API est bien joignable via le proxy du front
-curl http://localhost:${HTTP_PORT:-80}/api/providers
+# L'API est bien joignable via le proxy du front (catalogue du calculateur)
+curl http://localhost:${HTTP_PORT:-80}/api/use-cases
 
 # Seul le service frontend publie un port sur l'hôte
 docker compose ps
 ```
 
 Le script `scripts/verify-prod-compose.sh` (exécutable depuis la racine du dépôt) automatise ce dernier contrôle : il échoue si le backend venait à publier un port sur l'hôte.
+
+Le script `scripts/verify-compression.sh` vérifie, sur la stack lancée, que les fichiers texte sont servis compressés (écoconception, GreenIT RWEB_0076) : JS et CSS du build et catalogue JSON de l'API en gzip pour un navigateur qui l'accepte, JS en clair pour un client qui ne l'accepte pas. Les fichiers statiques sont précompressés au build (`frontend/Dockerfile.prod`) et servis tels quels par nginx (`gzip_static`) ; les réponses de l'API sont compressées à la volée.
+
+```bash
+scripts/verify-compression.sh                       # http://localhost:${HTTP_PORT:-80}
+scripts/verify-compression.sh https://mon-domaine   # ou une autre URL de base
+```
+
+Le script `scripts/verify-cache.sh` vérifie les en-têtes de cache navigateur (écoconception, GreenIT RWEB_0075), définis dans `frontend/nginx.conf` :
+
+- les fichiers du build (`/assets/`), dont le nom contient un hash de leur contenu, sont gardés un an sans revérification (`Cache-Control: public, max-age=31536000, immutable`) ; un asset absent renvoie 404 ;
+- `index.html`, servi pour toutes les routes de l'application, est revérifié à chaque visite (`Cache-Control: no-cache`) : nginx répond 304 sans le corps s'il n'a pas changé, et une nouvelle version est prise en compte immédiatement.
+
+```bash
+scripts/verify-cache.sh                       # http://localhost:${HTTP_PORT:-80}
+scripts/verify-cache.sh https://mon-domaine   # ou une autre URL de base
+```
 
 ## Variables d'environnement
 

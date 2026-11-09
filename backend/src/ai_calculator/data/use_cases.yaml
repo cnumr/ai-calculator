@@ -1,3 +1,25 @@
+# Display names of the models used below, shown next to each profile
+# ("Éco (GPT-4o mini)"). Keys are EcoLogits model ids (or, for static
+# profiles, the `model` they declare). Every model used must be listed.
+model_labels:
+  gpt-4o-mini: GPT-4o mini
+  gpt-4o: GPT-4o
+  gpt-4.1: GPT-4.1
+  o4-mini-deep-research: o4-mini Deep Research
+  claude-haiku-4-5: Claude Haiku 4.5
+  claude-sonnet-4-5: Claude Sonnet 4.5
+  claude-opus-4-8: Claude Opus 4.8
+  ministral-8b-latest: Ministral 8B
+  mistral-small-latest: Mistral Small
+  mistral-large-latest: Mistral Large
+  gemini-2.5-flash-lite: Gemini 2.5 Flash-Lite
+  gemini-2.5-flash: Gemini 2.5 Flash
+  gemini-2.5-pro: Gemini 2.5 Pro
+  gemini-2.5-flash-image: Gemini 2.5 Flash Image
+  dall-e-3: DALL·E 3
+  google/veo-3.0: Veo 3
+  google/veo-3.0-fast: Veo 3 Fast
+  openai/sora-2-pro: Sora 2 Pro
 providers:
   - id: openai
     selected_by_default: true
@@ -9,31 +31,68 @@ providers:
     selected_by_default: true
   - id: microsoft_copilot
     selected_by_default: true
+# Each use case declares its kind, which sets how its impacts are computed
+# and which parameters POST /api/calculate accepts for it:
+#   text  -> EcoLogits LLM (ecologits_model); output_tokens is the default
+#            tokens per action, which users can change
+#   video -> EcoLogits video (ecologits_video), resolution / duration / audio
+#   image -> static_impacts declared below, no parameter
 use_cases:
+  # Video: computed by EcoLogits (estimations.video) for one generated clip.
+  # The user can change resolution, duration and audio: their options come
+  # from each model's EcoLogits capabilities, and every combination is
+  # precomputed at startup. `defaults` must be supported by the model.
+  # Reference clip: 8 s (offered by all three models), 720p, with audio. The
+  # datacenter is the model provider's EcoLogits configuration.
+  # Replaces the POC V1 static value (veo-2, 377 g CO2eq, no published
+  # source; veo-2 is not modelled by EcoLogits).
   - id: video
+    kind: video
     default_provider: google
     recommended_tier: video
     providers:
       - provider_id: google
         profiles:
           - id: video
-            static_impacts:
-              gwp:
-                min: 0.377061
-                max: 0.377061
-              adpe:
-                min: 8.102e-06
-                max: 8.102e-06
-              energy: null
-              water: null
-              pe: null
+            ecologits_video:
+              model: google/veo-3.0
+              defaults:
+                resolution: 720p
+                duration_s: 8
+                with_audio: true
+          - id: video_fast
+            ecologits_video:
+              model: google/veo-3.0-fast
+              defaults:
+                resolution: 720p
+                duration_s: 8
+                with_audio: true
+      - provider_id: openai
+        profiles:
+          - id: video
+            ecologits_video:
+              model: openai/sora-2-pro
+              defaults:
+                resolution: 720p
+                duration_s: 8
+                with_audio: true
+  # Image: EcoLogits does not model image generation. These static values
+  # (per generated image, kg CO2eq and kg Sbeq) come from the POC V1
+  # (https://ia-calculator.greenit.eco, entries "gemini-2.5-flash-image" and
+  # "dall-e-3", 12 568 mg / 12 500 mg CO2eq), which cites no published source
+  # and states that they include a broader infrastructure estimate.
+  # Kept deliberately until a published source is adopted; the UI flags the
+  # missing source on the card (i18n key useCases.image.dataNote). Candidate
+  # source reviewed: Luccioni et al., "Power Hungry Processing" (FAccT 2024).
   - id: image
+    kind: image
     default_provider: google
     recommended_tier: image
     providers:
       - provider_id: google
         profiles:
           - id: image
+            model: gemini-2.5-flash-image
             static_impacts:
               gwp:
                 min: 0.012568
@@ -47,6 +106,7 @@ use_cases:
       - provider_id: openai
         profiles:
           - id: image
+            model: dall-e-3
             static_impacts:
               gwp:
                 min: 0.0125
@@ -58,6 +118,7 @@ use_cases:
               water: null
               pe: null
   - id: deep_research
+    kind: text
     default_provider: openai
     recommended_tier: research
     providers:
@@ -138,6 +199,7 @@ use_cases:
   # id shortened from the design spec's "meeting_summary" to match the
   # pre-existing asset filename (assets/use-cases/meet_summary.svg)
   - id: meet_summary
+    kind: text
     default_provider: microsoft_copilot
     recommended_tier: eco
     providers:
@@ -216,6 +278,7 @@ use_cases:
             ecologits_model: claude-sonnet-4-5
             output_tokens: 8000
   - id: doc_small
+    kind: text
     default_provider: openai
     recommended_tier: eco
     providers:
@@ -294,6 +357,7 @@ use_cases:
             ecologits_model: claude-sonnet-4-5
             output_tokens: 3000
   - id: doc_large
+    kind: text
     default_provider: openai
     recommended_tier: balanced
     providers:
@@ -372,6 +436,7 @@ use_cases:
             ecologits_model: claude-sonnet-4-5
             output_tokens: 15000
   - id: ai_query
+    kind: text
     default_provider: google
     recommended_tier: eco
     providers:
@@ -450,6 +515,7 @@ use_cases:
             ecologits_model: claude-sonnet-4-5
             output_tokens: 1000
   - id: email
+    kind: text
     default_provider: microsoft_copilot
     recommended_tier: eco
     providers:
