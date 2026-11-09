@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1
+
+### Patch Changes
+
+- 82e5a91: Correction de la stack Docker Compose de production : les services `backend` et `frontend` ont `restart: unless-stopped`, ils repartent automatiquement après un redémarrage du serveur ou du démon Docker. Voir `docs/PRODUCTION.md`.
+- 53a96f2: Met à jour la librairie `ecologits` en 0.11.3 et remplace les modèles retirés du catalogue (Claude Opus 4.0, Gemini 2.0 Flash et Flash-Lite) par leurs équivalents de palier.
+
 ## 0.3.0
 
 ### Minor Changes
