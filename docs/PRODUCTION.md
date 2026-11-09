@@ -67,8 +67,8 @@ docker compose down
 # Le front répond
 curl -I http://localhost:${HTTP_PORT:-80}/
 
-# L'API est bien joignable via le proxy du front
-curl http://localhost:${HTTP_PORT:-80}/api/providers
+# L'API est bien joignable via le proxy du front (catalogue du calculateur)
+curl http://localhost:${HTTP_PORT:-80}/api/use-cases
 
 # Seul le service frontend publie un port sur l'hôte
 docker compose ps

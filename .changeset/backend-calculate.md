@@ -2,10 +2,10 @@
 "ai-calculator": minor
 ---
 
-Move the calculator's business logic to the backend: `POST /api/calculate`.
+La logique métier du calculateur passe côté backend : nouvel endpoint `POST /api/calculate`.
 
-- **One scenario endpoint**: it receives every daily usage and the headcount, and returns the impacts of each usage (per action, per day, per year), the individual and company annual totals, the breakdown by provider and the CO2 equivalents.
-- **Typed parameters per use-case kind**: usages are discriminated on `kind` (`text`, `video`, `image`); only video usages accept `resolution`, `duration_s` and `with_audio`, each checked against the model's options. Invalid scenarios get a `422` with an explicit message.
-- **No more precomputed impacts**: `GET /api/use-cases` only describes the choices (catalogue down from 59 to 11.5 KB) and declares each use case's `kind`; EcoLogits impacts are computed on demand and cached.
-- **CO2 equivalents** (ImpactCO2 factors) now live in the backend.
-- **Frontend**: it builds the scenario, sends it 150 ms after the last change, cancels outdated requests and only applies the latest answer. Values awaiting an update are dimmed, and a failed calculation keeps the last result and offers a retry. Results are unchanged.
+- **Un seul calcul de scénario** : il reçoit tous les usages quotidiens et le nombre de salariés, et renvoie l'impact de chaque usage (par action, par jour et par an), les totaux annuels individuel et entreprise, la répartition par fournisseur et les équivalences CO2.
+- **Paramètres typés par type de cas d'usage** : les usages sont distingués par `kind` (`text`, `video`, `image`), chacun n'acceptant que ses propres paramètres, vérifiés contre les options du modèle. Un scénario invalide reçoit une erreur `422` avec un message explicite.
+- **Catalogue allégé** : `GET /api/use-cases` ne décrit plus que les choix possibles (de 59 à 11,5 Ko) et indique le `kind` de chaque cas d'usage ; les impacts EcoLogits sont calculés à la demande, avec un cache.
+- **Équivalences CO2** : les facteurs ImpactCO2 sont désormais gérés par le backend.
+- **Frontend** : il envoie le scénario 150 ms après le dernier changement, annule les requêtes dépassées et n'applique que la dernière réponse ; les valeurs en attente de mise à jour sont atténuées, et un calcul en échec conserve le dernier résultat avec un bouton « Réessayer ». Les résultats sont inchangés.

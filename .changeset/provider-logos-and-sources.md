@@ -2,9 +2,10 @@
 "ai-calculator": minor
 ---
 
-Rework the use-case cards: one selection row, results below, sources and editable assumptions.
+Nouvelle disposition des cartes, sources méthodologiques et hypothèses modifiables.
 
-- **One selection row**: provider (with its logo), profile and average daily frequency sit side by side.
-- **Results below**: GHG and water side by side, with the methodological source in small print on the right: "Source: EcoLogits 0.11.3, LLM inference model" (or video generation model), linking to the EcoLogits methodology; image generation keeps its "indicative value, no published source yet" note. `GET /api/use-cases` exposes a `source` per use case (`id`, `version` read from the installed EcoLogits, `url`).
-- **Editable token assumption**: text use cases now offer a "Customize" menu, like video, showing the generated tokens per action (catalogue value as the default) and letting users change it. The "calculation assumption" line is removed. `POST /api/calculate` accepts `parameters.output_tokens` (1 to 10,000,000) for text usages; parameters in the catalogue are either a choice among `options` or a free integer in `[min, max]`, and profiles no longer expose `output_tokens` directly.
-- **Provider logos** also appear next to each provider in the breakdown by provider.
+- **Une ligne de sélection** : fournisseur (avec son logo), profil et fréquence quotidienne moyenne côte à côte ; résultats (émissions et eau) en dessous.
+- **Fréquence par défaut à 0** : aucun usage n'est compté tant que l'utilisateur n'a pas renseigné ses fréquences ; « Réinitialiser » y revient.
+- **Source méthodologique** : chaque carte indique la source de ses valeurs, par exemple « Source : EcoLogits 0.11.3, modélisation de l'inférence des LLM », avec un lien vers la méthodologie EcoLogits ; la génération d'images garde sa mention « valeur indicative, sans source publiée ». `GET /api/use-cases` expose une `source` par cas d'usage (identifiant, version d'EcoLogits installée, lien).
+- **Tokens modifiables** : pour les cas d'usage texte, le menu « Personnaliser » affiche le nombre de tokens générés par action (valeur du catalogue par défaut) et permet de le modifier ; `POST /api/calculate` accepte `parameters.output_tokens` (de 1 à 10 000 000).
+- **Logos des fournisseurs** : également affichés dans la répartition par fournisseur.
