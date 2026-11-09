@@ -135,3 +135,38 @@ def test_get_use_cases_lists_families_and_the_family_of_each_use_case():
     assert families["email"] == "writing"
     assert families["video"] == "visual"
     assert families["dev_assistance"] == "development"
+
+
+def test_get_use_cases_is_cacheable_with_a_short_max_age_and_an_etag():
+    response = client.get("/api/use-cases")
+
+    assert response.headers["cache-control"] == "public, max-age=300"
+    etag = response.headers["etag"]
+    assert etag.startswith('"') and etag.endswith('"')
+    assert client.get("/api/use-cases").headers["etag"] == etag
+
+
+def test_get_use_cases_answers_304_without_body_when_the_etag_matches():
+    etag = client.get("/api/use-cases").headers["etag"]
+
+    response = client.get("/api/use-cases", headers={"If-None-Match": etag})
+
+    assert response.status_code == 304
+    assert response.content == b""
+    assert response.headers["etag"] == etag
+    assert response.headers["cache-control"] == "public, max-age=300"
+
+
+def test_get_use_cases_accepts_the_weak_etag_set_by_nginx_compression():
+    etag = client.get("/api/use-cases").headers["etag"]
+
+    response = client.get("/api/use-cases", headers={"If-None-Match": f'"other", W/{etag}'})
+
+    assert response.status_code == 304
+
+
+def test_get_use_cases_returns_the_catalogue_when_the_etag_differs():
+    response = client.get("/api/use-cases", headers={"If-None-Match": '"stale"'})
+
+    assert response.status_code == 200
+    assert len(response.json()["use_cases"]) == 12
