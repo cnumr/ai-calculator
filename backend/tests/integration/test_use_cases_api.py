@@ -123,3 +123,15 @@ def test_get_use_cases_lists_the_data_sources_and_their_versions():
     assert set(sources) == {"ecologits", "impactco2"}
     assert sources["ecologits"]["version"]
     assert sources["impactco2"]["retrieved_on"]
+
+
+def test_get_use_cases_lists_families_and_the_family_of_each_use_case():
+    body = client.get("/api/use-cases").json()
+
+    assert [f["id"] for f in body["families"]] == [
+        "writing", "analysis", "office", "visual", "development"
+    ]
+    families = {uc["id"]: uc["family"] for uc in body["use_cases"]}
+    assert families["email"] == "writing"
+    assert families["video"] == "visual"
+    assert families["dev_assistance"] == "development"

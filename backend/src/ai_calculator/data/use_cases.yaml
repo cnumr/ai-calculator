@@ -70,6 +70,15 @@ providers:
     selected_by_default: true
   - id: microsoft_copilot
     selected_by_default: true
+# Families of use cases, in display order: the calculator lists use cases
+# under a heading per family (labels in frontend/src/i18n). Every use case
+# declares its family.
+families:
+  - id: writing
+  - id: analysis
+  - id: office
+  - id: visual
+  - id: development
 # Each use case declares its kind, which sets how its impacts are computed
 # and which parameters POST /api/calculate accepts for it:
 #   text  -> EcoLogits LLM; offers every model of text_models above, and
@@ -92,6 +101,7 @@ use_cases:
   # Replaces the POC V1 static value (veo-2, 377 g CO2eq, no published
   # source; veo-2 is not modelled by EcoLogits).
   - id: video
+    family: visual
     kind: video
     default_provider: google
     recommended_tier: video
@@ -131,6 +141,7 @@ use_cases:
   # study covers diffusion models in general, Veo 3.1 is only the reference.
   # The profile keeps the name of the image model the user works with.
   - id: image
+    family: visual
     kind: image
     default_provider: google
     recommended_tier: image
@@ -156,6 +167,7 @@ use_cases:
             image_from_video: *image_from_video
   # Output tokens per action from the project methodology: 5000 (5-page report, EcoLogits reference).
   - id: deep_research
+    family: analysis
     kind: text
     default_provider: openai
     recommended_tier: research
@@ -164,54 +176,63 @@ use_cases:
   # pre-existing asset filename (assets/use-cases/meet_summary.svg)
   # Output tokens per action from the project methodology: 1200 (1 to 2-page summary; range 800-2000).
   - id: meet_summary
+    family: analysis
     kind: text
     default_provider: microsoft_copilot
     recommended_tier: eco
     output_tokens: 1200
   # Output tokens per action from the project methodology: 2000 (2-page summary; range 1500-3000).
   - id: doc_small
+    family: writing
     kind: text
     default_provider: openai
     recommended_tier: eco
     output_tokens: 2000
   # Output tokens per action from the project methodology: 5000 (5-page summary, EcoLogits reference).
   - id: doc_large
+    family: writing
     kind: text
     default_provider: openai
     recommended_tier: balanced
     output_tokens: 5000
   # Output tokens per action from the project methodology: 2000 (8 to 12 slides with titles, key messages, bullets, notes and layout instructions).
   - id: slides
+    family: office
     kind: text
     default_provider: google
     recommended_tier: balanced
     output_tokens: 2000
   # Output tokens per action from the project methodology: 2500 (20 to 100-row table with headers, formulas, checks, comments; range 1000-5000).
   - id: spreadsheet
+    family: office
     kind: text
     default_provider: microsoft_copilot
     recommended_tier: balanced
     output_tokens: 2500
   # Output tokens per action from the project methodology: 250 (about 200-word answer, EcoLogits reference).
   - id: ai_query
+    family: analysis
     kind: text
     default_provider: google
     recommended_tier: eco
     output_tokens: 250
   # Output tokens per action from the project methodology: 300 (100 to 250 words; range 150-500).
   - id: email
+    family: writing
     kind: text
     default_provider: microsoft_copilot
     recommended_tier: eco
     output_tokens: 300
   # Output tokens per action from the project methodology: 1000 (detailed email, 300 to 900 words; range 500-1800).
   - id: email_long
+    family: writing
     kind: text
     default_provider: microsoft_copilot
     recommended_tier: balanced
     output_tokens: 1000
   # Output tokens per action from the project methodology: 100000 (autonomous agentic coding session).
   - id: dev_assistance
+    family: development
     kind: text
     default_provider: anthropic
     recommended_tier: balanced

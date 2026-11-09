@@ -6,6 +6,7 @@ from ai_calculator.domain.use_cases import Catalog, ResolvedProfile
 from ai_calculator.schemas.use_cases import (
     CatalogProviderOut,
     DataSourceOut,
+    FamilyOut,
     ProfileOut,
     ProfileParameterOut,
     ProviderMappingOut,
@@ -36,6 +37,7 @@ def _to_use_cases_response(catalog: Catalog) -> UseCasesResponse:
             CatalogProviderOut(id=p.id, selected_by_default=p.selected_by_default)
             for p in catalog.providers
         ],
+        families=[FamilyOut(id=family) for family in catalog.families],
         use_cases=[
             UseCaseOut(
                 id=uc.id,
@@ -53,6 +55,7 @@ def _to_use_cases_response(catalog: Catalog) -> UseCasesResponse:
                 source=SourceOut(
                     id=uc.source.id, version=uc.source.version, url=uc.source.url
                 ),
+                family=uc.family,
             )
             for uc in catalog.use_cases
         ],

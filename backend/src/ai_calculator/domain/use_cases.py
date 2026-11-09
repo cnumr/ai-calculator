@@ -207,12 +207,17 @@ class ResolvedUseCase:
     recommended_tier: str
     providers: list[ResolvedProviderMapping]
     source: MethodologicalSource
+    # Family the use case is listed under (e.g. "writing"), when the
+    # catalogue declares families.
+    family: str | None = None
 
 
 @dataclass(frozen=True)
 class Catalog:
     providers: list[CatalogProvider]
     use_cases: list[ResolvedUseCase]
+    # Families of use cases, in display order (empty when not declared).
+    families: list[str] = field(default_factory=list)
 
     def find(
         self, use_case_id: str, provider_id: str, profile_id: str
@@ -449,6 +454,27 @@ def _text_provider_mappings(
     ]
 
 
+def _parse_families(raw: dict, context: str) -> list[str]:
+    """Ids of the use-case families, in display order (optional)."""
+    entries = raw.get("families") or []
+    families = [str(_require(entry, "id", "families entry")) for entry in entries]
+    if len(set(families)) != len(families):
+        raise UseCasesConfigError(f"{context}: families must have unique ids")
+    return families
+
+
+def _use_case_family(uc: dict, families: list[str], context: str) -> str | None:
+    """The use case's family: required, and declared, when families exist."""
+    if not families:
+        if "family" in uc:
+            raise UseCasesConfigError(f"{context}: 'family' needs a families list")
+        return None
+    family = str(_require(uc, "family", context))
+    if family not in families:
+        raise UseCasesConfigError(f"{context}: unknown family '{family}'")
+    return family
+
+
 def _check_defaults(
     default_provider: str,
     recommended_tier: str,
@@ -498,6 +524,7 @@ def load_catalog(path: Path | None = None) -> Catalog:
         raise UseCasesConfigError(f"{config_path}: model_labels must be a mapping")
 
     text_models = _parse_text_models(raw, str(config_path))
+    families = _parse_families(raw, str(config_path))
 
     raw_use_cases = _require(raw, "use_cases", str(config_path))
     use_cases = []
@@ -531,6 +558,7 @@ def load_catalog(path: Path | None = None) -> Catalog:
         _check_defaults(
             default_provider, recommended_tier, provider_mappings, use_case_context
         )
+        family = _use_case_family(uc, families, use_case_context)
         use_cases.append(
             ResolvedUseCase(
                 id=use_case_id,
@@ -540,7 +568,8 @@ def load_catalog(path: Path | None = None) -> Catalog:
                 recommended_tier=recommended_tier,
                 providers=provider_mappings,
                 source=source_for_kind(kind),
+                family=family,
             )
         )
 
-    return Catalog(providers=providers, use_cases=use_cases)
+    return Catalog(providers=providers, use_cases=use_cases, families=families)

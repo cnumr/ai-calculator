@@ -80,6 +80,22 @@ describe("fetchUseCases", () => {
     expect(legacy).toEqual({ id: "legacy", parameters: [], models: [] });
   });
 
+  it("reads the families and the family of each use case", async () => {
+    stubFetch({
+      providers: [],
+      families: [{ id: "writing" }, { id: "visual" }],
+      use_cases: [
+        { id: "email", kind: "text", family: "writing", providers: [] },
+        { id: "legacy", kind: "text", providers: [] },
+      ],
+    });
+
+    const catalog = await fetchUseCases();
+
+    expect(catalog.families).toEqual(["writing", "visual"]);
+    expect(catalog.useCases.map((uc) => uc.family)).toEqual(["writing", null]);
+  });
+
   it("throws ApiError when the response is not ok", async () => {
     stubFetch({}, false, 500);
 
