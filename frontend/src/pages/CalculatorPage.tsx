@@ -43,7 +43,8 @@ function createInitialCardStates(useCases: UseCasesCatalog["useCases"]) {
     states[useCase.id] = {
       providerId: mapping?.providerId ?? "",
       profileId: profile?.id ?? "",
-      frequencyPerDay: 1,
+      // No usage by default: the user enters their own daily frequencies.
+      frequencyPerDay: 0,
       parameters: {},
     };
   }

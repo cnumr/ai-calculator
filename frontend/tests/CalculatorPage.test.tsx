@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import i18next from "../src/i18n";
@@ -141,8 +141,21 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-async function renderLoaded() {
+/** The page as it opens: every card at a frequency of 0. */
+async function renderDefault() {
   const view = render(<CalculatorPage />);
+  await waitFor(() => expect(individualSummary()).toBe("0 kg CO2eq"));
+  return view;
+}
+
+/** The page with each card used once a day. */
+async function renderLoaded() {
+  const view = await renderDefault();
+  for (const title of [/video generation/i, /writing an email/i]) {
+    fireEvent.change(within(card(title)).getByLabelText("Average daily frequency"), {
+      target: { value: "1" },
+    });
+  }
   // video 1 kg + email (google) 100 kg per day, over 218 days = 22 018 kg
   await waitFor(() => expect(individualSummary()).toBe("22.0 t CO2eq"));
   return view;
@@ -184,8 +197,17 @@ describe("CalculatorPage catalogue", () => {
 });
 
 describe("CalculatorPage calculation (POST /api/calculate)", () => {
+  it("starts every card at a frequency of 0", async () => {
+    await renderDefault();
+
+    for (const title of [/video generation/i, /writing an email/i]) {
+      expect(within(card(title)).getByLabelText("Average daily frequency")).toHaveValue(0);
+      expect(cardGwp(title)).toHaveTextContent("0 kg CO2eq");
+    }
+  });
+
   it("sends the scenario of the cards and the headcount", async () => {
-    await renderLoaded();
+    await renderDefault();
 
     expect(lastRequest()).toEqual({
       headcount: 1,
@@ -195,7 +217,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
           useCaseId: "video",
           providerId: "google",
           profileId: "video",
-          frequencyPerDay: 1,
+          frequencyPerDay: 0,
           parameters: { resolution: "720p" },
         },
         {
@@ -203,7 +225,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
           useCaseId: "email",
           providerId: "google",
           profileId: "eco",
-          frequencyPerDay: 1,
+          frequencyPerDay: 0,
           parameters: {},
         },
       ],
@@ -345,13 +367,14 @@ describe("CalculatorPage keeps the scenario consistent with the cards", () => {
   it("sends the default scenario again after a reset", async () => {
     const user = userEvent.setup();
     await renderLoaded();
-    const initial = lastRequest();
+    const initial = mockedCalculate.mock.calls[0][0];
 
     await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
     await waitFor(() => expect(individualSummary()).toBe("22.2 t CO2eq"));
     await user.click(screen.getByRole("button", { name: /reset/i }));
 
-    await waitFor(() => expect(individualSummary()).toBe("22.0 t CO2eq"));
+    // Back to the defaults: frequencies at 0, 720p.
+    await waitFor(() => expect(individualSummary()).toBe("0 kg CO2eq"));
     expect(lastRequest()).toEqual(initial);
   });
 
