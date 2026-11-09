@@ -20,8 +20,8 @@ model_labels:
   gemini-pro-latest: Gemini Pro
   gemini-2.5-flash-image: Gemini 2.5 Flash Image
   dall-e-3: DALL·E 3
-  google/veo-3.0: Veo 3
-  google/veo-3.0-fast: Veo 3 Fast
+  google/veo-3.1: Veo 3.1
+  google/veo-3.1-fast: Veo 3.1 Fast
   openai/sora-2-pro: Sora 2 Pro
 # Text models shared by every text use case: provider -> profile -> model.
 # Profiles, from the lightest to the largest model (EcoLogits 0.11.3 sizes):
@@ -82,8 +82,13 @@ use_cases:
   # The user can change resolution, duration and audio: their options come
   # from each model's EcoLogits capabilities, and every combination is
   # precomputed at startup. `defaults` must be supported by the model.
-  # Reference clip: 8 s (offered by all three models), 720p, with audio. The
-  # datacenter is the model provider's EcoLogits configuration.
+  # Reference clip from the project methodology: Veo 3.1, 720p, 8 s, with
+  # audio (27.7-60.6 Wh with EcoLogits 0.11.3, as in the methodology). 8 s is
+  # offered by all three models (Veo 3.1 and 3.1 Fast: 4, 6 or 8 s; Sora 2
+  # Pro: 4, 8 or 12 s). The datacenter is the model provider's EcoLogits
+  # configuration.
+  # 4K is not offered: no EcoLogits 0.11.3 video model supports it (720p and
+  # 1080p at best), although the methodology lists it.
   # Replaces the POC V1 static value (veo-2, 377 g CO2eq, no published
   # source; veo-2 is not modelled by EcoLogits).
   - id: video
@@ -95,14 +100,14 @@ use_cases:
         profiles:
           - id: video
             ecologits_video:
-              model: google/veo-3.0
+              model: google/veo-3.1
               defaults:
                 resolution: 720p
                 duration_s: 8
                 with_audio: true
           - id: video_fast
             ecologits_video:
-              model: google/veo-3.0-fast
+              model: google/veo-3.1-fast
               defaults:
                 resolution: 720p
                 duration_s: 8

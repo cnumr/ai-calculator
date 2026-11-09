@@ -462,3 +462,18 @@ def test_real_config_uses_one_model_per_provider_and_profile_for_every_text_use_
                 key = (mapping.provider_id, profile.id)
                 models.setdefault(key, set()).add(profile.calculation.ecologits_model)
     assert all(len(names) == 1 for names in models.values()), models
+
+
+def test_real_config_video_follows_the_methodology_reference_veo_3_1():
+    video = next(uc for uc in load_catalog().use_cases if uc.id == "video")
+    google = next(m for m in video.providers if m.provider_id == "google")
+    models = {p.id: p.calculation.model for p in google.profiles}
+    assert models == {"video": "google/veo-3.1", "video_fast": "google/veo-3.1-fast"}
+
+    standard = next(p for p in google.profiles if p.id == "video")
+    options = {p.id: p.options for p in standard.parameters}
+    assert options["resolution"] == ["720p", "1080p"]
+    assert options["duration_s"] == [4, 6, 8]
+    # Methodology reference: Veo 3.1, 720p, 8 s, with audio, 27.7 to 60.6 Wh.
+    energy = standard.unit_impacts().energy
+    assert (round(energy.min * 1000, 1), round(energy.max * 1000, 1)) == (27.7, 60.6)

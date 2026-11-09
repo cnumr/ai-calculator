@@ -57,7 +57,7 @@ def test_get_use_cases_serialises_video_parameters():
 
     assert profile["parameters"] == [
         {"id": "resolution", "default": "720p", "options": ["720p", "1080p"], "min": None, "max": None},
-        {"id": "duration_s", "default": 8, "options": [5, 8, 10], "min": None, "max": None},
+        {"id": "duration_s", "default": 8, "options": [4, 6, 8], "min": None, "max": None},
         {"id": "with_audio", "default": True, "options": [True, False], "min": None, "max": None},
     ]
 
