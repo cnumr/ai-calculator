@@ -403,6 +403,42 @@ describe("UseCaseCard provider logo", () => {
     expect(logo().getAttribute("src")).not.toBe(openaiLogo);
   });
 
+  it.each([
+    // The new provider offers the chosen profile: it is kept.
+    ["balanced", "balanced"],
+    // It does not: the use case's recommended profile is used.
+    ["flagship", "balanced"],
+  ])("keeps profile %s when changing provider, else the recommended one", async (chosen, expected) => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const useCase: UseCase = {
+      id: "email",
+      kind: "text",
+      recommendedProfileId: "balanced",
+      providers: [
+        { providerId: "openai", profiles: [{ id: "eco" }, { id: "balanced" }, { id: "flagship" }] },
+        { providerId: "mistral", profiles: [{ id: "eco" }, { id: "balanced" }] },
+      ],
+    };
+    render(
+      <UseCaseCard
+        useCase={useCase}
+        availableProviderIds={["openai", "mistral"]}
+        providerId="openai"
+        profileId={chosen}
+        frequencyPerDay={1}
+        dailyImpacts={DAILY}
+        onChange={onChange}
+      />,
+    );
+
+    await user.selectOptions(screen.getByLabelText("Provider"), "mistral");
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ providerId: "mistral", profileId: expected }),
+    );
+  });
+
   it("shows the provider's initial when it has no logo", () => {
     renderEmail({
       useCase: { ...EMAIL, providers: [{ providerId: "acme", profiles: [{ id: "eco" }] }] },

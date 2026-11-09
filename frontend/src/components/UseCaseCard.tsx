@@ -24,6 +24,10 @@ import docSmallIcon from "../assets/use-cases/doc_small.svg";
 import docLargeIcon from "../assets/use-cases/doc_large.svg";
 import aiQueryIcon from "../assets/use-cases/ai_query.svg";
 import emailIcon from "../assets/use-cases/email.svg";
+import emailLongIcon from "../assets/use-cases/email_long.svg";
+import slidesIcon from "../assets/use-cases/slides.svg";
+import spreadsheetIcon from "../assets/use-cases/spreadsheet.svg";
+import devAssistanceIcon from "../assets/use-cases/dev_assistance.svg";
 
 const USE_CASE_ICONS: Record<string, string> = {
   video: videoIcon,
@@ -34,6 +38,10 @@ const USE_CASE_ICONS: Record<string, string> = {
   doc_large: docLargeIcon,
   ai_query: aiQueryIcon,
   email: emailIcon,
+  email_long: emailLongIcon,
+  slides: slidesIcon,
+  spreadsheet: spreadsheetIcon,
+  dev_assistance: devAssistanceIcon,
 };
 
 const CRITERIA: Array<{ key: keyof Impacts; unit: string }> = [
@@ -237,9 +245,18 @@ export function UseCaseCard({
                     const nextMapping = offeredProviders.find(
                       (pm) => pm.providerId === e.target.value,
                     );
+                    // Keep the chosen profile when the new provider offers
+                    // it, else the use case's recommended one, else its first.
+                    const nextProfiles = nextMapping?.profiles ?? [];
+                    const keep = (id: string) =>
+                      nextProfiles.some((profile) => profile.id === id) ? id : null;
                     emit({
                       providerId: e.target.value,
-                      profileId: nextMapping?.profiles[0]?.id ?? "",
+                      profileId:
+                        keep(currentProfile?.id ?? profileId) ??
+                        keep(useCase.recommendedProfileId ?? "") ??
+                        nextProfiles[0]?.id ??
+                        "",
                     });
                   }}
                 >

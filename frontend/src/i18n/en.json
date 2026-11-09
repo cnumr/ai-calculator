@@ -20,7 +20,11 @@
     "doc_small": { "name": "Writing a short document", "subtitle": "Notes and short summaries" },
     "doc_large": { "name": "Writing a long document", "subtitle": "Reports, PDFs, articles" },
     "ai_query": { "name": "Query to an AI assistant", "subtitle": "Chat and assistant" },
-    "email": { "name": "Writing a short email", "subtitle": "Gmail, Outlook, calendar" }
+    "email": { "name": "Writing a short email", "subtitle": "Gmail, Outlook, calendar" },
+    "slides": { "name": "Generating a presentation (slides)", "subtitle": "8 to 12 slides, Slides, PowerPoint" },
+    "spreadsheet": { "name": "Generating a spreadsheet", "subtitle": "20 to 100-row table, Sheets, Excel" },
+    "email_long": { "name": "Writing a long email", "subtitle": "Detailed email of 300 to 900 words" },
+    "dev_assistance": { "name": "Development assistance", "subtitle": "Agentic session" }
   },
   "calculator": {
     "title": "Impact calculator",
@@ -67,6 +71,7 @@
       "eco": "Eco",
       "balanced": "Balanced",
       "powerful": "Powerful",
+      "flagship": "Ultra",
       "research": "Research",
       "image": "Standard",
       "video": "Standard",

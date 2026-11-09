@@ -11,7 +11,7 @@ def test_get_use_cases_returns_200_with_providers_and_use_cases():
     assert response.status_code == 200
     body = response.json()
     assert len(body["providers"]) == 5
-    assert len(body["use_cases"]) == 8
+    assert len(body["use_cases"]) == 12
     email = next(uc for uc in body["use_cases"] if uc["id"] == "email")
     assert email["default_provider"] == "microsoft_copilot"
     assert email["recommended_tier"] == "eco"
@@ -22,9 +22,8 @@ def test_get_use_cases_reflects_selected_by_default():
 
     body = response.json()
     providers_by_id = {p["id"]: p for p in body["providers"]}
-    assert providers_by_id["openai"]["selected_by_default"] is True
-    assert providers_by_id["anthropic"]["selected_by_default"] is False
-    assert providers_by_id["mistral"]["selected_by_default"] is False
+    # Every provider is offered by default; users deselect the ones they do not use.
+    assert all(provider["selected_by_default"] for provider in providers_by_id.values())
 
 
 def test_get_use_cases_omits_unsupported_provider_combinations():
@@ -81,7 +80,7 @@ def test_get_use_cases_exposes_profile_model_names():
     email = next(uc for uc in body["use_cases"] if uc["id"] == "email")
     openai = next(p for p in email["providers"] if p["provider_id"] == "openai")
     eco = next(p for p in openai["profiles"] if p["id"] == "eco")
-    assert eco["models"] == ["GPT-4o mini"]
+    assert eco["models"] == ["GPT-6 Luna"]
 
 
 def test_get_use_cases_declares_the_kind_of_each_use_case():

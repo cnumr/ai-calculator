@@ -55,4 +55,4 @@ Voir [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) pour lancer le projet (Docker Co
 
 ## Statut
 
-V1 en développement : calculateur fonctionnel (8 cas d'usage, 5 fournisseurs), publié par versions successives. Voir [CHANGELOG.md](CHANGELOG.md) pour l'historique, et `.superpowers/specs/` pour les specs de design (dont les retours sur le POC V2).
+V1 en développement : calculateur fonctionnel (12 cas d'usage, 5 fournisseurs), publié par versions successives. Voir [CHANGELOG.md](CHANGELOG.md) pour l'historique, et `.superpowers/specs/` pour les specs de design (dont les retours sur le POC V2).

@@ -77,6 +77,8 @@ test("calculator: impacts come from POST /api/calculate and follow the cards", a
   await expect(impactDetails).toHaveAttribute("open", "");
 
   const anthropicChip = page.getByRole("button", { name: /anthropic/i });
-  await anthropicChip.click();
+  // Every provider is selected by default: a click deselects it.
   await expect(anthropicChip).toHaveAttribute("aria-pressed", "true");
+  await anthropicChip.click();
+  await expect(anthropicChip).toHaveAttribute("aria-pressed", "false");
 });

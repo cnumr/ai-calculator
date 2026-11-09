@@ -361,6 +361,76 @@ def _resolve_profile(
     return resolved
 
 
+def _parse_text_models(raw: dict, context: str) -> dict[str, list[dict]]:
+    """The shared text-model table: provider -> its profiles, in order.
+
+    Each profile maps a tier (eco, balanced, ...) to an EcoLogits model. Text
+    use cases that declare `output_tokens` instead of `providers` offer every
+    provider and profile of this table, so a model is changed in one place.
+    """
+    table = raw.get("text_models") or {}
+    if not isinstance(table, dict):
+        raise UseCasesConfigError(f"{context}: text_models must be a mapping")
+    parsed: dict[str, list[dict]] = {}
+    for provider_id, tiers in table.items():
+        if not isinstance(tiers, dict) or not tiers:
+            raise UseCasesConfigError(
+                f"{context}: text_models.{provider_id} must map profiles to models"
+            )
+        parsed[provider_id] = [
+            {
+                "id": tier_id,
+                "ecologits_provider": _require(
+                    model, "ecologits_provider", f"text_models.{provider_id}.{tier_id}"
+                ),
+                "ecologits_model": _require(
+                    model, "ecologits_model", f"text_models.{provider_id}.{tier_id}"
+                ),
+            }
+            for tier_id, model in tiers.items()
+        ]
+    return parsed
+
+
+def _text_provider_mappings(
+    uc: dict, text_models: dict[str, list[dict]], context: str
+) -> list[dict]:
+    """Provider mappings of a text use case built from the shared table."""
+    if not text_models:
+        raise UseCasesConfigError(
+            f"{context}: needs either 'providers' or a text_models table"
+        )
+    output_tokens = _require(uc, "output_tokens", context)
+    return [
+        {
+            "provider_id": provider_id,
+            "profiles": [
+                {**profile, "output_tokens": output_tokens} for profile in profiles
+            ],
+        }
+        for provider_id, profiles in text_models.items()
+    ]
+
+
+def _check_defaults(
+    default_provider: str,
+    recommended_tier: str,
+    mappings: list[ResolvedProviderMapping],
+    context: str,
+) -> None:
+    """The default provider must be offered, with the recommended profile."""
+    mapping = next((m for m in mappings if m.provider_id == default_provider), None)
+    if mapping is None:
+        raise UseCasesConfigError(
+            f"{context}: default_provider '{default_provider}' is not offered"
+        )
+    if all(p.id != recommended_tier for p in mapping.profiles):
+        raise UseCasesConfigError(
+            f"{context}: recommended_tier '{recommended_tier}' is not offered "
+            f"by provider '{default_provider}'"
+        )
+
+
 def load_catalog(path: Path | None = None) -> Catalog:
     config_path = path if path is not None else DEFAULT_USE_CASES_PATH
 
@@ -390,6 +460,8 @@ def load_catalog(path: Path | None = None) -> Catalog:
     if not isinstance(model_labels, dict):
         raise UseCasesConfigError(f"{config_path}: model_labels must be a mapping")
 
+    text_models = _parse_text_models(raw, str(config_path))
+
     raw_use_cases = _require(raw, "use_cases", str(config_path))
     use_cases = []
     for uc in raw_use_cases:
@@ -402,7 +474,12 @@ def load_catalog(path: Path | None = None) -> Catalog:
             )
         default_provider = _require(uc, "default_provider", use_case_context)
         recommended_tier = _require(uc, "recommended_tier", use_case_context)
-        raw_provider_mappings = _require(uc, "providers", use_case_context)
+        if kind == "text" and "providers" not in uc:
+            raw_provider_mappings = _text_provider_mappings(
+                uc, text_models, use_case_context
+            )
+        else:
+            raw_provider_mappings = _require(uc, "providers", use_case_context)
         provider_mappings = []
         for pm in raw_provider_mappings:
             provider_id = _require(pm, "provider_id", use_case_context)
@@ -414,6 +491,9 @@ def load_catalog(path: Path | None = None) -> Catalog:
             provider_mappings.append(
                 ResolvedProviderMapping(provider_id=provider_id, profiles=profiles)
             )
+        _check_defaults(
+            default_provider, recommended_tier, provider_mappings, use_case_context
+        )
         use_cases.append(
             ResolvedUseCase(
                 id=use_case_id,

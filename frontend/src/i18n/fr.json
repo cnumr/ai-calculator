@@ -20,7 +20,11 @@
     "doc_small": { "name": "Rédaction d'un document court", "subtitle": "Notes et synthèses courtes" },
     "doc_large": { "name": "Rédaction d'un document long", "subtitle": "Rapports, PDF, articles" },
     "ai_query": { "name": "Question à un assistant IA", "subtitle": "Chat et assistant" },
-    "email": { "name": "Rédaction d'un mail court", "subtitle": "Gmail, Outlook, agenda" }
+    "email": { "name": "Rédaction d'un mail court", "subtitle": "Gmail, Outlook, agenda" },
+    "slides": { "name": "Générer une présentation (slides)", "subtitle": "8 à 12 slides, Slides, PowerPoint" },
+    "spreadsheet": { "name": "Génération d'une feuille de calcul", "subtitle": "Tableau de 20 à 100 lignes, Sheets, Excel" },
+    "email_long": { "name": "Rédaction d'un mail long", "subtitle": "Mail détaillé de 300 à 900 mots" },
+    "dev_assistance": { "name": "Assistance au développement", "subtitle": "Session agentique" }
   },
   "calculator": {
     "title": "Calculateur d'impacts",
@@ -67,6 +71,7 @@
       "eco": "Éco",
       "balanced": "Équilibré",
       "powerful": "Puissant",
+      "flagship": "Ultra",
       "research": "Recherche",
       "image": "Standard",
       "video": "Standard",

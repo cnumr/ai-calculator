@@ -320,7 +320,7 @@ def test_real_config_loads():
     catalog = load_catalog()
 
     assert len(catalog.providers) == 5
-    assert len(catalog.use_cases) == 8
+    assert len(catalog.use_cases) == 12
 
 
 def test_real_config_offers_google_and_openai_video_profiles():
@@ -366,3 +366,99 @@ def test_use_cases_name_their_methodological_source(tmp_path):
     assert image.source.id == "unsourced"
     assert image.source.version is None
     assert image.source.url is None
+
+
+# --- Shared text-model table ---------------------------------------------------------
+
+TEXT_MODELS_YAML = """
+model_labels:
+  gpt-4o-mini: GPT-4o mini
+  gpt-4o: GPT-4o
+  claude-haiku-4-5: Claude Haiku 4.5
+providers:
+  - id: openai
+    selected_by_default: true
+  - id: anthropic
+    selected_by_default: false
+text_models:
+  openai:
+    eco: {ecologits_provider: openai, ecologits_model: gpt-4o-mini}
+    balanced: {ecologits_provider: openai, ecologits_model: gpt-4o}
+  anthropic:
+    eco: {ecologits_provider: anthropic, ecologits_model: claude-haiku-4-5}
+use_cases:
+  - id: email
+    kind: text
+    default_provider: openai
+    recommended_tier: balanced
+    output_tokens: 300
+"""
+
+
+def test_text_use_cases_without_providers_offer_every_model_of_the_shared_table(tmp_path):
+    email = _load(tmp_path, TEXT_MODELS_YAML).use_cases[0]
+
+    offered = {
+        m.provider_id: [(p.id, p.calculation.ecologits_model) for p in m.profiles]
+        for m in email.providers
+    }
+    assert offered == {
+        "openai": [("eco", "gpt-4o-mini"), ("balanced", "gpt-4o")],
+        "anthropic": [("eco", "claude-haiku-4-5")],
+    }
+    for mapping in email.providers:
+        for profile in mapping.profiles:
+            assert profile.parameters[0].id == "output_tokens"
+            assert profile.parameters[0].default == 300
+
+
+def test_text_use_case_without_providers_needs_the_shared_table(tmp_path):
+    yaml_text = TEXT_MODELS_YAML.split("text_models:")[0] + "use_cases:" + (
+        TEXT_MODELS_YAML.split("use_cases:")[1]
+    )
+    with pytest.raises(UseCasesConfigError, match="text_models"):
+        _load(tmp_path, yaml_text)
+
+
+def test_load_catalog_raises_when_the_default_provider_is_not_offered(tmp_path):
+    with pytest.raises(UseCasesConfigError, match="default_provider 'mistral'"):
+        _load(tmp_path, TEXT_MODELS_YAML.replace("default_provider: openai", "default_provider: mistral"))
+
+
+def test_load_catalog_raises_when_the_recommended_tier_is_not_offered(tmp_path):
+    with pytest.raises(UseCasesConfigError, match="recommended_tier 'powerful'"):
+        _load(tmp_path, TEXT_MODELS_YAML.replace("recommended_tier: balanced", "recommended_tier: powerful"))
+
+
+def test_real_config_offers_the_methodology_use_cases_with_the_balanced_profile():
+    catalog = load_catalog()
+    by_id = {uc.id: uc for uc in catalog.use_cases}
+
+    expected_tokens = {"slides": 2000, "spreadsheet": 2500, "email_long": 1000, "dev_assistance": 100000}
+    for use_case_id, tokens in expected_tokens.items():
+        use_case = by_id[use_case_id]
+        assert use_case.kind == "text"
+        assert use_case.recommended_tier == "balanced"
+        assert {m.provider_id for m in use_case.providers} == {
+            "openai", "anthropic", "mistral", "google", "microsoft_copilot"
+        }
+        profile = next(
+            p
+            for m in use_case.providers
+            if m.provider_id == use_case.default_provider
+            for p in m.profiles
+            if p.id == "balanced"
+        )
+        assert profile.parameters[0].default == tokens
+
+
+def test_real_config_uses_one_model_per_provider_and_profile_for_every_text_use_case():
+    models: dict[tuple[str, str], set[str]] = {}
+    for use_case in load_catalog().use_cases:
+        if use_case.kind != "text":
+            continue
+        for mapping in use_case.providers:
+            for profile in mapping.profiles:
+                key = (mapping.provider_id, profile.id)
+                models.setdefault(key, set()).add(profile.calculation.ecologits_model)
+    assert all(len(names) == 1 for names in models.values()), models
