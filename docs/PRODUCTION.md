@@ -83,6 +83,16 @@ scripts/verify-compression.sh                       # http://localhost:${HTTP_PO
 scripts/verify-compression.sh https://mon-domaine   # ou une autre URL de base
 ```
 
+Le script `scripts/verify-cache.sh` vérifie les en-têtes de cache navigateur (écoconception, GreenIT RWEB_0075), définis dans `frontend/nginx.conf` :
+
+- les fichiers du build (`/assets/`), dont le nom contient un hash de leur contenu, sont gardés un an sans revérification (`Cache-Control: public, max-age=31536000, immutable`) ; un asset absent renvoie 404 ;
+- `index.html`, servi pour toutes les routes de l'application, est revérifié à chaque visite (`Cache-Control: no-cache`) : nginx répond 304 sans le corps s'il n'a pas changé, et une nouvelle version est prise en compte immédiatement.
+
+```bash
+scripts/verify-cache.sh                       # http://localhost:${HTTP_PORT:-80}
+scripts/verify-cache.sh https://mon-domaine   # ou une autre URL de base
+```
+
 ## Variables d'environnement
 
 | Variable    | Service  | Défaut | Rôle                                                              |

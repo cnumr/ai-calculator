@@ -8,6 +8,7 @@
 set -euo pipefail
 
 BASE_URL="${1:-http://localhost:${HTTP_PORT:-80}}"
+BASE_URL="${BASE_URL%/}"  # sans / final
 
 encoding() {
   # En-tête Content-Encoding de la réponse (vide si absente).
@@ -19,12 +20,12 @@ transferred() {
   curl -s -o /dev/null -w '%{size_download}' -H "Accept-Encoding: $2" "$BASE_URL$1"
 }
 
-index=$(curl -s "$BASE_URL/")
-js=$(echo "$index" | grep -o '/assets/[^"]*\.js' | head -1)
-css=$(echo "$index" | grep -o '/assets/[^"]*\.css' | head -1)
+index=$(curl -s "$BASE_URL/" || true)
+js=$(echo "$index" | grep -o '/assets/[^"]*\.js' | head -1 || true)
+css=$(echo "$index" | grep -o '/assets/[^"]*\.css' | head -1 || true)
 
 if [ -z "$js" ] || [ -z "$css" ]; then
-  echo "FAIL: impossible de trouver le JS et le CSS du build dans $BASE_URL/." >&2
+  echo "FAIL: impossible de trouver le JS et le CSS du build dans $BASE_URL/ (stack de production lancée ? Le serveur de dev Vite ne passe pas par nginx)." >&2
   exit 1
 fi
 
