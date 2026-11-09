@@ -12,6 +12,8 @@ navigateur ── :80 ──> frontend (Nginx)
                          └── /api/*  ──(réseau docker interne)──> backend:8000
 ```
 
+Pour estimer la charge supportée sur un petit serveur (TPS, mémoire), voir [LOAD_TEST.md](LOAD_TEST.md).
+
 ## Prérequis
 
 - Docker + Docker Compose (v2, `docker compose`)
