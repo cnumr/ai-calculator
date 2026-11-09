@@ -9,3 +9,5 @@ Données sourcées et formatage localisé.
 - **Équivalences CO2** : facteurs exacts d'ImpactCO2 (ADEME) pour le streaming vidéo, le smartphone et la voiture thermique, avec gestion des pluriels.
 - **Formatage des nombres** : séparateurs décimaux et de milliers selon la langue choisie (`22,0` en français, `22.0` en anglais).
 - **Unités** : espacées (`g CO2eq`, `mg Sbeq`).
+
+_Réalisé avec Claude Code — Claude Opus 5.5 : ≈ 13,8 M tokens (dont 13,4 M relus en cache, 48 k générés) ; Claude Haiku 5.5 : ≈ 412 k tokens (dont 258 k relus en cache, 20 k générés)._

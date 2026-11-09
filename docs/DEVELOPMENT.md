@@ -159,6 +159,13 @@ npx changeset
 
 Répondre aux questions (bump `patch`/`minor`/`major`, résumé du changement en une phrase — ce résumé alimente directement le `CHANGELOG.md`). Committer le fichier généré dans `.changeset/`.
 
+Si le changement a été réalisé avec un assistant IA, terminer le changeset par une ligne indiquant les tokens consommés et le ou les modèles utilisés. Avec Claude Code, `scripts/claude-usage.py` la produit à partir des journaux de session locaux :
+
+```bash
+scripts/claude-usage.py --since 2026-11-09T15:45 --until 2026-11-09T16:30   # heure locale
+# _Réalisé avec Claude Code — Claude Opus 5.5 : ≈ 3,4 M tokens (dont 3,3 M relus en cache, 31 k générés)._
+```
+
 **Automatisation (`.github/workflows/release.yml`)** :
 
 1. À chaque push sur `main`, si des changesets sont en attente, la CI ouvre/actualise une pull request « Version Packages » qui applique le(s) bump(s) et met à jour `CHANGELOG.md`.
