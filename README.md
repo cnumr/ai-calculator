@@ -20,13 +20,13 @@ Un premier [POC](https://ia-calculator.greenit.eco/) a été réalisé sous form
   - **ADPe** : Épuisement des ressources minérales rares utilisées pour fabriquer le matériel.
   - **Énergie** : Électricité consommée par les serveurs pour répondre à la requête.
   - **PE** : Énergie primaire nécessaire, en amont de la production d'électricité.
-- **Back** : API FastAPI stateless, dernières versions stables des librairies. **Toute la logique métier est côté back** : calcul des impacts par action (EcoLogits pour le texte et la vidéo, valeurs statiques pour l'image), extrapolation annuelle (218 jours ouvrés), totaux individuel et entreprise, répartition par fournisseur et équivalences CO2 (ImpactCO2, ADEME).
+- **Back** : API FastAPI stateless, dernières versions stables des librairies. **Toute la logique métier est côté back** : calcul des impacts par action (EcoLogits pour le texte et la vidéo ; pour l'image, transposition depuis une vidéo EcoLogits de référence selon la méthodologie), extrapolation annuelle (218 jours ouvrés), totaux individuel et entreprise, répartition par fournisseur et équivalences CO2 (ImpactCO2, ADEME).
 - **Front** : SPA React + Vite, consommant l'API back en JSON. Il gère l'interface (choix des fournisseurs, profils, fréquences et réglages) et l'affichage, sans calcul d'impact. Stateless (aucune base de données en V1).
 
 ### API
 
 - `GET /api/use-cases` : catalogue des choix possibles (fournisseurs, cas d'usage et leur type `text` / `video` / `image`, profils, modèles, paramètres réglables, source méthodologique) et sources de données utilisées avec leur version (EcoLogits, ImpactCO2). Source de vérité : `backend/src/ai_calculator/data/use_cases.yaml`.
-- `POST /api/calculate` : calcul d'un scénario (usages quotidiens + nombre de salariés) → impacts par usage, totaux annuels, répartition par fournisseur, équivalences CO2. Les paramètres acceptés dépendent du type de cas d'usage (tokens générés pour le texte ; résolution, durée et audio pour la vidéo).
+- `POST /api/calculate` : calcul d'un scénario (usages quotidiens + nombre de salariés) → impacts par usage, totaux annuels, répartition par fournisseur, équivalences CO2. Les paramètres acceptés dépendent du type de cas d'usage (tokens générés pour le texte ; résolution, durée et audio pour la vidéo ; taille pour l'image).
 
 La documentation interactive de l'API est servie par le back sur `/docs`.
 

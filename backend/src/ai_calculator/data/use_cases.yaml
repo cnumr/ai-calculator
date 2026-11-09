@@ -1,5 +1,5 @@
 # Display names of the models used below, shown next to each profile
-# ("Éco (GPT-4o mini)"). Keys are EcoLogits model ids (or, for static
+# ("Éco (GPT-6 Luna)"). Keys are EcoLogits model ids (or, for image
 # profiles, the `model` they declare). Every model used must be listed.
 model_labels:
   gpt-6-luna: GPT-6 Luna
@@ -76,7 +76,7 @@ providers:
 #            output_tokens is the default tokens per action (users can
 #            change it)
 #   video -> EcoLogits video (ecologits_video), resolution / duration / audio
-#   image -> static_impacts declared below, no parameter
+#   image -> transposed from a reference video (image_from_video), size
 use_cases:
   # Video: computed by EcoLogits (estimations.video) for one generated clip.
   # The user can change resolution, duration and audio: their options come
@@ -121,14 +121,15 @@ use_cases:
                 resolution: 720p
                 duration_s: 8
                 with_audio: true
-  # Image: EcoLogits does not model image generation. These static values
-  # (per generated image, kg CO2eq and kg Sbeq) come from the POC V1
-  # (https://ia-calculator.greenit.eco, entries "gemini-2.5-flash-image" and
-  # "dall-e-3", 12 568 mg / 12 500 mg CO2eq), which cites no published source
-  # and states that they include a broader infrastructure estimate.
-  # Kept deliberately until a published source is adopted; the UI flags the
-  # missing source on the card (i18n key useCases.image.dataNote). Candidate
-  # source reviewed: Luccioni et al., "Power Hungry Processing" (FAccT 2024).
+  # Image: EcoLogits does not model image generation. Following the project
+  # methodology, the impacts of an image are those of a reference video clip
+  # computed by EcoLogits (Veo 3.1, 720p, 8 s, with audio: 27.7-60.6 Wh)
+  # divided by a factor per size, for every criterion. The factors match the
+  # energy per image of "The Hidden Cost of an Image" (arXiv 2506.17016):
+  # 1024x1024 about 1.5 Wh (reference / 30), 2048x2048 about 5 Wh
+  # (reference / 8). The same transposition applies to every provider: the
+  # study covers diffusion models in general, Veo 3.1 is only the reference.
+  # The profile keeps the name of the image model the user works with.
   - id: image
     kind: image
     default_provider: google
@@ -138,30 +139,21 @@ use_cases:
         profiles:
           - id: image
             model: gemini-2.5-flash-image
-            static_impacts:
-              gwp:
-                min: 0.012568
-                max: 0.012568
-              adpe:
-                min: 2.7e-07
-                max: 2.7e-07
-              energy: null
-              water: null
-              pe: null
+            image_from_video: &image_from_video
+              reference:
+                model: google/veo-3.1
+                resolution: 720p
+                duration_s: 8
+                with_audio: true
+              size_divisors:
+                1024x1024: 30
+                2048x2048: 8
+              default_size: 1024x1024
       - provider_id: openai
         profiles:
           - id: image
             model: dall-e-3
-            static_impacts:
-              gwp:
-                min: 0.0125
-                max: 0.0125
-              adpe:
-                min: 2.68e-07
-                max: 2.68e-07
-              energy: null
-              water: null
-              pe: null
+            image_from_video: *image_from_video
   # Output tokens per action from the project methodology: 5000 (5-page report, EcoLogits reference).
   - id: deep_research
     kind: text

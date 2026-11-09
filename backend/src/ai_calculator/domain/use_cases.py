@@ -1,7 +1,8 @@
 """Use-case catalogue: which providers, profiles and parameters a user can pick.
 
 The catalogue is descriptive. Each profile carries how to compute the impacts
-of one action (`TextCalculation`, `VideoCalculation`, `StaticCalculation`);
+of one action (`TextCalculation`, `VideoCalculation`,
+`ImageFromVideoCalculation`);
 impacts are computed on demand by the scenario calculation, not stored here.
 """
 
@@ -14,11 +15,11 @@ import yaml
 
 from ai_calculator.domain.impacts import (
     EcologitsComputationError,
-    ImpactRange,
     ModelNotFoundError,
     UnitImpacts,
     compute_unit_impacts,
     compute_video_unit_impacts,
+    scale_impacts,
 )
 from ai_calculator.domain.sources import MethodologicalSource, source_for_kind
 from ai_calculator.domain.video import VideoCapabilities, video_capabilities
@@ -124,13 +125,32 @@ class VideoCalculation:
 
 
 @dataclass(frozen=True)
-class StaticCalculation:
-    """Fixed impacts declared in the catalogue (e.g. image generation)."""
+class ImageFromVideoCalculation:
+    """Image generation, transposed from a reference video (project methodology).
 
-    impacts: UnitImpacts
+    EcoLogits does not model image generation. The methodology takes the
+    impacts of a reference video clip computed by EcoLogits (Veo 3.1, 720p,
+    8 s, with audio) and divides them by a factor per image size, derived from
+    the energy per image measured in "The Hidden Cost of an Image"
+    (arXiv 2506.17016). Every criterion is divided by the same factor.
+    """
+
+    video_model: str
+    resolution: str
+    duration_s: float
+    with_audio: bool
+    # (size, divisor) pairs, e.g. ("1024x1024", 30.0).
+    divisors: tuple[tuple[str, float], ...]
 
     def unit_impacts(self, values: Mapping[str, ParameterValue]) -> UnitImpacts:
-        return self.impacts
+        divisor = dict(self.divisors)[str(values["size"])]
+        video = compute_video_unit_impacts(
+            model_name=self.video_model,
+            resolution=self.resolution,
+            duration_s=self.duration_s,
+            with_audio=self.with_audio,
+        )
+        return scale_impacts(video, 1 / divisor)
 
 
 def _same_value(option: ParameterValue, value: ParameterValue) -> bool:
@@ -223,25 +243,6 @@ def _require(mapping: dict, key: str, context: str) -> object:
     return mapping[key]
 
 
-def _parse_optional_range(mapping: dict, key: str, context: str) -> ImpactRange | None:
-    value = _require(mapping, key, context)
-    if value is None:
-        return None
-    return ImpactRange(min=float(_require(value, "min", context)), max=float(_require(value, "max", context)))
-
-
-def _static_calculation(static_impacts: dict, context: str) -> StaticCalculation:
-    return StaticCalculation(
-        impacts=UnitImpacts(
-            gwp=_parse_optional_range(static_impacts, "gwp", context),
-            energy=_parse_optional_range(static_impacts, "energy", context),
-            adpe=_parse_optional_range(static_impacts, "adpe", context),
-            pe=_parse_optional_range(static_impacts, "pe", context),
-            water=_parse_optional_range(static_impacts, "water", context),
-        )
-    )
-
-
 def _text_calculation(profile: dict, context: str) -> TextCalculation:
     return TextCalculation(
         ecologits_provider=str(_require(profile, "ecologits_provider", context)),
@@ -285,15 +286,47 @@ def _video_parameters(
     return parameters
 
 
+def _image_from_video(
+    spec: dict, context: str
+) -> tuple[ImageFromVideoCalculation, list[ProfileParameter]]:
+    """Calculation and size parameter of an image profile transposed from a
+    reference video; the reference must be supported by the video model."""
+    reference = _require(spec, "reference", context)
+    model = str(_require(reference, "model", context))
+    # Same checks as a video profile's defaults: the clip must be supported.
+    _video_parameters(video_capabilities(model), reference, context)
+    divisors = _require(spec, "size_divisors", context)
+    if not isinstance(divisors, dict) or not divisors:
+        raise UseCasesConfigError(f"{context}: size_divisors must map sizes to factors")
+    if any(float(factor) <= 0 for factor in divisors.values()):
+        raise UseCasesConfigError(f"{context}: size_divisors must be positive")
+    default_size = _require(spec, "default_size", context)
+    if default_size not in divisors:
+        raise UseCasesConfigError(
+            f"{context}: default_size {default_size!r} is not in size_divisors"
+        )
+    calculation = ImageFromVideoCalculation(
+        video_model=model,
+        resolution=str(reference["resolution"]),
+        duration_s=float(reference["duration_s"]),
+        with_audio=bool(reference["with_audio"]),
+        divisors=tuple((str(size), float(factor)) for size, factor in divisors.items()),
+    )
+    parameters = [
+        ProfileParameter(id="size", default=str(default_size), options=[str(s) for s in divisors])
+    ]
+    return calculation, parameters
+
+
 _PROFILE_FIELD_BY_KIND: dict[UseCaseKind, str] = {
     "text": "ecologits_model",
     "video": "ecologits_video",
-    "image": "static_impacts",
+    "image": "image_from_video",
 }
 
 
 def _profile_kind(profile: dict) -> UseCaseKind:
-    if "static_impacts" in profile:
+    if "image_from_video" in profile:
         return "image"
     if "ecologits_video" in profile:
         return "video"
@@ -301,7 +334,7 @@ def _profile_kind(profile: dict) -> UseCaseKind:
 
 
 def _profile_model_id(profile: dict) -> str | None:
-    if "static_impacts" in profile:
+    if "image_from_video" in profile:
         return profile.get("model")
     if "ecologits_video" in profile:
         return profile["ecologits_video"].get("model")
@@ -329,9 +362,13 @@ def _resolve_profile(
 
     try:
         if kind == "image":
+            calculation, parameters = _image_from_video(
+                profile["image_from_video"], profile_context
+            )
             resolved = ResolvedProfile(
                 id=profile_id,
-                calculation=_static_calculation(profile["static_impacts"], profile_context),
+                calculation=calculation,
+                parameters=parameters,
                 models=models,
             )
         elif kind == "video":

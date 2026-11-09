@@ -112,7 +112,7 @@ describe("calculate", () => {
     co2_equivalents: [{ id: "car_km", impact_co2_slug: "voiturethermique", quantity: 7.5 }],
   };
 
-  it("posts the scenario in snake_case, with parameters for text and video usages", async () => {
+  it("posts the scenario in snake_case, with the parameters of each usage", async () => {
     const fetchMock = stubFetch(response);
     const controller = new AbortController();
 
@@ -142,7 +142,7 @@ describe("calculate", () => {
             providerId: "google",
             profileId: "image",
             frequencyPerDay: 2,
-            parameters: { ignored: true },
+            parameters: { size: "2048x2048" },
           },
         ],
       },
@@ -178,6 +178,7 @@ describe("calculate", () => {
           provider_id: "google",
           profile_id: "image",
           frequency_per_day: 2,
+          parameters: { size: "2048x2048" },
         },
       ],
     });

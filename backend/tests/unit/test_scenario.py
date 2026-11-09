@@ -1,16 +1,26 @@
+from dataclasses import dataclass
+
 import pytest
 
 from ai_calculator.domain.equivalents import load_equivalents
-from ai_calculator.domain.impacts import ImpactRange
+from ai_calculator.domain.impacts import ImpactRange, UnitImpacts
 from ai_calculator.domain.scenario import (
     WORKING_DAYS_PER_YEAR,
     ScenarioError,
     UsageInput,
     compute_scenario,
 )
-from ai_calculator.domain.use_cases import load_catalog
+from ai_calculator.domain.use_cases import (
+    Catalog,
+    ResolvedProfile,
+    ResolvedProviderMapping,
+    ResolvedUseCase,
+    load_catalog,
+)
 
-# Static profiles give exact, easy-to-check numbers (kg CO2eq per action).
+# The "image" use case of these tests uses fixed impacts (kg CO2eq per
+# action), defined here, so totals are exact and easy to check; the video use
+# case is loaded from YAML and computed by EcoLogits.
 CATALOG_YAML = """
 model_labels:
   google/veo-3.0: Veo 3
@@ -20,29 +30,6 @@ providers:
   - id: google
     selected_by_default: true
 use_cases:
-  - id: image
-    kind: image
-    default_provider: google
-    recommended_tier: image
-    providers:
-      - provider_id: openai
-        profiles:
-          - id: image
-            static_impacts:
-              gwp: {min: 1.0, max: 2.0}
-              adpe: null
-              energy: null
-              water: null
-              pe: null
-      - provider_id: google
-        profiles:
-          - id: image
-            static_impacts:
-              gwp: {min: 3.0, max: 6.0}
-              adpe: {min: 0.5, max: 0.5}
-              energy: null
-              water: null
-              pe: null
   - id: video
     kind: video
     default_provider: google
@@ -57,11 +44,48 @@ use_cases:
 """
 
 
+@dataclass(frozen=True)
+class FixedCalculation:
+    impacts: UnitImpacts
+
+    def unit_impacts(self, values):
+        return self.impacts
+
+
+def _fixed_profile(gwp, adpe=None):
+    return ResolvedProfile(
+        id="image",
+        calculation=FixedCalculation(
+            UnitImpacts(gwp=gwp, energy=None, adpe=adpe, pe=None, water=None)
+        ),
+    )
+
+
 @pytest.fixture
 def catalog(tmp_path):
     config_file = tmp_path / "use_cases.yaml"
     config_file.write_text(CATALOG_YAML)
-    return load_catalog(config_file)
+    loaded = load_catalog(config_file)
+    image_use_case = ResolvedUseCase(
+        id="image",
+        kind="image",
+        subtitle_key="useCases.image.subtitle",
+        default_provider="google",
+        recommended_tier="image",
+        providers=[
+            ResolvedProviderMapping(
+                provider_id="openai", profiles=[_fixed_profile(ImpactRange(1.0, 2.0))]
+            ),
+            ResolvedProviderMapping(
+                provider_id="google",
+                profiles=[
+                    _fixed_profile(ImpactRange(3.0, 6.0), adpe=ImpactRange(0.5, 0.5))
+                ],
+            ),
+        ],
+        source=loaded.use_cases[0].source,
+    )
+    return Catalog(providers=loaded.providers, use_cases=[image_use_case, *loaded.use_cases])
 
 
 def image(provider_id, frequency_per_day, **overrides):

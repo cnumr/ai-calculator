@@ -110,7 +110,10 @@ def test_get_use_cases_exposes_the_methodological_source():
     assert sources["email"]["url"].startswith("https://ecologits.ai/")
     assert sources["email"]["version"]
     assert sources["video"]["id"] == "ecologits_video"
-    assert sources["image"] == {"id": "unsourced", "version": None, "url": None}
+    # Images are transposed from an EcoLogits video, described in the methodology page.
+    assert sources["image"]["id"] == "image_from_video"
+    assert sources["image"]["version"] == sources["video"]["version"]
+    assert sources["image"]["url"] == "/methodologie#images"
 
 
 def test_get_use_cases_lists_the_data_sources_and_their_versions():

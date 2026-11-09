@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import type {
   Impacts,
   ParameterValue,
@@ -116,6 +117,10 @@ export function UseCaseCard({
     }
     if (parameterId === "with_audio") {
       return t(`calculator.parameterOption.with_audio.${String(value)}`);
+    }
+    if (parameterId === "size") {
+      // "1024x1024" -> "1024 × 1024"
+      return String(value).replace("x", " × ");
     }
     if (parameterId === "output_tokens") {
       return t("calculator.parameterOption.output_tokens", {
@@ -352,12 +357,17 @@ export function UseCaseCard({
                   {source.url && (
                     <>
                       {" "}
-                      <a href={source.url} target="_blank" rel="noreferrer">
-                        {t("calculator.sourceLink")}{" "}
-                        <span className="visually-hidden">
-                          ({t("calculator.newTab")})
-                        </span>
-                      </a>
+                      {source.url.startsWith("/") ? (
+                        // A page of this site (e.g. the methodology): same tab.
+                        <Link to={source.url}>{t("calculator.sourceLink")}</Link>
+                      ) : (
+                        <a href={source.url} target="_blank" rel="noreferrer">
+                          {t("calculator.sourceLink")}{" "}
+                          <span className="visually-hidden">
+                            ({t("calculator.newTab")})
+                          </span>
+                        </a>
+                      )}
                     </>
                   )}
                 </span>

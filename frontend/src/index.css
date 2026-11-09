@@ -230,6 +230,29 @@ button {
   max-width: 640px;
 }
 
+.page-prose section {
+  margin-top: 2rem;
+}
+
+.methodology-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9375rem;
+}
+
+.methodology-table th,
+.methodology-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.methodology-table th {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
 /* Calculator */
 
 .calculator-hero {

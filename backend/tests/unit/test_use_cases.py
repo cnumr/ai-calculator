@@ -3,7 +3,7 @@ import pytest
 from ai_calculator.domain.use_cases import (
     Catalog,
     ParameterError,
-    StaticCalculation,
+    ImageFromVideoCalculation,
     TextCalculation,
     UseCasesConfigError,
     VideoCalculation,
@@ -40,12 +40,15 @@ use_cases:
         profiles:
           - id: image
             model: dall-e-3
-            static_impacts:
-              gwp: {min: 0.0125, max: 0.0125}
-              adpe: {min: 2.68e-07, max: 2.68e-07}
-              energy: null
-              water: null
-              pe: null
+            image_from_video:
+              reference:
+                model: google/veo-3.1
+                resolution: 720p
+                duration_s: 8
+                with_audio: true
+              size_divisors:
+                1024x1024: 30
+              default_size: 1024x1024
 """
 
 VIDEO_YAML = """
@@ -109,7 +112,7 @@ def test_load_catalog_gives_each_profile_its_calculation(tmp_path):
     assert email.providers[0].profiles[0].calculation == TextCalculation(
         ecologits_provider="openai", ecologits_model="gpt-4o-mini"
     )
-    assert isinstance(image.providers[0].profiles[0].calculation, StaticCalculation)
+    assert isinstance(image.providers[0].profiles[0].calculation, ImageFromVideoCalculation)
 
 
 def test_load_catalog_exposes_model_names(tmp_path):
@@ -119,7 +122,7 @@ def test_load_catalog_exposes_model_names(tmp_path):
     assert image.providers[0].profiles[0].models == ["DALL·E 3"]
 
 
-def test_load_catalog_gives_no_model_to_static_profiles_without_one(tmp_path):
+def test_load_catalog_gives_no_model_to_image_profiles_without_one(tmp_path):
     image = _load(tmp_path, VALID_YAML.replace("            model: dall-e-3\n", "")).use_cases[1]
 
     assert image.providers[0].profiles[0].models == []
@@ -143,7 +146,7 @@ def test_text_profiles_offer_their_output_tokens_as_a_free_integer(tmp_path):
     [tokens] = email.providers[0].profiles[0].parameters
     assert (tokens.id, tokens.default, tokens.options) == ("output_tokens", 300, None)
     assert (tokens.minimum, tokens.maximum) == (1, 10_000_000)
-    assert image.providers[0].profiles[0].parameters == []
+    assert [p.id for p in image.providers[0].profiles[0].parameters] == ["size"]
 
 
 # --- Unit impacts ------------------------------------------------------------
@@ -154,15 +157,6 @@ def test_text_profile_unit_impacts_come_from_ecologits(tmp_path):
 
     for range_ in (impacts.gwp, impacts.energy, impacts.adpe, impacts.pe, impacts.water):
         assert range_.max >= range_.min >= 0
-
-
-def test_static_profile_unit_impacts_are_the_declared_values(tmp_path):
-    impacts = _load(tmp_path, VALID_YAML).use_cases[1].providers[0].profiles[0].unit_impacts()
-
-    assert (impacts.gwp.min, impacts.gwp.max) == (0.0125, 0.0125)
-    assert impacts.energy is None
-    assert impacts.water is None
-    assert impacts.pe is None
 
 
 def test_video_profile_unit_impacts_follow_the_parameters(tmp_path):
@@ -362,10 +356,10 @@ def test_use_cases_name_their_methodological_source(tmp_path):
     assert video.source.id == "ecologits_video"
     assert video.source.version == ecologits
     assert video.source.url == "https://ecologits.ai/latest/methodology/video_generation/"
-    # Image values come from the POC V1, without a published source.
-    assert image.source.id == "unsourced"
-    assert image.source.version is None
-    assert image.source.url is None
+    # Images are transposed from an EcoLogits video (methodology page).
+    assert image.source.id == "image_from_video"
+    assert image.source.version == ecologits
+    assert image.source.url == "/methodologie#images"
 
 
 # --- Shared text-model table ---------------------------------------------------------
@@ -477,3 +471,88 @@ def test_real_config_video_follows_the_methodology_reference_veo_3_1():
     # Methodology reference: Veo 3.1, 720p, 8 s, with audio, 27.7 to 60.6 Wh.
     energy = standard.unit_impacts().energy
     assert (round(energy.min * 1000, 1), round(energy.max * 1000, 1)) == (27.7, 60.6)
+
+
+# --- Images transposed from a reference video ---------------------------------------
+
+IMAGE_FROM_VIDEO_YAML = """
+model_labels:
+  gemini-2.5-flash-image: Gemini 2.5 Flash Image
+providers:
+  - id: google
+    selected_by_default: true
+use_cases:
+  - id: image
+    kind: image
+    default_provider: google
+    recommended_tier: image
+    providers:
+      - provider_id: google
+        profiles:
+          - id: image
+            model: gemini-2.5-flash-image
+            image_from_video:
+              reference:
+                model: google/veo-3.1
+                resolution: {resolution}
+                duration_s: 8
+                with_audio: true
+              size_divisors:
+                1024x1024: 30
+                2048x2048: {large_divisor}
+              default_size: {default_size}
+"""
+
+
+def _load_image(tmp_path, resolution="720p", large_divisor=8, default_size="1024x1024"):
+    return _load(
+        tmp_path,
+        IMAGE_FROM_VIDEO_YAML.format(
+            resolution=resolution, large_divisor=large_divisor, default_size=default_size
+        ),
+    ).use_cases[0]
+
+
+def test_image_profiles_offer_their_sizes_and_divide_the_reference_video(tmp_path):
+    from ai_calculator.domain.impacts import compute_video_unit_impacts
+
+    image = _load_image(tmp_path)
+    profile = image.providers[0].profiles[0]
+    clip = compute_video_unit_impacts("google/veo-3.1", "720p", 8, True)
+
+    assert [(p.id, p.default, p.options) for p in profile.parameters] == [
+        ("size", "1024x1024", ["1024x1024", "2048x2048"])
+    ]
+    small = profile.unit_impacts()
+    large = profile.unit_impacts({"size": "2048x2048"})
+    for criterion in ("gwp", "energy", "adpe", "pe", "water"):
+        assert getattr(small, criterion).max == pytest.approx(getattr(clip, criterion).max / 30)
+        assert getattr(large, criterion).min == pytest.approx(getattr(clip, criterion).min / 8)
+    assert image.source.id == "image_from_video"
+    assert image.source.url == "/methodologie#images"
+
+
+@pytest.mark.parametrize(
+    ("override", "message"),
+    [
+        ({"resolution": "4k"}, "resolution"),
+        ({"large_divisor": 0}, "positive"),
+        ({"default_size": "512x512"}, "default_size"),
+    ],
+)
+def test_load_catalog_raises_on_invalid_image_transposition(tmp_path, override, message):
+    with pytest.raises(UseCasesConfigError, match=message):
+        _load_image(tmp_path, **override)
+
+
+def test_real_config_images_follow_the_methodology():
+    image = next(uc for uc in load_catalog().use_cases if uc.id == "image")
+
+    assert {m.provider_id for m in image.providers} == {"google", "openai"}
+    for mapping in image.providers:
+        profile = mapping.profiles[0]
+        # About 1.5 Wh per 1024x1024 image and 5 Wh per 2048x2048 image.
+        small = profile.unit_impacts({"size": "1024x1024"}).energy
+        large = profile.unit_impacts({"size": "2048x2048"}).energy
+        assert (small.min + small.max) / 2 * 1000 == pytest.approx(1.47, abs=0.01)
+        assert (large.min + large.max) / 2 * 1000 == pytest.approx(5.52, abs=0.01)
