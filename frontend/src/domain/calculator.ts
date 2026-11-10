@@ -111,9 +111,7 @@ export function buildCalculateRequest(
       profileId: profile.id,
       frequencyPerDay: Math.max(0, state.frequencyPerDay || 0),
     };
-    if (useCase.kind !== "image") {
-      usage.parameters = resolveParameters(profile, state.parameters);
-    }
+    usage.parameters = resolveParameters(profile, state.parameters);
     usages.push(usage);
   }
   return {

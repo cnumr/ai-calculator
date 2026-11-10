@@ -45,10 +45,19 @@ class TextUsageIn(_UsageIn):
     parameters: TextParametersIn = Field(default_factory=TextParametersIn)
 
 
+class ImageParametersIn(BaseModel):
+    """Image settings; each one defaults to the profile's default value."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    size: str | None = Field(default=None, examples=["1024x1024"])
+
+
 class ImageUsageIn(_UsageIn):
-    """Image generation: no parameter yet (no data per image size)."""
+    """Image generation, transposed from a reference video per image size."""
 
     kind: Literal["image"]
+    parameters: ImageParametersIn = Field(default_factory=ImageParametersIn)
 
 
 class VideoParametersIn(BaseModel):

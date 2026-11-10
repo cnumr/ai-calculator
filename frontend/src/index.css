@@ -6,6 +6,7 @@
   --forest: #1b6b45;
   --forest-dark: #124a30;
   --forest-deep: #0b2a1c;
+  --forest-tint: #e6f1ea;
   --amber: #c77a1e;
   --red: #b3402c;
   --line: #dce3d8;
@@ -227,6 +228,29 @@ button {
 
 .page-prose {
   max-width: 640px;
+}
+
+.page-prose section {
+  margin-top: 2rem;
+}
+
+.methodology-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9375rem;
+}
+
+.methodology-table th,
+.methodology-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.methodology-table th {
+  color: var(--ink-soft);
+  font-weight: 600;
 }
 
 /* Calculator */
@@ -540,10 +564,27 @@ button {
   color: var(--forest);
 }
 
+/* Selected: tinted, coloured logo and a check mark. Not selected: neutral,
+   greyed logo, so that the state reads at a glance even when all are on. */
 .provider-chips__chip[aria-pressed="true"] {
-  background: var(--forest-deep);
-  border-color: var(--forest-deep);
-  color: var(--surface);
+  background: var(--forest-tint);
+  border-color: var(--forest);
+  color: var(--forest-deep);
+}
+
+.provider-chips__chip[aria-pressed="true"]::after {
+  content: "✓" / "";
+  color: var(--forest);
+  font-weight: 700;
+}
+
+.provider-chips__chip[aria-pressed="false"] {
+  color: var(--ink-soft);
+}
+
+.provider-chips__chip[aria-pressed="false"] .provider-chips__logo {
+  filter: grayscale(1);
+  opacity: 0.5;
 }
 
 .provider-chips__logo {
@@ -551,10 +592,6 @@ button {
   height: 1.25rem;
   flex-shrink: 0;
   object-fit: contain;
-}
-
-.provider-chips__chip[aria-pressed="true"] .provider-chips__logo {
-  filter: brightness(0) invert(1);
 }
 
 .provider-chips__logo-fallback {
@@ -573,8 +610,8 @@ button {
 }
 
 .provider-chips__chip[aria-pressed="true"] .provider-chips__logo-fallback {
-  background: var(--surface);
-  color: var(--forest-deep);
+  background: var(--forest);
+  color: var(--surface);
 }
 
 /* Use case catalog */

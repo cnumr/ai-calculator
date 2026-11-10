@@ -70,11 +70,25 @@ def test_calculate_fills_in_video_parameter_defaults():
     }
 
 
-def test_calculate_keeps_null_for_criteria_a_usage_does_not_measure():
-    body = client.post("/api/calculate", json={"usages": [IMAGE]}).json()
+def test_calculate_transposes_images_from_the_reference_video_per_size():
+    video = {**VIDEO, "parameters": {"resolution": "720p", "duration_s": 8, "with_audio": True}}
+    body = client.post(
+        "/api/calculate",
+        json={
+            "usages": [
+                video,
+                IMAGE,
+                {**IMAGE, "parameters": {"size": "2048x2048"}},
+            ]
+        },
+    ).json()
+    clip, small, large = (u["unit_impacts"] for u in body["usages"])
 
-    assert body["usages"][0]["annual_impacts"]["energy"] is None
-    assert body["individual_annual"]["energy"] == {"min": 0.0, "max": 0.0}
+    assert body["usages"][1]["parameters"] == {"size": "1024x1024"}
+    for criterion in ("gwp", "energy", "adpe", "pe", "water"):
+        assert small[criterion]["min"] == pytest.approx(clip[criterion]["min"] / 30)
+        assert small[criterion]["max"] == pytest.approx(clip[criterion]["max"] / 30)
+        assert large[criterion]["max"] == pytest.approx(clip[criterion]["max"] / 8)
 
 
 def test_calculate_defaults_headcount_to_one():
@@ -89,6 +103,7 @@ def test_calculate_defaults_headcount_to_one():
         # each kind only accepts its own parameters
         {"usages": [{**EMAIL, "parameters": {"resolution": "720p"}}]},
         {"usages": [{**IMAGE, "parameters": {"output_tokens": 10}}]},
+        {"usages": [{**IMAGE, "parameters": {"size": "4096x4096"}}]},
         {"usages": [{**EMAIL, "parameters": {"output_tokens": 0}}]},
         {"usages": [{**EMAIL, "parameters": {"output_tokens": 12.5}}]},
         # unknown video parameter
@@ -125,7 +140,8 @@ def test_openapi_documents_parameters_per_use_case_kind():
 
     assert "parameters" in schemas["VideoUsageIn"]["properties"]
     assert "parameters" in schemas["TextUsageIn"]["properties"]
-    assert "parameters" not in schemas["ImageUsageIn"]["properties"]
+    assert "parameters" in schemas["ImageUsageIn"]["properties"]
+    assert set(schemas["ImageParametersIn"]["properties"]) == {"size"}
     assert set(schemas["TextParametersIn"]["properties"]) == {"output_tokens"}
     assert set(schemas["VideoParametersIn"]["properties"]) == {
         "resolution",

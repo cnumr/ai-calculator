@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import i18n from "../src/i18n";
 import { UseCaseCard } from "../src/components/UseCaseCard";
@@ -127,7 +128,7 @@ describe("UseCaseCard layout", () => {
   it("renders the use case name and its picto", () => {
     renderEmail();
 
-    expect(screen.getByText(/rédaction d'un email|writing an email/i)).toBeInTheDocument();
+    expect(screen.getByText(/rédaction d'un mail court|writing a short email/i)).toBeInTheDocument();
     expect(screen.getByRole("img", { hidden: true })).toBeInTheDocument();
   });
 
@@ -306,7 +307,7 @@ describe("UseCaseCard methodological source", () => {
   const IMAGE: UseCase = {
     id: "image",
     kind: "image",
-    source: { id: "unsourced", version: null, url: null },
+    source: { id: "image_from_video", version: "0.11.3", url: "/methodologie#images" },
     providers: [{ providerId: "google", profiles: [{ id: "image" }] }],
   };
   const SOURCED_EMAIL: UseCase = {
@@ -352,13 +353,25 @@ describe("UseCaseCard methodological source", () => {
     );
   });
 
-  it("warns that image values have no published source, without a link", async () => {
+  it("explains that image values are transposed from an EcoLogits video", async () => {
     await i18n.changeLanguage("fr");
-    renderEmail({ useCase: IMAGE, availableProviderIds: ["google"], providerId: "google", profileId: "image" });
+    render(
+      <MemoryRouter>
+        <UseCaseCard
+          useCase={IMAGE}
+          availableProviderIds={["google"]}
+          providerId="google"
+          profileId="image"
+          frequencyPerDay={1}
+          dailyImpacts={DAILY}
+          onChange={() => {}}
+        />
+      </MemoryRouter>,
+    );
 
-    const note = screen.getByRole("note");
-    expect(note).toHaveTextContent("Valeur indicative, sans source publiée à ce jour.");
-    expect(within(note).queryByRole("link")).not.toBeInTheDocument();
+    expect(screen.getByRole("note")).toHaveTextContent(
+      "Source : transposition depuis la génération vidéo EcoLogits 0.11.3 (Veo 3.1), d'après l'étude « The Hidden Cost of an Image ».",
+    );
   });
 
   it("shows no note when the catalogue gives no source", () => {
@@ -401,6 +414,42 @@ describe("UseCaseCard provider logo", () => {
     await user.selectOptions(screen.getByLabelText("Provider"), "anthropic");
 
     expect(logo().getAttribute("src")).not.toBe(openaiLogo);
+  });
+
+  it.each([
+    // The new provider offers the chosen profile: it is kept.
+    ["balanced", "balanced"],
+    // It does not: the use case's recommended profile is used.
+    ["flagship", "balanced"],
+  ])("keeps profile %s when changing provider, else the recommended one", async (chosen, expected) => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const useCase: UseCase = {
+      id: "email",
+      kind: "text",
+      recommendedProfileId: "balanced",
+      providers: [
+        { providerId: "openai", profiles: [{ id: "eco" }, { id: "balanced" }, { id: "flagship" }] },
+        { providerId: "mistral", profiles: [{ id: "eco" }, { id: "balanced" }] },
+      ],
+    };
+    render(
+      <UseCaseCard
+        useCase={useCase}
+        availableProviderIds={["openai", "mistral"]}
+        providerId="openai"
+        profileId={chosen}
+        frequencyPerDay={1}
+        dailyImpacts={DAILY}
+        onChange={onChange}
+      />,
+    );
+
+    await user.selectOptions(screen.getByLabelText("Provider"), "mistral");
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ providerId: "mistral", profileId: expected }),
+    );
   });
 
   it("shows the provider's initial when it has no logo", () => {
@@ -551,5 +600,60 @@ describe("UseCaseCard model parameters", () => {
 
     expect(screen.queryByLabelText("Resolution")).not.toBeInTheDocument();
     expect(document.querySelector(".use-case-card__customize")).not.toBeInTheDocument();
+  });
+});
+
+describe("UseCaseCard image sizes", () => {
+  const IMAGE: UseCase = {
+    id: "image",
+    kind: "image",
+    source: { id: "image_from_video", version: "0.11.3", url: "/methodologie#images" },
+    providers: [
+      {
+        providerId: "google",
+        profiles: [
+          {
+            id: "image",
+            parameters: [
+              { id: "size", options: ["1024x1024", "2048x2048"], defaultValue: "1024x1024", min: null, max: null },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  it("offers the image sizes and links its source to the methodology page", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <MemoryRouter>
+        <UseCaseCard
+          useCase={IMAGE}
+          availableProviderIds={["google"]}
+          providerId="google"
+          profileId="image"
+          frequencyPerDay={1}
+          dailyImpacts={DAILY}
+          onChange={onChange}
+        />
+      </MemoryRouter>,
+    );
+
+    // A page of this site: same tab, no "new tab" mention.
+    const link = screen.getByRole("link", { name: "Methodology" });
+    expect(link).toHaveAttribute("href", "/methodologie#images");
+    expect(link).not.toHaveAttribute("target");
+
+    await user.click(screen.getByText(/customize/i));
+    const size = screen.getByLabelText("Size");
+    expect(within(size).getAllByRole("option").map((o) => o.textContent)).toEqual([
+      "1024 × 1024",
+      "2048 × 2048",
+    ]);
+    await user.selectOptions(size, "2048 × 2048");
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ parameters: { size: "2048x2048" } }),
+    );
   });
 });

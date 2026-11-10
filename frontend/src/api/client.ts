@@ -73,7 +73,7 @@ export interface ProviderMapping {
 
 /** Methodological source behind a use case's impacts. */
 export interface MethodologicalSource {
-  /** "ecologits_llm", "ecologits_video" or "unsourced". */
+  /** "ecologits_llm", "ecologits_video" or "image_from_video". */
   id: string;
   version: string | null;
   url: string | null;
@@ -273,7 +273,7 @@ export async function calculate(
         provider_id: u.providerId,
         profile_id: u.profileId,
         frequency_per_day: u.frequencyPerDay,
-        ...(u.kind !== "image" ? { parameters: u.parameters ?? {} } : {}),
+        parameters: u.parameters ?? {},
       })),
     }),
     signal,

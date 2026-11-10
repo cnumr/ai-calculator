@@ -20,7 +20,11 @@
     "doc_small": { "name": "Rédaction d'un document court", "subtitle": "Notes et synthèses courtes" },
     "doc_large": { "name": "Rédaction d'un document long", "subtitle": "Rapports, PDF, articles" },
     "ai_query": { "name": "Question à un assistant IA", "subtitle": "Chat et assistant" },
-    "email": { "name": "Rédaction d'un email", "subtitle": "Gmail, Outlook, agenda" }
+    "email": { "name": "Rédaction d'un mail court", "subtitle": "Gmail, Outlook, agenda" },
+    "slides": { "name": "Générer une présentation (slides)", "subtitle": "8 à 12 slides, Slides, PowerPoint" },
+    "spreadsheet": { "name": "Génération d'une feuille de calcul", "subtitle": "Tableau de 20 à 100 lignes, Sheets, Excel" },
+    "email_long": { "name": "Rédaction d'un mail long", "subtitle": "Mail détaillé de 300 à 900 mots" },
+    "dev_assistance": { "name": "Assistance au développement", "subtitle": "Session agentique" }
   },
   "calculator": {
     "title": "Calculateur d'impacts",
@@ -67,6 +71,7 @@
       "eco": "Éco",
       "balanced": "Équilibré",
       "powerful": "Puissant",
+      "flagship": "Ultra",
       "research": "Recherche",
       "image": "Standard",
       "video": "Standard",
@@ -76,7 +81,7 @@
     "source": {
       "ecologits_llm": "Source : EcoLogits {{version}}, modélisation de l'inférence des LLM.",
       "ecologits_video": "Source : EcoLogits {{version}}, modélisation de la génération vidéo.",
-      "unsourced": "Valeur indicative, sans source publiée à ce jour."
+      "image_from_video": "Source : transposition depuis la génération vidéo EcoLogits {{version}} (Veo 3.1), d'après l'étude « The Hidden Cost of an Image »."
     },
     "sourceLink": "Méthodologie",
     "newTab": "nouvel onglet",
@@ -87,7 +92,8 @@
       "output_tokens": "Tokens générés par action",
       "resolution": "Résolution",
       "duration_s": "Durée",
-      "with_audio": "Audio"
+      "with_audio": "Audio",
+      "size": "Taille"
     },
     "parameterOption": {
       "output_tokens": "{{value}} tokens générés",
@@ -121,7 +127,23 @@
   },
   "methodology": {
     "title": "Méthodologie",
-    "body": "Les impacts sont calculés à partir d'EcoLogits, qui modélise l'inférence des modèles d'IA générative..."
+    "body": "Les impacts sont calculés à partir d'EcoLogits, qui modélise l'inférence des modèles d'IA générative...",
+    "images": {
+      "title": "Génération d'images",
+      "principle": "EcoLogits ne modélise pas la génération d'images. Le calculateur applique la méthode du projet : l'impact d'une image est déduit de celui d'une courte vidéo générée, calculé par EcoLogits, divisé par un facteur qui dépend de la taille de l'image.",
+      "reference": "Vidéo de référence : Veo 3.1 (Google), 720p, 8 secondes, avec audio, soit 27,7 à 60,6 Wh selon EcoLogits.",
+      "size": "Taille de l'image",
+      "factor": "Facteur appliqué",
+      "energy": "Énergie par image (moyenne)",
+      "divisor": "vidéo de référence ÷ {{divisor}}",
+      "energyValue": {
+        "small": "environ 1,5 Wh",
+        "large": "environ 5 Wh"
+      },
+      "study": "Ces facteurs reprennent l'énergie par image de l'étude « The Hidden Cost of an Image: Quantifying the Energy Consumption of AI Image Generation » : environ 1,5 Wh pour une image 1024 × 1024, et 5 Wh pour une image 2048 × 2048 par extrapolation.",
+      "studyLink": "Lire l'étude (arXiv 2506.17016)",
+      "scope": "Le même facteur s'applique aux cinq critères (émissions, énergie, ressources minérales, énergie primaire et eau) et à tous les fournisseurs : l'étude porte sur les modèles de diffusion en général, Veo 3.1 ne sert que de référence. Le profil affiche le modèle d'image utilisé (par exemple Gemini 2.5 Flash Image), mais son impact n'est pas mesuré directement."
+    }
   },
   "about": {
     "title": "À propos",
