@@ -12,6 +12,8 @@ navigateur ── :80 ──> frontend (Nginx)
                          └── /api/*  ──(réseau docker interne)──> backend:8000
 ```
 
+Pour estimer la charge supportée sur un petit serveur (TPS, mémoire), voir [LOAD_TEST.md](LOAD_TEST.md).
+
 ## Prérequis
 
 - Docker + Docker Compose (v2, `docker compose`)
@@ -87,6 +89,7 @@ Le script `scripts/verify-cache.sh` vérifie les en-têtes de cache navigateur (
 
 - les fichiers du build (`/assets/`), dont le nom contient un hash de leur contenu, sont gardés un an sans revérification (`Cache-Control: public, max-age=31536000, immutable`) ; un asset absent renvoie 404 ;
 - `index.html`, servi pour toutes les routes de l'application, est revérifié à chaque visite (`Cache-Control: no-cache`) : nginx répond 304 sans le corps s'il n'a pas changé, et une nouvelle version est prise en compte immédiatement.
+- le catalogue de l'API (`GET /api/use-cases`, GreenIT RWEB_0021) est gardé 5 minutes (`Cache-Control: public, max-age=300`), puis revalidé par son `ETag` : le backend répond 304 sans le contenu tant qu'il n'a pas été redéployé.
 
 ```bash
 scripts/verify-cache.sh                       # http://localhost:${HTTP_PORT:-80}

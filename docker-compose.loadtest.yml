@@ -1,0 +1,14 @@
+# Load test of the API on a small VPS-like budget (see docs/LOAD_TEST.md).
+# Adds, to the production stack, resource limits on the backend and a port
+# on the host loopback to reach it directly:
+#   docker compose -f docker-compose.yml -f docker-compose.loadtest.yml up --build -d backend
+#   scripts/load_test.py --base-url http://localhost:8001
+services:
+  backend:
+    cpus: ${LOADTEST_CPUS:-0.1}
+    mem_limit: ${LOADTEST_MEMORY:-128m}
+    # No swap: going over the memory limit kills the process (OOM), as on a
+    # small VPS without swap.
+    memswap_limit: ${LOADTEST_MEMORY:-128m}
+    ports:
+      - "127.0.0.1:${LOADTEST_PORT:-8001}:8000"
