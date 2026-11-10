@@ -86,6 +86,8 @@ export interface UseCase {
   subtitleKey?: string;
   defaultProviderId?: string;
   recommendedProfileId?: string;
+  /** Family the use case is listed under (e.g. "writing"). */
+  family?: string | null;
   providers: ProviderMapping[];
 }
 
@@ -102,12 +104,15 @@ export interface DataSource {
 
 export interface UseCasesCatalog {
   providers: CatalogProvider[];
+  /** Families of use cases, in display order. */
+  families?: string[];
   useCases: UseCase[];
   dataSources?: DataSource[];
 }
 
 interface UseCasesResponseBody {
   providers: Array<{ id: string; selected_by_default: boolean }>;
+  families?: Array<{ id: string }>;
   data_sources?: Array<{
     id: string;
     name: string;
@@ -122,6 +127,7 @@ interface UseCasesResponseBody {
     subtitle_key?: string;
     default_provider?: string;
     recommended_tier?: string;
+    family?: string | null;
     providers: Array<{
       provider_id: string;
       profiles: Array<{
@@ -150,6 +156,7 @@ export async function fetchUseCases(): Promise<UseCasesCatalog> {
       id: p.id,
       selectedByDefault: p.selected_by_default,
     })),
+    families: (body.families ?? []).map((f) => f.id),
     dataSources: (body.data_sources ?? []).map((s) => ({
       id: s.id,
       name: s.name,
@@ -164,6 +171,7 @@ export async function fetchUseCases(): Promise<UseCasesCatalog> {
       subtitleKey: uc.subtitle_key,
       defaultProviderId: uc.default_provider,
       recommendedProfileId: uc.recommended_tier,
+      family: uc.family ?? null,
       providers: uc.providers.map((pm) => ({
         providerId: pm.provider_id,
         profiles: pm.profiles.map((p) => ({
@@ -193,7 +201,7 @@ export interface UsageRequest {
   providerId: string;
   profileId: string;
   frequencyPerDay: number;
-  /** Text and video usages only (image usages have no parameter). */
+  /** Parameter values (tokens, video settings, image size). */
   parameters?: Record<string, ParameterValue>;
 }
 

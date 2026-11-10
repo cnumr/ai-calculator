@@ -25,7 +25,7 @@ Un premier [POC](https://ia-calculator.greenit.eco/) a été réalisé sous form
 
 ### API
 
-- `GET /api/use-cases` : catalogue des choix possibles (fournisseurs, cas d'usage et leur type `text` / `video` / `image`, profils, modèles, paramètres réglables, source méthodologique) et sources de données utilisées avec leur version (EcoLogits, ImpactCO2). Source de vérité : `backend/src/ai_calculator/data/use_cases.yaml`.
+- `GET /api/use-cases` : catalogue des choix possibles (fournisseurs, cas d'usage et leur type `text` / `video` / `image`, familles, profils, modèles, paramètres réglables, source méthodologique) et sources de données utilisées avec leur version (EcoLogits, ImpactCO2). Source de vérité : `backend/src/ai_calculator/data/use_cases.yaml`.
 - `POST /api/calculate` : calcul d'un scénario (usages quotidiens + nombre de salariés) → impacts par usage, totaux annuels, répartition par fournisseur, équivalences CO2. Les paramètres acceptés dépendent du type de cas d'usage (tokens générés pour le texte ; résolution, durée et audio pour la vidéo ; taille pour l'image).
 
 La documentation interactive de l'API est servie par le back sur `/docs`.

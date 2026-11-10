@@ -128,11 +128,11 @@ const enterpriseSummary = () =>
 const lastRequest = () => mockedCalculate.mock.calls.at(-1)![0];
 const card = (title: RegExp) =>
   screen.getByRole("heading", { name: title }).closest("article")!;
-/** Opens a card's "Customize" menu: its fields only exist once it is open. */
-async function openCustomize(title: RegExp) {
-  fireEvent.click(card(title).querySelector(".use-case-card__customize summary")!);
+/** Opens a card's settings: its selects and fields only exist once open. */
+async function openSettings(title: RegExp) {
+  fireEvent.click(within(card(title)).getByRole("button", { name: /settings/i }));
   await waitFor(() =>
-    expect(card(title).querySelector(".use-case-card__parameters")).not.toBeNull(),
+    expect(card(title).querySelector(".use-case-card__panel")).not.toBeNull(),
   );
 }
 const cardGwp = (title: RegExp) =>
@@ -186,6 +186,7 @@ describe("CalculatorPage catalogue", () => {
 
   it("initializes each card with its catalogue provider and profile defaults", async () => {
     await renderLoaded();
+    await openSettings(/writing a short email/i);
 
     expect(within(card(/writing a short email/i)).getByLabelText("Provider")).toHaveValue("google");
     expect(within(card(/writing a short email/i)).getByLabelText("Profile")).toHaveValue("eco");
@@ -200,6 +201,85 @@ describe("CalculatorPage catalogue", () => {
 
     expect(await screen.findByRole("heading", { name: /writing a short email/i })).toBeInTheDocument();
     expect(mockedFetchUseCases).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("CalculatorPage families", () => {
+  it("lists use cases under a heading per family, in the catalogue order", async () => {
+    mockedFetchUseCases.mockResolvedValueOnce({
+      ...CATALOG,
+      families: ["writing", "visual"],
+      useCases: CATALOG.useCases.map((uc) => ({
+        ...uc,
+        family: uc.id === "video" ? "visual" : "writing",
+      })),
+    });
+    await renderDefault();
+
+    const families = screen
+      .getAllByRole("region")
+      .filter((region) => region.classList.contains("use-case-family"));
+    expect(families.map((region) => region.getAttribute("aria-labelledby"))).toEqual([
+      "family-writing",
+      "family-visual",
+    ]);
+    expect(within(families[0]).getByRole("heading", { name: "Writing" })).toBeInTheDocument();
+    expect(families[0]).toContainElement(card(/writing a short email/i));
+    expect(families[1]).toContainElement(card(/video generation/i));
+  });
+
+  it("lists use cases without a heading when the catalogue has no families", async () => {
+    await renderDefault();
+
+    expect(screen.queryByRole("heading", { name: "Writing" })).not.toBeInTheDocument();
+    expect(card(/video generation/i)).toBeInTheDocument();
+  });
+});
+
+describe("CalculatorPage only-my-usages filter", () => {
+  const filter = () => screen.getByRole("checkbox", { name: /only my usages/i });
+  const setFrequency = (title: RegExp, value: string) =>
+    fireEvent.change(within(card(title)).getByLabelText("Average daily frequency"), {
+      target: { value },
+    });
+
+  it("is disabled until a use case has a frequency, and counts the used ones", async () => {
+    await renderDefault();
+
+    expect(filter()).toBeDisabled();
+    expect(filter()).toHaveAccessibleName("Only my usages (0)");
+
+    setFrequency(/writing a short email/i, "2");
+
+    expect(filter()).toBeEnabled();
+    expect(filter()).toHaveAccessibleName("Only my usages (1)");
+  });
+
+  it("lists only the used use cases, and keeps a row cleared while it is on", async () => {
+    await renderDefault();
+    setFrequency(/writing a short email/i, "2");
+
+    fireEvent.click(filter());
+
+    expect(screen.queryByRole("heading", { name: /video generation/i })).not.toBeInTheDocument();
+    expect(card(/writing a short email/i)).toBeInTheDocument();
+    // Cleared while editing: the row stays until the filter is turned off.
+    setFrequency(/writing a short email/i, "");
+    expect(card(/writing a short email/i)).toBeInTheDocument();
+
+    fireEvent.click(filter());
+    expect(card(/video generation/i)).toBeInTheDocument();
+  });
+
+  it("is turned off by the reset", async () => {
+    await renderDefault();
+    setFrequency(/writing a short email/i, "2");
+    fireEvent.click(filter());
+
+    fireEvent.click(screen.getByRole("button", { name: /reset/i }));
+
+    expect(filter()).not.toBeChecked();
+    expect(card(/video generation/i)).toBeInTheDocument();
   });
 });
 
@@ -296,7 +376,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     const user = userEvent.setup();
     await renderLoaded();
 
-    await openCustomize(/video generation/i);
+    await openSettings(/video generation/i);
     await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
 
     await waitFor(() => expect(cardGwp(/video generation/i)).toHaveTextContent("2.00 kg CO2eq"));
@@ -321,7 +401,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     await renderLoaded();
     mockedCalculate.mockRejectedValueOnce(new apiClient.ApiError(500, "boom"));
 
-    await openCustomize(/video generation/i);
+    await openSettings(/video generation/i);
     await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
 
     const alert = await screen.findByRole("alert");
@@ -340,7 +420,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     const late = deferred<CalculateResult>();
     mockedCalculate.mockImplementationOnce(() => late.promise);
 
-    await openCustomize(/video generation/i);
+    await openSettings(/video generation/i);
     const resolution = within(card(/video generation/i)).getByLabelText("Resolution");
     await user.selectOptions(resolution, "1080p");
     await waitFor(() =>
@@ -392,7 +472,7 @@ describe("CalculatorPage keeps the scenario consistent with the cards", () => {
     await renderLoaded();
     const initial = mockedCalculate.mock.calls[0][0];
 
-    await openCustomize(/video generation/i);
+    await openSettings(/video generation/i);
     await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
     await waitFor(() => expect(individualSummary()).toBe("22.2 t CO2eq"));
     await user.click(screen.getByRole("button", { name: /reset/i }));

@@ -41,6 +41,7 @@ class UseCaseOut(BaseModel):
     recommended_tier: str
     providers: list[ProviderMappingOut]
     source: SourceOut
+    family: str | None
 
 
 class CatalogProviderOut(BaseModel):
@@ -56,8 +57,14 @@ class DataSourceOut(BaseModel):
     url: str
 
 
+class FamilyOut(BaseModel):
+    id: str
+
+
 class UseCasesResponse(BaseModel):
     providers: list[CatalogProviderOut]
+    # Families of use cases, in display order.
+    families: list[FamilyOut]
     use_cases: list[UseCaseOut]
     # External data sources behind the calculations, with their version.
     data_sources: list[DataSourceOut]

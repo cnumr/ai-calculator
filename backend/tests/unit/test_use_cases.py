@@ -556,3 +556,51 @@ def test_real_config_images_follow_the_methodology():
         large = profile.unit_impacts({"size": "2048x2048"}).energy
         assert (small.min + small.max) / 2 * 1000 == pytest.approx(1.47, abs=0.01)
         assert (large.min + large.max) / 2 * 1000 == pytest.approx(5.52, abs=0.01)
+
+
+# --- Families ---------------------------------------------------------------------
+
+def _with_families(text, family="writing"):
+    return text.replace(
+        "use_cases:\n", "families:\n  - id: writing\n  - id: visual\nuse_cases:\n", 1
+    ).replace("    kind: text\n", f"    family: {family}\n    kind: text\n", 1)
+
+
+def test_load_catalog_reads_families_and_the_family_of_each_use_case(tmp_path):
+    catalog = _load(tmp_path, _with_families(TEXT_MODELS_YAML))
+
+    assert catalog.families == ["writing", "visual"]
+    assert catalog.use_cases[0].family == "writing"
+
+
+def test_families_are_optional(tmp_path):
+    catalog = _load(tmp_path, TEXT_MODELS_YAML)
+
+    assert catalog.families == []
+    assert catalog.use_cases[0].family is None
+
+
+@pytest.mark.parametrize(
+    ("text", "message"),
+    [
+        (_with_families(TEXT_MODELS_YAML, family="cooking"), "unknown family 'cooking'"),
+        (
+            TEXT_MODELS_YAML.replace("    kind: text\n", "    family: writing\n    kind: text\n"),
+            "needs a families list",
+        ),
+        (
+            _with_families(TEXT_MODELS_YAML).replace("    family: writing\n", ""),
+            "family",
+        ),
+    ],
+)
+def test_load_catalog_raises_on_invalid_families(tmp_path, text, message):
+    with pytest.raises(UseCasesConfigError, match=message):
+        _load(tmp_path, text)
+
+
+def test_real_config_lists_every_use_case_under_a_family():
+    catalog = load_catalog()
+
+    assert catalog.families == ["writing", "analysis", "office", "visual", "development"]
+    assert all(uc.family in catalog.families for uc in catalog.use_cases)

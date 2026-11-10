@@ -50,6 +50,19 @@
     "profileSelect": "Profil",
     "profileUnsupported": "Non disponible pour ce fournisseur",
     "notAvailable": "Non disponible",
+    "settingsToggle": "Réglages",
+    "customizeTitle": "Personnalisation",
+    "dailyImpactsTitle": "Détail des impacts par jour",
+    "onlyUsed": "Seulement mes usages ({{count}})",
+    "columnFrequency": "Fréquence quotidienne",
+    "columnImpact": "Impact par jour",
+    "families": {
+      "writing": "Rédaction",
+      "analysis": "Analyse et synthèse",
+      "office": "Production bureautique",
+      "visual": "Création visuelle",
+      "development": "Développement"
+    },
     "frequencyPerDay": "Fréquence quotidienne moyenne",
     "detailsToggle": "Voir/Masquer le détail de vos impacts pour cette tâche",
     "cardImpactSummary": {
@@ -87,7 +100,6 @@
     "newTab": "nouvel onglet",
     "parameterDefault": "Valeur par défaut : {{value}}",
     "perDayShort": "/jour",
-    "customize": "Personnaliser : {{values}}",
     "parameter": {
       "output_tokens": "Tokens générés par action",
       "resolution": "Résolution",
