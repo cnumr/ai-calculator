@@ -1,6 +1,6 @@
 # Déploiement continu sur le VPS GreenIT (staging et prod) — Design
 
-Statut : validé (brainstorming du 11/11/2026), à planifier. Branche : `feat/deploiement-vps` (depuis `develop`). Issue : cnumr/ai-calculator#29, option C.
+Statut : validé (brainstorming du 11/11/2026), planifié : `.superpowers/plans/2026-11-11-deploiement-vps.md` (écarts du plan reportés ici). Branche : `feat/deploiement-vps` (depuis `develop`). Issue : cnumr/ai-calculator#29, option C.
 
 ## Contexte
 
@@ -103,6 +103,7 @@ Le script est écrit en Bash, avec `set -euo pipefail`. Il ne dépend que de `do
 | `PREVIOUS_TAG` | Tag précédent, cible du retour arrière (prod) |
 | `PINNED` | `true` après un retour arrière manuel : la tâche planifiée ne change plus la version |
 | `ALERT_WEBHOOK_URL` | Webhook Mattermost ; vide = pas d'alerte |
+| `FAILED_TARGET` | Écrit par le script après un échec. Prod : la release en échec, qui n'est pas retentée (ni ré-alertée) tant qu'une nouvelle release ne sort pas. Staging : les identifiants des images en échec, en attente d'un nouveau push. Effacé après une bascule réussie. Une version passée à la main (`update.sh prod vX`) l'ignore. |
 
 ### Déroulé
 
@@ -113,10 +114,10 @@ Le script est écrit en Bash, avec `set -euo pipefail`. Il ne dépend que de `do
    - prod avec `--unpin` : le script retire `PINNED`, puis continue comme sans argument.
    - prod sans argument : si `PINNED=true`, il écrit « version figée sur vX » et sort. Sinon, il lit `tag_name` sur `https://api.github.com/repos/cnumr/ai-calculator/releases/latest`, sans jeton (12 appels par heure, limite anonyme à 60). Si l'API est en erreur, il écrit un avertissement et sort sans rien changer, sans alerte.
 3. **Rien à faire ?**
-   - staging : le script note l'identifiant des images locales, lance `docker compose pull`, puis compare. Si rien n'a changé, il sort.
-   - prod : si la cible est égale à `IMAGE_TAG`, il sort.
+   - staging : `docker compose pull`, puis comparaison des images des conteneurs en service avec les images locales `:develop`. Identiques : il sort. Égales à `FAILED_TARGET` : il sort aussi. En `--dry-run`, pas de `pull`.
+   - prod : si la cible est égale à `IMAGE_TAG`, ou à `FAILED_TARGET` (sans version passée à la main), il sort.
    - Ces sorties ne sont écrites qu'avec `--verbose`.
-4. **Image disponible ?** En prod, si `pull` répond « manifest unknown » sur la cible, l'image est encore en cours de build. Le script écrit un avertissement et sort, sans alerte et sans rien modifier. Il réessaiera au prochain passage.
+4. **Image disponible ?** En prod, `docker manifest inspect` (lecture du manifeste seul, aussi en `--dry-run`) sur les deux images de la cible. Absentes : l'image est encore en cours de build. Le script écrit un message et sort, sans alerte et sans rien modifier. Il réessaiera au prochain passage. Exception : une version passée à la main et introuvable fait sortir en erreur (code 1), sans écrire `PINNED`.
 5. **Bascule**
    - prod : `PREVIOUS_TAG` reçoit l'ancien `IMAGE_TAG`, et `IMAGE_TAG` reçoit la cible.
    - puis `docker compose pull` et `docker compose up -d`.
@@ -126,8 +127,9 @@ Le script est écrit en Bash, avec `set -euo pipefail`. Il ne dépend que de `do
      - Si le retour réussit, alerte : « prod : vX en échec, retour à vY ».
      - Si le retour échoue aussi, alerte : « prod indisponible ».
      - Code de sortie non nul.
-   - staging : alerte « staging : déploiement de <sha> en échec ». Pas de retour arrière : le prochain push sur `develop` réparera le staging.
-8. **Purge** : après une bascule réussie, `docker image prune -f --filter label=org.opencontainers.image.source=https://github.com/cnumr/ai-calculator`. Seules les images du projet devenues inutiles sont supprimées, celles des autres projets ne sont pas touchées.
+   - prod : `FAILED_TARGET` reçoit la cible.
+   - staging : alerte « staging : déploiement de <sha> en échec », et `FAILED_TARGET` reçoit les identifiants des images. Pas de retour arrière : le prochain push sur `develop` réparera le staging.
+8. **Purge** : après une bascule réussie, `docker image prune -af --filter label=org.opencontainers.image.source=https://github.com/cnumr/ai-calculator`. Seules les images du projet devenues inutiles sont supprimées, celles des autres projets ne sont pas touchées. `-a` est nécessaire : sans lui, les anciennes versions taguées ne sont jamais supprimées. L'image de `PREVIOUS_TAG` part donc aussi ; un retour arrière la retélécharge avec `up -d` (quelques secondes de plus).
 
 ### Alerte
 
@@ -190,11 +192,11 @@ Les logs du script vont dans le journal système. Sa limite et sa purge sont cel
 4. **Domaines YunoHost** :
    - `sudo yunohost domain add <domaine>` ;
    - après la propagation DNS : `sudo yunohost domain cert install <domaine>`.
-5. **Apps Redirect** : `sudo yunohost app install redirect --args "…"`, vers `http://127.0.0.1:8085` ou `8086`.
-   - Les noms d'arguments sont lus **avant l'installation** dans le manifeste de l'app `redirect` (dépôt `YunoHost-Apps/redirect_ynh`), pour la version proposée par le catalogue du VPS. La commande exacte est ensuite reportée dans le README.
-   - Visibilité :
-     - prod : `sudo yunohost user permission update <app>.main --add visitors` ;
-     - staging : `--remove visitors`, ce qui limite l'accès aux utilisateurs YunoHost.
+5. **Apps Redirect** (arguments lus dans le manifeste de `YunoHost-Apps/redirect_ynh`) :
+   - prod : `sudo yunohost app install redirect --label "AI Calculator" --args "domain=ia-calculator.greenit.eco&path=/&redirect_type=reverseproxy&target=http://127.0.0.1:8085&init_main_permission=visitors"` ;
+   - staging : même commande avec le domaine staging, `target=http://127.0.0.1:8086` et `init_main_permission=all_users` (comptes YunoHost).
+   - La version du catalogue sur le VPS n'est pas vérifiée : si un argument est refusé, on lit les réglages d'une app Redirect existante (`sudo yunohost app setting <id> redirect_type`), puis on corrige la commande et le README.
+   - Changer la visibilité plus tard : `sudo yunohost user permission update <app>.main --add visitors` ou `--remove visitors`.
 
 ### 4.3 Hors VPS
 
@@ -235,16 +237,17 @@ Les logs du script vont dans le journal système. Sa limite et sa purge sont cel
 
 ## 6. Tests et critères d'acceptation
 
-**CI** (dans `images-develop.yml` ou dans un job léger dédié) :
-- `shellcheck deploy/*.sh` ;
-- `docker compose -f deploy/compose.yml config`, avec un `.env` d'exemple.
+**CI** : workflow dédié `deploy-checks.yml`, lancé sur les PR qui touchent `deploy/**` ou `.github/workflows/**`, et appelé (`workflow_call`) par `images-develop.yml` avant la construction :
+- `shellcheck` sur `update.sh`, le test et les faux binaires ;
+- `bash deploy/tests/update_test.sh` : tests de `update.sh` avec un faux `docker` et un faux `curl` (`deploy/tests/fake-bin/`), sans réseau ni conteneur ;
+- `docker compose -f deploy/compose.yml --env-file deploy/env.example config --quiet`.
 
-**`deploy/.env.example`** : il sert au test CI et de modèle pour l'installation.
+**`deploy/env.example`** (et non `deploy/.env.example`, que le `.gitignore` ignore avec `.env.*`) : il sert au test CI et de modèle pour l'installation.
 
 **Recette sur le VPS**
 1. Un push sur `develop` est en ligne sur `ia-calculator-staging.greenit.eco` en moins de 10 minutes. Le pied de page affiche `+sha.<commit>`.
 2. Une release `vX.Y.Z` est en ligne en prod en moins de 10 minutes, et le pied de page affiche `X.Y.Z`.
-3. Une image volontairement cassée en staging déclenche une alerte Mattermost. En prod, un tag cassé provoque le retour à `PREVIOUS_TAG` et une alerte.
+3. Échec et retour arrière : couverts par `deploy/tests/update_test.sh` en CI, plus un message de test envoyé au webhook. On ne publie pas de release volontairement cassée.
 4. `update.sh prod vX.Y.Z` fige la version, la tâche planifiée la laisse en place, et `--unpin` revient à la dernière release.
 5. Le staging demande une connexion YunoHost, la prod est publique.
 6. `docker inspect` montre le driver de logs `local` avec ses limites, sur les quatre conteneurs.
