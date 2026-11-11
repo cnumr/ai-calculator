@@ -194,13 +194,20 @@ export async function fetchUseCases(): Promise<UseCasesCatalog> {
 /* POST /api/calculate                                                       */
 /* ------------------------------------------------------------------------ */
 
-/** One daily usage of a use case, as sent to the calculation. */
+/** Period of a usage frequency: working day, week or month. */
+export type FrequencyUnit = "day" | "week" | "month";
+
+export const FREQUENCY_UNITS: FrequencyUnit[] = ["day", "week", "month"];
+
+/** One usage of a use case, as sent to the calculation. */
 export interface UsageRequest {
   kind: UseCaseKind;
   useCaseId: string;
   providerId: string;
   profileId: string;
-  frequencyPerDay: number;
+  /** Average actions per `frequencyUnit`. */
+  frequency: number;
+  frequencyUnit: FrequencyUnit;
   /** Parameter values (tokens, video settings, image size). */
   parameters?: Record<string, ParameterValue>;
 }
@@ -214,6 +221,9 @@ export interface UsageResult {
   useCaseId: string;
   providerId: string;
   profileId: string;
+  frequency: number;
+  frequencyUnit: FrequencyUnit;
+  /** Equivalent per working day, converted by the backend. */
   frequencyPerDay: number;
   /** Parameter values actually used (defaults filled in). */
   parameters: Record<string, ParameterValue>;
@@ -250,6 +260,8 @@ interface CalculateResponseBody {
     use_case_id: string;
     provider_id: string;
     profile_id: string;
+    frequency: number;
+    frequency_unit: FrequencyUnit;
     frequency_per_day: number;
     parameters: Record<string, ParameterValue>;
     unit_impacts: Impacts;
@@ -280,7 +292,8 @@ export async function calculate(
         use_case_id: u.useCaseId,
         provider_id: u.providerId,
         profile_id: u.profileId,
-        frequency_per_day: u.frequencyPerDay,
+        frequency: u.frequency,
+        frequency_unit: u.frequencyUnit,
         parameters: u.parameters ?? {},
       })),
     }),
@@ -296,6 +309,8 @@ export async function calculate(
       useCaseId: u.use_case_id,
       providerId: u.provider_id,
       profileId: u.profile_id,
+      frequency: u.frequency,
+      frequencyUnit: u.frequency_unit,
       frequencyPerDay: u.frequency_per_day,
       parameters: u.parameters,
       unitImpacts: u.unit_impacts,

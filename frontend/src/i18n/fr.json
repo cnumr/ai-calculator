@@ -39,8 +39,8 @@
       "description": "Sélectionnez les fournisseurs LLM autorisés — ils seront disponibles dans les cas d'usage ci-dessous"
     },
     "sectionUsage": {
-      "title": "Usages quotidiens par utilisateur",
-      "description": "Choisissez le fournisseur et le profil, indiquez la fréquence quotidienne"
+      "title": "Usages par utilisateur",
+      "description": "Choisissez le fournisseur et le profil, indiquez la fréquence par jour, semaine ou mois"
     },
     "sectionEnterprise": {
       "title": "Impact à l'échelle de l'entreprise",
@@ -52,10 +52,10 @@
     "notAvailable": "Non disponible",
     "settingsToggle": "Réglages",
     "customizeTitle": "Personnalisation",
-    "dailyImpactsTitle": "Détail des impacts par jour",
+    "dailyImpactsTitle": "Détail des impacts par jour ouvré",
     "onlyUsed": "Seulement mes usages ({{count}})",
-    "columnFrequency": "Fréquence quotidienne",
-    "columnImpact": "Impact par jour",
+    "columnFrequency": "Fréquence\nmoyenne",
+    "columnImpact": "Impact par jour ouvré",
     "families": {
       "writing": "Rédaction",
       "analysis": "Analyse et synthèse",
@@ -63,7 +63,13 @@
       "visual": "Création visuelle",
       "development": "Développement"
     },
-    "frequencyPerDay": "Fréquence quotidienne moyenne",
+    "frequency": "Fréquence moyenne",
+    "frequencyUnitLabel": "Unité de la fréquence",
+    "frequencyUnit": {
+      "day": "/jour",
+      "week": "/semaine",
+      "month": "/mois"
+    },
     "detailsToggle": "Voir/Masquer le détail de vos impacts pour cette tâche",
     "cardImpactSummary": {
       "gwp": "Gaz à effet de serre",
@@ -99,7 +105,6 @@
     "sourceLink": "Méthodologie",
     "newTab": "nouvel onglet",
     "parameterDefault": "Valeur par défaut : {{value}}",
-    "perDayShort": "/jour",
     "parameter": {
       "output_tokens": "Tokens générés par action",
       "resolution": "Résolution",
@@ -140,6 +145,31 @@
   "methodology": {
     "title": "Méthodologie",
     "body": "Les impacts sont calculés à partir d'EcoLogits, qui modélise l'inférence des modèles d'IA générative...",
+    "frequency": {
+      "title": "Fréquence d'usage",
+      "principle": "La fréquence de chaque usage se saisit par jour, par semaine ou par mois. Le calculateur la ramène au nombre d'actions par an, sur la base de 218 jours ouvrés, puis à une moyenne par jour ouvré : c'est elle qui sert à l'« Impact par jour ouvré » de chaque ligne, pour comparer les usages entre eux quelle que soit leur unité.",
+      "unit": "Unité",
+      "perYear": "Périodes travaillées par an",
+      "perDay": "Équivalent par jour ouvré",
+      "rows": {
+        "day": [
+          "Par jour",
+          "218 jours ouvrés",
+          "n"
+        ],
+        "week": [
+          "Par semaine",
+          "43,6 semaines (218 ÷ 5 jours ouvrés)",
+          "n ÷ 5"
+        ],
+        "month": [
+          "Par mois",
+          "11 mois (un mois de congés)",
+          "n × 11 ÷ 218"
+        ]
+      },
+      "example": "Exemple : une vidéo par mois compte pour 11 vidéos par an, soit environ 0,05 par jour ouvré."
+    },
     "images": {
       "title": "Génération d'images",
       "principle": "EcoLogits ne modélise pas la génération d'images. Le calculateur applique la méthode du projet : l'impact d'une image est déduit de celui d'une courte vidéo générée, calculé par EcoLogits, divisé par un facteur qui dépend de la taille de l'image.",

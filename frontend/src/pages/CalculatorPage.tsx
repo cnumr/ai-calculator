@@ -65,8 +65,9 @@ function createInitialCardStates(useCases: UseCasesCatalog["useCases"]) {
     states[useCase.id] = {
       providerId: mapping?.providerId ?? "",
       profileId: profile?.id ?? "",
-      // No usage by default: the user enters their own daily frequencies.
-      frequencyPerDay: 0,
+      // No usage by default: the user enters their own frequencies.
+      frequency: 0,
+      frequencyUnit: "day",
       parameters: {},
     };
   }
@@ -213,7 +214,7 @@ export function CalculatorPage() {
   const { result, status, retry } = useCalculation(request);
   // Use cases with a frequency: the ones "Only my usages" keeps.
   const usedUseCaseIds = (catalog?.useCases ?? [])
-    .filter((uc) => (cardStates[uc.id]?.frequencyPerDay ?? 0) > 0)
+    .filter((uc) => (cardStates[uc.id]?.frequency ?? 0) > 0)
     .map((uc) => uc.id);
 
   const loadCatalog = useCallback(() => {
@@ -350,7 +351,8 @@ export function CalculatorPage() {
                         availableProviderIds={Array.from(selectedProviders)}
                         providerId={state.providerId}
                         profileId={state.profileId}
-                        frequencyPerDay={state.frequencyPerDay}
+                        frequency={state.frequency}
+                        frequencyUnit={state.frequencyUnit}
                         parameters={state.parameters}
                         dailyImpacts={usageResult?.dailyImpacts ?? null}
                         pending={

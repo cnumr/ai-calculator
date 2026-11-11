@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { FREQUENCY_UNITS } from "../api/client";
 import type {
+  FrequencyUnit,
   Impacts,
   ParameterValue,
   Profile,
@@ -63,11 +65,13 @@ interface UseCaseCardProps {
   availableProviderIds: string[];
   providerId: string;
   profileId: string;
-  frequencyPerDay: number;
+  frequency: number;
+  frequencyUnit?: FrequencyUnit;
   /** Parameter values chosen by the user (see CardState.parameters). */
   parameters?: Record<string, ParameterValue>;
   /**
-   * Impacts for the day (one action × frequency), computed by the backend;
+   * Impacts per working day (one action × frequency, converted to a working
+   * day whatever its unit), computed by the backend;
    * null before the first calculation.
    */
   dailyImpacts?: Impacts | null;
@@ -81,7 +85,8 @@ export function UseCaseCard({
   availableProviderIds,
   providerId,
   profileId,
-  frequencyPerDay,
+  frequency,
+  frequencyUnit = "day",
   parameters = {},
   dailyImpacts = null,
   pending = false,
@@ -141,7 +146,8 @@ export function UseCaseCard({
     onChange({
       providerId: currentMapping?.providerId ?? providerId,
       profileId: currentProfile?.id ?? profileId,
-      frequencyPerDay,
+      frequency,
+      frequencyUnit,
       parameters,
       ...next,
     });
@@ -225,7 +231,7 @@ export function UseCaseCard({
   const className = [
     "use-case-card",
     pending && "use-case-card--pending",
-    frequencyPerDay > 0 ? "use-case-card--used" : "use-case-card--idle",
+    frequency > 0 ? "use-case-card--used" : "use-case-card--idle",
     open && "use-case-card--open",
   ]
     .filter(Boolean)
@@ -255,19 +261,36 @@ export function UseCaseCard({
           <>
             <div className="use-case-card__frequency">
               <label htmlFor={`${inputIdPrefix}-frequency`} className="visually-hidden">
-                {t("calculator.frequencyPerDay")}
+                {t("calculator.frequency")}
+              </label>
+              <label
+                htmlFor={`${inputIdPrefix}-frequency-unit`}
+                className="visually-hidden"
+              >
+                {t("calculator.frequencyUnitLabel")}
               </label>
               <div className="use-case-card__frequency-input">
                 <input
                   id={`${inputIdPrefix}-frequency`}
                   type="number"
                   min={0}
-                  value={frequencyPerDay}
-                  onChange={(e) => emit({ frequencyPerDay: Number(e.target.value) })}
+                  value={frequency}
+                  onChange={(e) => emit({ frequency: Number(e.target.value) })}
                 />
-                <span className="use-case-card__frequency-unit" aria-hidden="true">
-                  {t("calculator.perDayShort")}
-                </span>
+                <select
+                  id={`${inputIdPrefix}-frequency-unit`}
+                  className="use-case-card__frequency-unit"
+                  value={frequencyUnit}
+                  onChange={(e) =>
+                    emit({ frequencyUnit: e.target.value as FrequencyUnit })
+                  }
+                >
+                  {FREQUENCY_UNITS.map((unit) => (
+                    <option key={unit} value={unit}>
+                      {t(`calculator.frequencyUnit.${unit}`)}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

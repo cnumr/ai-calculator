@@ -634,7 +634,7 @@ button {
   display: grid;
   gap: 1.5rem;
   margin-bottom: 2rem;
-  --use-case-columns: minmax(0, 1fr) 7.5rem 9rem 6.5rem;
+  --use-case-columns: minmax(0, 1fr) 9rem 9rem 6.5rem;
 }
 
 .use-case-catalog__columns {
@@ -650,6 +650,13 @@ button {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+/* Column titles centred over their column, on two lines each ("\n" in the
+   translation), so both read alike. */
+.use-case-catalog__columns > span {
+  text-align: center;
+  white-space: pre-line;
 }
 
 /* "Only my usages": a discreet filter in the column titles' row. */
@@ -749,15 +756,17 @@ button {
   grid-area: frequency;
 }
 
-/* Average daily frequency ("1 /jour"). */
+/* Average frequency and its unit ("1 /semaine"). */
 .use-case-card__frequency-input {
   display: flex;
   align-items: center;
+  /* Centred under the column title. */
+  justify-content: center;
   gap: 0.375rem;
 }
 
 .use-case-card__frequency-input input {
-  width: 4.5rem;
+  width: 3.75rem;
   font-family: var(--font-mono);
   font-size: 0.875rem;
   padding: 0.45rem 0.55rem;
@@ -772,9 +781,29 @@ button {
   border-color: var(--forest);
 }
 
+/* Unit picker, discreet: reads like the former "/jour" text. */
 .use-case-card__frequency-unit {
+  min-width: 0;
+  /* Fits the chosen unit where supported, not the longest option. */
+  field-sizing: content;
+  appearance: none;
+  padding: 0.3rem 1rem 0.3rem 0.2rem;
+  /* Small chevron, drawn in CSS (no image request). */
+  background:
+    linear-gradient(45deg, transparent 50%, currentColor 50%) right 0.45rem center / 0.3rem 0.3rem no-repeat,
+    linear-gradient(-45deg, transparent 50%, currentColor 50%) right 0.2rem center / 0.3rem 0.3rem no-repeat;
+  border: 1px solid transparent;
+  border-radius: 6px;
   color: var(--ink-soft);
+  font: inherit;
   font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.use-case-card__frequency-unit:hover,
+.use-case-card__frequency-unit:focus {
+  border-color: var(--line);
+  color: var(--ink);
 }
 
 .use-case-card__summary {

@@ -10,6 +10,8 @@ const IMAGE_SIZES = [
   { size: "2048 × 2048", divisor: 8, energyKey: "large" },
 ] as const;
 
+const FREQUENCY_UNITS = ["day", "week", "month"] as const;
+
 export function MethodologyPage() {
   const { t } = useTranslation();
   const { hash } = useLocation();
@@ -24,6 +26,35 @@ export function MethodologyPage() {
     <div className="page-prose">
       <h1>{t("methodology.title")}</h1>
       <p>{t("methodology.body")}</p>
+
+      <section id="frequence" aria-labelledby="methodology-frequency">
+        <h2 id="methodology-frequency">{t("methodology.frequency.title")}</h2>
+        <p>{t("methodology.frequency.principle")}</p>
+        <table className="methodology-table">
+          <thead>
+            <tr>
+              <th scope="col">{t("methodology.frequency.unit")}</th>
+              <th scope="col">{t("methodology.frequency.perYear")}</th>
+              <th scope="col">{t("methodology.frequency.perDay")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {FREQUENCY_UNITS.map((unit) => {
+              const cells = t(`methodology.frequency.rows.${unit}`, {
+                returnObjects: true,
+              }) as string[];
+              return (
+                <tr key={unit}>
+                  {cells.map((cell) => (
+                    <td key={cell}>{cell}</td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <p>{t("methodology.frequency.example")}</p>
+      </section>
 
       <section id="images" aria-labelledby="methodology-images">
         <h2 id="methodology-images">{t("methodology.images.title")}</h2>

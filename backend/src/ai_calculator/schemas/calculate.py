@@ -6,8 +6,9 @@ parameters it accepts, so the OpenAPI schema documents them per type.
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
+from ai_calculator.domain.scenario import FrequencyUnit
 from ai_calculator.domain.use_cases import MAX_OUTPUT_TOKENS, MIN_OUTPUT_TOKENS
 from ai_calculator.schemas.impacts import ImpactsOut
 from ai_calculator.schemas.use_cases import ParameterValueOut
@@ -21,7 +22,17 @@ class _UsageIn(BaseModel):
     use_case_id: str
     provider_id: str
     profile_id: str
-    frequency_per_day: float = Field(ge=0, description="Average actions per day.")
+    frequency: float = Field(
+        ge=0,
+        # `frequency_per_day` is the former name, still accepted.
+        validation_alias=AliasChoices("frequency", "frequency_per_day"),
+        description="Average actions per `frequency_unit`.",
+    )
+    frequency_unit: FrequencyUnit = Field(
+        default="day",
+        description="Period of the frequency: working day, week (5 working days) "
+        "or month (11 worked months a year).",
+    )
 
 
 class TextParametersIn(BaseModel):
@@ -93,7 +104,9 @@ class UsageOut(BaseModel):
     use_case_id: str
     provider_id: str
     profile_id: str
-    frequency_per_day: float
+    frequency: float
+    frequency_unit: FrequencyUnit
+    frequency_per_day: float = Field(description="Equivalent per working day.")
     parameters: dict[str, ParameterValueOut]
     unit_impacts: ImpactsOut
     daily_impacts: ImpactsOut

@@ -80,12 +80,17 @@ function fakeResult(request: CalculateRequest, scale = 1): CalculateResult {
     const unit =
       UNIT_GWP_KG[`${u.useCaseId}:${u.providerId}:${u.profileId}:${parameters.resolution ?? ""}`] *
       scale;
-    const daily = unit * u.frequencyPerDay;
+    // Same conversion as the backend: 43.6 weeks, 11 months a year.
+    const perYear = { day: 218, week: 218 / 5, month: 11 }[u.frequencyUnit];
+    const frequencyPerDay = (u.frequency * perYear) / 218;
+    const daily = unit * frequencyPerDay;
     return {
       useCaseId: u.useCaseId,
       providerId: u.providerId,
       profileId: u.profileId,
-      frequencyPerDay: u.frequencyPerDay,
+      frequency: u.frequency,
+      frequencyUnit: u.frequencyUnit,
+      frequencyPerDay,
       parameters,
       unitImpacts: gwpKg(unit),
       dailyImpacts: gwpKg(daily),
@@ -159,7 +164,7 @@ async function renderDefault() {
 async function renderLoaded() {
   const view = await renderDefault();
   for (const title of [/video generation/i, /writing a short email/i]) {
-    fireEvent.change(within(card(title)).getByLabelText("Average daily frequency"), {
+    fireEvent.change(within(card(title)).getByLabelText("Average frequency"), {
       target: { value: "1" },
     });
   }
@@ -239,7 +244,7 @@ describe("CalculatorPage families", () => {
 describe("CalculatorPage only-my-usages filter", () => {
   const filter = () => screen.getByRole("checkbox", { name: /only my usages/i });
   const setFrequency = (title: RegExp, value: string) =>
-    fireEvent.change(within(card(title)).getByLabelText("Average daily frequency"), {
+    fireEvent.change(within(card(title)).getByLabelText("Average frequency"), {
       target: { value },
     });
 
@@ -288,7 +293,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     await renderDefault();
 
     for (const title of [/video generation/i, /writing a short email/i]) {
-      expect(within(card(title)).getByLabelText("Average daily frequency")).toHaveValue(0);
+      expect(within(card(title)).getByLabelText("Average frequency")).toHaveValue(0);
       expect(cardGwp(title)).toHaveTextContent("0 kg CO2eq");
     }
   });
@@ -304,7 +309,8 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
           useCaseId: "video",
           providerId: "google",
           profileId: "video",
-          frequencyPerDay: 0,
+          frequency: 0,
+          frequencyUnit: "day",
           parameters: { resolution: "720p" },
         },
         {
@@ -312,7 +318,8 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
           useCaseId: "email",
           providerId: "google",
           profileId: "eco",
-          frequencyPerDay: 0,
+          frequency: 0,
+          frequencyUnit: "day",
           parameters: {},
         },
       ],
@@ -348,13 +355,27 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     const user = userEvent.setup();
     await renderLoaded();
 
-    const frequency = within(card(/writing a short email/i)).getByLabelText("Average daily frequency");
+    const frequency = within(card(/writing a short email/i)).getByLabelText("Average frequency");
     await user.clear(frequency);
     await user.type(frequency, "3");
 
     // video 1 + email 3 x 100 = 301 kg per day x 218
     await waitFor(() => expect(individualSummary()).toBe("65.6 t CO2eq"));
-    expect(lastRequest().usages[1].frequencyPerDay).toBe(3);
+    expect(lastRequest().usages[1].frequency).toBe(3);
+  });
+
+  it("recalculates with the chosen frequency unit", async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+
+    await user.selectOptions(
+      within(card(/writing a short email/i)).getByLabelText("Frequency unit"),
+      "week",
+    );
+
+    // email once a week = 0.2 a working day: (1 + 0.2 x 100) kg x 218
+    await waitFor(() => expect(individualSummary()).toBe("4.58 t CO2eq"));
+    expect(lastRequest().usages[1]).toMatchObject({ frequency: 1, frequencyUnit: "week" });
   });
 
   it("waits for typing to settle before calling the backend", async () => {
@@ -363,10 +384,10 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     const callsBefore = mockedCalculate.mock.calls.length;
 
     await user.type(
-      within(card(/writing a short email/i)).getByLabelText("Average daily frequency"),
+      within(card(/writing a short email/i)).getByLabelText("Average frequency"),
       "234",
     );
-    await waitFor(() => expect(lastRequest().usages[1].frequencyPerDay).toBe(1234));
+    await waitFor(() => expect(lastRequest().usages[1].frequency).toBe(1234));
 
     // One request for the settled value, not one per keystroke.
     expect(mockedCalculate.mock.calls.length - callsBefore).toBe(1);

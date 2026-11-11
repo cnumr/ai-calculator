@@ -39,8 +39,8 @@
       "description": "Select the allowed LLM providers — they'll be available in the use cases below"
     },
     "sectionUsage": {
-      "title": "Daily usage per user",
-      "description": "Choose the provider and profile, set the daily frequency"
+      "title": "Usage per user",
+      "description": "Choose the provider and profile, set the frequency per day, week or month"
     },
     "sectionEnterprise": {
       "title": "Company-wide impact",
@@ -52,10 +52,10 @@
     "notAvailable": "Not available",
     "settingsToggle": "Settings",
     "customizeTitle": "Customisation",
-    "dailyImpactsTitle": "Impact details per day",
+    "dailyImpactsTitle": "Impact details per working day",
     "onlyUsed": "Only my usages ({{count}})",
-    "columnFrequency": "Daily frequency",
-    "columnImpact": "Impact per day",
+    "columnFrequency": "Average\nfrequency",
+    "columnImpact": "Impact per working day",
     "families": {
       "writing": "Writing",
       "analysis": "Analysis and summaries",
@@ -63,7 +63,13 @@
       "visual": "Visual creation",
       "development": "Development"
     },
-    "frequencyPerDay": "Average daily frequency",
+    "frequency": "Average frequency",
+    "frequencyUnitLabel": "Frequency unit",
+    "frequencyUnit": {
+      "day": "/day",
+      "week": "/week",
+      "month": "/month"
+    },
     "detailsToggle": "Show/hide the impact details for this task",
     "cardImpactSummary": {
       "gwp": "Greenhouse gases",
@@ -99,7 +105,6 @@
     "sourceLink": "Methodology",
     "newTab": "new tab",
     "parameterDefault": "Default value: {{value}}",
-    "perDayShort": "/day",
     "parameter": {
       "output_tokens": "Generated tokens per action",
       "resolution": "Resolution",
@@ -140,6 +145,31 @@
   "methodology": {
     "title": "Methodology",
     "body": "Impacts are computed from EcoLogits, which models generative AI model inference...",
+    "frequency": {
+      "title": "Usage frequency",
+      "principle": "Each usage's frequency is entered per day, week or month. The calculator converts it into actions per year, based on 218 working days, then into an average per working day: that is what each row's “Impact per working day” uses, so usages compare with each other whatever their unit.",
+      "unit": "Unit",
+      "perYear": "Worked periods per year",
+      "perDay": "Equivalent per working day",
+      "rows": {
+        "day": [
+          "Per day",
+          "218 working days",
+          "n"
+        ],
+        "week": [
+          "Per week",
+          "43.6 weeks (218 ÷ 5 working days)",
+          "n ÷ 5"
+        ],
+        "month": [
+          "Per month",
+          "11 months (one month of leave)",
+          "n × 11 ÷ 218"
+        ]
+      },
+      "example": "Example: one video a month counts as 11 videos a year, about 0.05 per working day."
+    },
     "images": {
       "title": "Image generation",
       "principle": "EcoLogits does not model image generation. The calculator applies the project's method: the impact of an image is derived from that of a short generated video, computed by EcoLogits, divided by a factor that depends on the image size.",

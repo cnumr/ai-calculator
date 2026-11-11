@@ -35,7 +35,7 @@ def build_scenario(base_url: str) -> bytes:
             "use_case_id": uc["id"],
             "provider_id": uc["default_provider"],
             "profile_id": uc["recommended_tier"],
-            "frequency_per_day": 1,
+            "frequency": 1,
         }
         for uc in catalogue["use_cases"]
     ]

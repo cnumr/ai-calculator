@@ -31,7 +31,7 @@ test("lists use cases as compact rows grouped by family, settings on demand", as
 
   // Frequency and results on the row, vertically centred together.
   const card = page.locator(".use-case-card").first();
-  const frequency = card.getByLabel(/fréquence|frequency/i);
+  const frequency = card.getByLabel(/^(fréquence moyenne|average frequency)$/i);
   const results = card.locator(".use-case-card__summary");
   const [frequencyBox, resultsBox] = await Promise.all(
     [frequency, results].map((l) => l.boundingBox()),
@@ -82,10 +82,11 @@ test("calculator: impacts come from POST /api/calculate and follow the cards", a
   const recalculation = page.waitForResponse(
     (r) => r.url().endsWith("/api/calculate") && r.request().method() === "POST",
   );
-  await videoCard.getByLabel(/fréquence|frequency/i).fill("5");
+  await videoCard.getByLabel(/^(fréquence moyenne|average frequency)$/i).fill("5");
   const request = (await recalculation).request().postDataJSON();
   const video = request.usages.find((u: { use_case_id: string }) => u.use_case_id === "video");
-  expect(video.frequency_per_day).toBe(5);
+  expect(video.frequency).toBe(5);
+  expect(video.frequency_unit).toBe("day");
   await expect(individualTotal).not.toHaveText(before!);
 
   // The impact details are in the settings panel.

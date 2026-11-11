@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import i18n from "../src/i18n";
 import { UseCaseCard } from "../src/components/UseCaseCard";
 import type { Impacts, ParameterValue, UseCase } from "../src/api/client";
+import type { CardState } from "../src/domain/calculator";
 
 // Tests that need French switch to it explicitly; reset to the jsdom
 // default (English) so the language never leaks into the next test.
@@ -65,7 +66,7 @@ function renderEmail(props: Partial<Parameters<typeof UseCaseCard>[0]> = {}) {
       availableProviderIds={["openai", "anthropic"]}
       providerId="openai"
       profileId="eco"
-      frequencyPerDay={1}
+      frequency={1}
       dailyImpacts={DAILY}
       onChange={() => {}}
       {...props}
@@ -99,7 +100,7 @@ describe("UseCaseCard layout", () => {
     renderEmail();
 
     const row = document.querySelector<HTMLElement>(".use-case-card__row")!;
-    expect(row).toContainElement(screen.getByLabelText(/fréquence|frequency/i));
+    expect(row).toContainElement(screen.getByLabelText(/^(fréquence moyenne|average frequency)$/i));
     expect(row).toContainElement(screen.getByTitle(/gaz à effet de serre|greenhouse gases/i));
     // Closed: no provider or profile select in the DOM (RWEB_0046).
     const toggle = screen.getByRole("button", { name: settingsToggle });
@@ -119,7 +120,7 @@ describe("UseCaseCard layout", () => {
 
   it("recalls the provider and profile on the row, and marks used use cases", async () => {
     await i18n.changeLanguage("en");
-    const { rerender } = renderEmail({ frequencyPerDay: 0 });
+    const { rerender } = renderEmail({ frequency: 0 });
 
     expect(document.querySelector(".use-case-card__meta")).toHaveTextContent("OpenAI · Eco");
     expect(document.querySelector(".use-case-card")).toHaveClass("use-case-card--idle");
@@ -130,7 +131,7 @@ describe("UseCaseCard layout", () => {
         availableProviderIds={["openai", "anthropic"]}
         providerId="openai"
         profileId="eco"
-        frequencyPerDay={2}
+        frequency={2}
         dailyImpacts={DAILY}
         onChange={() => {}}
       />,
@@ -138,14 +139,27 @@ describe("UseCaseCard layout", () => {
     expect(document.querySelector(".use-case-card")).toHaveClass("use-case-card--used");
   });
 
-  it("labels the frequency as an average per day, for assistive technologies", async () => {
+  it("labels the frequency and its unit, per day by default", async () => {
     await i18n.changeLanguage("fr");
     renderEmail();
 
-    const frequency = document.querySelector(".use-case-card__frequency");
-    expect(frequency).toHaveTextContent("Fréquence quotidienne moyenne");
-    expect(frequency).toHaveTextContent("/jour");
-    expect(screen.getByLabelText("Fréquence quotidienne moyenne")).toHaveValue(1);
+    expect(screen.getByLabelText("Fréquence moyenne")).toHaveValue(1);
+    const unit = screen.getByLabelText("Unité de la fréquence");
+    expect(unit).toHaveValue("day");
+    expect(
+      Array.from(unit.querySelectorAll("option")).map((o) => o.textContent),
+    ).toEqual(["/jour", "/semaine", "/mois"]);
+  });
+
+  it("reports the chosen frequency unit", async () => {
+    const onChange = vi.fn();
+    renderEmail({ onChange });
+
+    await userEvent.selectOptions(screen.getByLabelText("Frequency unit"), "month");
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ frequency: 1, frequencyUnit: "month" }),
+    );
   });
 
   it("renders the use case name and its picto", () => {
@@ -242,7 +256,8 @@ describe("UseCaseCard selection", () => {
     expect(onChange).toHaveBeenCalledWith({
       providerId: "openai",
       profileId: "powerful",
-      frequencyPerDay: 1,
+      frequency: 1,
+      frequencyUnit: "day" as const,
       parameters: {},
     });
   });
@@ -251,10 +266,10 @@ describe("UseCaseCard selection", () => {
     const onChange = vi.fn();
     renderEmail({ onChange });
 
-    await userEvent.type(screen.getByLabelText("Average daily frequency"), "2");
+    await userEvent.type(screen.getByLabelText("Average frequency"), "2");
 
     expect(onChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ frequencyPerDay: 12 }),
+      expect.objectContaining({ frequency: 12 }),
     );
   });
 });
@@ -355,7 +370,7 @@ describe("UseCaseCard methodological source", () => {
       "Source : EcoLogits 0.11.3, modélisation de l'inférence des LLM.",
     );
     // With the impact details it justifies.
-    expect(screen.getByRole("region", { name: "Détail des impacts par jour" })).toContainElement(note);
+    expect(screen.getByRole("region", { name: "Détail des impacts par jour ouvré" })).toContainElement(note);
     const link = within(note).getByRole("link", { name: /méthodologie/i });
     expect(link).toHaveAttribute(
       "href",
@@ -392,7 +407,7 @@ describe("UseCaseCard methodological source", () => {
           availableProviderIds={["google"]}
           providerId="google"
           profileId="image"
-          frequencyPerDay={1}
+          frequency={1}
           dailyImpacts={DAILY}
           onChange={() => {}}
         />
@@ -417,11 +432,12 @@ describe("UseCaseCard provider logo", () => {
   it("shows the selected provider's logo left of its select", async () => {
     const user = userEvent.setup();
     function Interactive() {
-      const [state, setState] = useState({
+      const [state, setState] = useState<CardState>({
         providerId: "openai",
         profileId: "eco",
-        frequencyPerDay: 1,
-        parameters: {} as Record<string, ParameterValue>,
+        frequency: 1,
+        frequencyUnit: "day",
+        parameters: {},
       });
       return (
         <UseCaseCard
@@ -472,7 +488,7 @@ describe("UseCaseCard provider logo", () => {
         availableProviderIds={["openai", "mistral"]}
         providerId="openai"
         profileId={chosen}
-        frequencyPerDay={1}
+        frequency={1}
         dailyImpacts={DAILY}
         onChange={onChange}
       />,
@@ -502,11 +518,12 @@ describe("UseCaseCard provider logo", () => {
 
 describe("UseCaseCard model parameters", () => {
   function InteractiveVideoCard({ onChange }: { onChange?: (p: Record<string, ParameterValue>) => void }) {
-    const [state, setState] = useState({
+    const [state, setState] = useState<CardState>({
       providerId: "google",
       profileId: "video",
-      frequencyPerDay: 1,
-      parameters: {} as Record<string, ParameterValue>,
+      frequency: 1,
+      frequencyUnit: "day",
+      parameters: {},
     });
     return (
       <UseCaseCard
@@ -577,11 +594,12 @@ describe("UseCaseCard model parameters", () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
     function TextCard() {
-      const [state, setState] = useState({
+      const [state, setState] = useState<CardState>({
         providerId: "openai",
         profileId: "eco",
-        frequencyPerDay: 1,
-        parameters: {} as Record<string, ParameterValue>,
+        frequency: 1,
+        frequencyUnit: "day",
+        parameters: {},
       });
       return (
         <UseCaseCard
@@ -639,7 +657,7 @@ describe("UseCaseCard model parameters", () => {
     const sections = within(panel).getAllByRole("region");
     expect(sections.map((section) => section.querySelector("h5")!.textContent)).toEqual([
       "Personnalisation",
-      "Détail des impacts par jour",
+      "Détail des impacts par jour ouvré",
     ]);
     expect(sections[0]).toContainElement(screen.getByLabelText("Résolution"));
   });
@@ -684,7 +702,7 @@ describe("UseCaseCard image sizes", () => {
           availableProviderIds={["google"]}
           providerId="google"
           profileId="image"
-          frequencyPerDay={1}
+          frequency={1}
           dailyImpacts={DAILY}
           onChange={onChange}
         />
