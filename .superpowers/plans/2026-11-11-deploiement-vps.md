@@ -1211,7 +1211,7 @@ Ce dossier déploie ai-calculator sur le VPS de l'association GreenIT (`yunohost
 
 | Environnement | Suit | Dossier | Port local | Domaine | Accès |
 |---|---|---|---|---|---|
-| staging | branche `develop` (image `:develop`) | `/srv/ai-calculator-staging` | 8086 | `ia-calculator-staging.greenit.eco` | comptes YunoHost |
+| staging | branche `develop` (image `:develop`) | `/srv/ai-calculator-staging` | 8086 | `ia-calculator-staging.greenit.eco` | public |
 | prod | dernière GitHub Release (image `:vX.Y.Z`) | `/srv/ai-calculator-prod` | 8085 | `ia-calculator.greenit.eco` | public |
 
 Fichiers :
@@ -1400,13 +1400,19 @@ Faites de même pour `ia-calculator.greenit.eco`. Le certificat de la prod s'ins
 **Commande** : les arguments viennent du manifeste de l'app `redirect` (dépôt `YunoHost-Apps/redirect_ynh`). Les valeurs du chemin `/` sont `redirect_type=reverseproxy` et `init_main_permission` (`visitors` = public, `all_users` = comptes YunoHost).
 
 ```bash
-# staging : réservé aux comptes YunoHost
+# staging : public
 sudo yunohost app install redirect --label "AI Calculator staging" \
-  --args "domain=ia-calculator-staging.greenit.eco&path=/&redirect_type=reverseproxy&target=http://127.0.0.1:8086&init_main_permission=all_users"
+  --args "domain=ia-calculator-staging.greenit.eco&path=/&redirect_type=reverseproxy&target=http://127.0.0.1:8086&init_main_permission=visitors"
 
 # prod : public
 sudo yunohost app install redirect --label "AI Calculator" \
   --args "domain=ia-calculator.greenit.eco&path=/&redirect_type=reverseproxy&target=http://127.0.0.1:8085&init_main_permission=visitors"
+```
+
+Les deux apps ont les droits `all_users` et `visitors`. Après chaque installation :
+
+```bash
+sudo yunohost user permission update <id>.main --add all_users visitors
 ```
 
 Si l'installation refuse un argument, lisez les réglages d'une app Redirect existante (identifiant noté en section 1) :
@@ -1423,8 +1429,8 @@ Pour changer la visibilité plus tard :
 - `sudo yunohost user permission update <id>.main --remove visitors` (comptes YunoHost).
 
 **Vérifier** :
-- `curl -sI https://ia-calculator-staging.greenit.eco/ | head -n 1` renvoie une redirection vers la connexion YunoHost (SSO).
-- Dans un navigateur connecté, la page s'affiche.
+- `curl -sI https://ia-calculator-staging.greenit.eco/ | head -n 1` renvoie `HTTP/2 200`, sans redirection vers la connexion YunoHost.
+- `sudo yunohost user permission list <id>` affiche `all_users` et `visitors` pour chaque app.
 - En prod, la page s'affiche sans connexion.
 - `sudo yunohost app list` liste les deux apps.
 
@@ -1569,7 +1575,7 @@ flowchart LR
 
 | Environnement | Suit | Domaine |
 |---|---|---|
-| staging | `develop` | `ia-calculator-staging.greenit.eco` (comptes YunoHost) |
+| staging | `develop` | `ia-calculator-staging.greenit.eco` (public) |
 | prod | dernière GitHub Release | `ia-calculator.greenit.eco` (public) |
 
 En cas d'échec, la prod revient à la version précédente et une alerte part sur Mattermost.
@@ -1673,13 +1679,13 @@ Chaque tâche suit les sections de `deploy/README.md` à la lettre. Toute diffé
 ### Task 11: Domaines, Redirect et webhook du staging
 
 - [ ] **Step 1:** L'administrateur de la zone crée l'enregistrement `A` du staging (README 3.1).
-- [ ] **Step 2:** README 2.5 (domaine et certificat), puis 2.6 (Redirect staging en `all_users`).
+- [ ] **Step 2:** README 2.5 (domaine et certificat), puis 2.6 (Redirect staging, droits `all_users` et `visitors`).
 - [ ] **Step 3:** Créer le webhook Mattermost et le mettre dans le `.env` (README 3.3). Envoyer le message de test.
 
 ### Task 12: Prod en local, puis bascule
 
 - [ ] **Step 1:** Après une release dont le job `images` a réussi, faire README 2.4 avec `prod`. Contrôler avec `curl 127.0.0.1:8085`.
-- [ ] **Step 2:** Ajouter le domaine prod, sans certificat (2.5), et installer l'app Redirect prod en `visitors` (2.6).
+- [ ] **Step 2:** Ajouter le domaine prod, sans certificat (2.5), et installer l'app Redirect prod, droits `all_users` et `visitors` (2.6).
 - [ ] **Step 3 (jour J, date fixée par Renaud):** bascule DNS de la prod (3.1), puis certificat (2.5).
 
 ### Task 13: Recette
@@ -1690,5 +1696,5 @@ Mettre dans la PR ou l'issue le résultat de chaque point :
 - [ ] **2.** Une release `vX.Y.Z` est en ligne en prod en moins de 10 minutes, et le pied de page affiche `vX.Y.Z`.
 - [ ] **3.** Échec et retour arrière : couverts par `deploy/tests/update_test.sh` en CI, plus le message de test du webhook (README 3.3). On ne publie pas de release volontairement cassée.
 - [ ] **4.** `update.sh prod <version précédente>` fige la prod. Le passage suivant du timer la laisse en place, et `--unpin` revient à la dernière release.
-- [ ] **5.** Le staging demande une connexion YunoHost, la prod est publique.
+- [ ] **5.** Le staging et la prod s'affichent sans connexion YunoHost.
 - [ ] **6.** `docker inspect` montre le driver de logs `local` (`max-size` 10m, `max-file` 5) sur les quatre conteneurs.
