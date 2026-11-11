@@ -126,7 +126,7 @@ flowchart LR
 
 | Environnement | Suit | Domaine |
 |---|---|---|
-| staging | `develop` | `ia-calculator-staging.greenit.eco` (comptes YunoHost) |
+| staging | `develop` | `ia-calculator-staging.greenit.eco` (public) |
 | prod | dernière GitHub Release | `ia-calculator.greenit.eco` (public) |
 
 En cas d'échec, la prod revient à la version précédente et une alerte part sur Mattermost.

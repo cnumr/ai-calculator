@@ -4,7 +4,7 @@ Ce dossier déploie ai-calculator sur le VPS de l'association GreenIT (`yunohost
 
 | Environnement | Suit | Dossier | Port local | Domaine | Accès |
 |---|---|---|---|---|---|
-| staging | branche `develop` (image `:develop`) | `/srv/ai-calculator-staging` | 8086 | `ia-calculator-staging.greenit.eco` | comptes YunoHost |
+| staging | branche `develop` (image `:develop`) | `/srv/ai-calculator-staging` | 8086 | `ia-calculator-staging.greenit.eco` | public |
 | prod | dernière GitHub Release (image `:vX.Y.Z`) | `/srv/ai-calculator-prod` | 8085 | `ia-calculator.greenit.eco` | public |
 
 Fichiers :
@@ -190,16 +190,19 @@ Faites de même pour `ia-calculator.greenit.eco`. Le certificat de la prod s'ins
 
 **Qui** : Développeur.
 
-**Commande** : les arguments viennent du manifeste de l'app `redirect` (dépôt `YunoHost-Apps/redirect_ynh`). Les valeurs du chemin `/` sont `redirect_type=reverseproxy` et `init_main_permission` (`visitors` = public, `all_users` = comptes YunoHost).
+**Commande** : les arguments viennent du manifeste de l'app `redirect` (dépôt `YunoHost-Apps/redirect_ynh`). Les valeurs du chemin `/` sont `redirect_type=reverseproxy` et `init_main_permission` (`visitors` = public, `all_users` = comptes YunoHost). Staging et prod sont publics : chacun reçoit les droits `all_users` et `visitors`.
 
 ```bash
-# staging : réservé aux comptes YunoHost
+# staging : public
 sudo yunohost app install redirect --label "AI Calculator staging" \
-  --args "domain=ia-calculator-staging.greenit.eco&path=/&redirect_type=reverseproxy&target=http://127.0.0.1:8086&init_main_permission=all_users"
+  --args "domain=ia-calculator-staging.greenit.eco&path=/&redirect_type=reverseproxy&target=http://127.0.0.1:8086&init_main_permission=visitors"
 
 # prod : public
 sudo yunohost app install redirect --label "AI Calculator" \
   --args "domain=ia-calculator.greenit.eco&path=/&redirect_type=reverseproxy&target=http://127.0.0.1:8085&init_main_permission=visitors"
+
+# puis, pour chaque app (remplacer <id> par l'identifiant noté en section 1) :
+sudo yunohost user permission update <id>.main --add all_users --add visitors
 ```
 
 Si l'installation refuse un argument, lisez les réglages d'une app Redirect existante (identifiant noté en section 1) :
@@ -216,8 +219,7 @@ Pour changer la visibilité plus tard :
 - `sudo yunohost user permission update <id>.main --remove visitors` (comptes YunoHost).
 
 **Vérifier** :
-- `curl -sI https://ia-calculator-staging.greenit.eco/ | head -n 1` renvoie une redirection vers la connexion YunoHost (SSO).
-- Dans un navigateur connecté, la page s'affiche.
+- `curl -sI https://ia-calculator-staging.greenit.eco/ | head -n 1` renvoie `HTTP/2 200`, sans redirection vers la connexion YunoHost.
 - En prod, la page s'affiche sans connexion.
 - `sudo yunohost app list` liste les deux apps.
 
