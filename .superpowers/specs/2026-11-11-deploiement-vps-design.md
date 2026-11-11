@@ -19,7 +19,7 @@ L'issue #29 demande un déploiement automatique sur le VPS de l'association Gree
 | Compte | Compte **système** `ai-calculator` créé en ligne de commande (pas un utilisateur YunoHost), dans le groupe `docker`, sans mot de passe, sans shell, sans SSH. |
 | Registre | Images **publiques** sur `ghcr.io/cnumr/` : aucun identifiant sur le VPS. Création de packages publics déjà autorisée dans l'organisation `cnumr`. |
 | Alertes | **Webhook Mattermost** (format compatible Slack), URL dans le `.env`. URL vide = logs seulement. |
-| Domaines | `ia-calculator.greenit.eco` (prod, public) et `ia-calculator-staging.greenit.eco` (staging, réservé aux utilisateurs YunoHost). Zone DNS chez Infomaniak. |
+| Domaines | `ia-calculator.greenit.eco` (prod, public) et `ia-calculator-staging.greenit.eco` (staging, public lui aussi : décision de Renaud du 11/11/2026). Zone DNS chez Infomaniak. |
 | Domaine prod existant | `ia-calculator.greenit.eco` pointe aujourd'hui vers l'**ancien POC** (page unique, cf. `AGENTS.md`), hébergé chez Infomaniak (`83.166.133.33`). Il est **basculé vers le VPS le jour de la mise en prod** ; l'ancien site disparaît. |
 | Exécution sur le VPS | Tout en ligne de commande, par le Développeur via SSH, **après validation de Renaud**, en suivant `deploy/README.md`. |
 
@@ -36,7 +36,7 @@ flowchart LR
   U -->|pull| G
   U --> S[/srv/ai-calculator-staging :8086/]
   U --> P[/srv/ai-calculator-prod :8085/]
-  S --> RS[Redirect staging · SSO]
+  S --> RS[Redirect staging · public]
   P --> RP[Redirect prod · public]
   U -.échec.-> M[Mattermost]
 ```
@@ -194,7 +194,8 @@ Les logs du script vont dans le journal système. Sa limite et sa purge sont cel
    - après la propagation DNS : `sudo yunohost domain cert install <domaine>`.
 5. **Apps Redirect** (arguments lus dans le manifeste de `YunoHost-Apps/redirect_ynh`) :
    - prod : `sudo yunohost app install redirect --label "AI Calculator" --args "domain=ia-calculator.greenit.eco&path=/&redirect_type=reverseproxy&target=http://127.0.0.1:8085&init_main_permission=visitors"` ;
-   - staging : même commande avec le domaine staging, `target=http://127.0.0.1:8086` et `init_main_permission=all_users` (comptes YunoHost).
+   - staging : même commande avec le domaine staging et `target=http://127.0.0.1:8086`.
+   - Puis, pour chacune des deux apps : `sudo yunohost user permission update <app>.main --add all_users visitors`. Les deux environnements ont les droits `all_users` et `visitors` (décision de Renaud du 11/11/2026).
    - La version du catalogue sur le VPS n'est pas vérifiée : si un argument est refusé, on lit les réglages d'une app Redirect existante (`sudo yunohost app setting <id> redirect_type`), puis on corrige la commande et le README.
    - Changer la visibilité plus tard : `sudo yunohost user permission update <app>.main --add visitors` ou `--remove visitors`.
 
@@ -208,7 +209,7 @@ Les logs du script vont dans le journal système. Sa limite et sa purge sont cel
 
 ### 4.4 Ordre de mise en service
 
-1. Staging de bout en bout : DNS, Redirect, SSO, timer.
+1. Staging de bout en bout : DNS, Redirect, accès public, timer.
 2. Prod testée en local sur le VPS (`curl 127.0.0.1:8085`).
 3. Bascule DNS de la prod.
 
@@ -249,7 +250,7 @@ Les logs du script vont dans le journal système. Sa limite et sa purge sont cel
 2. Une release `vX.Y.Z` est en ligne en prod en moins de 10 minutes, et le pied de page affiche `X.Y.Z`.
 3. Échec et retour arrière : couverts par `deploy/tests/update_test.sh` en CI, plus un message de test envoyé au webhook. On ne publie pas de release volontairement cassée.
 4. `update.sh prod vX.Y.Z` fige la version, la tâche planifiée la laisse en place, et `--unpin` revient à la dernière release.
-5. Le staging demande une connexion YunoHost, la prod est publique.
+5. Le staging et la prod s'affichent sans connexion YunoHost.
 6. `docker inspect` montre le driver de logs `local` avec ses limites, sur les quatre conteneurs.
 
 ## Écoconception
