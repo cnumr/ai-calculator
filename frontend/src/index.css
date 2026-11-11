@@ -455,16 +455,30 @@ button {
 /* Range gauge — signature instrument-panel readout */
 
 .range-gauge {
-  display: grid;
-  grid-template-columns: minmax(90px, 140px) minmax(60px, 1fr);
-  align-items: center;
-  gap: 1rem;
-  padding: 0.6rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.75rem 0;
   border-top: 1px solid var(--line);
 }
 
 .range-gauge:first-of-type {
   border-top: none;
+}
+
+.range-gauge__value-row {
+  position: relative;
+  height: 1.2rem;
+}
+
+.range-gauge__value {
+  position: absolute;
+  bottom: 0;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--forest-deep);
 }
 
 .range-gauge__label {
@@ -514,7 +528,6 @@ button {
 }
 
 .range-gauge__bounds {
-  grid-column: 1 / -1;
   display: flex;
   justify-content: space-between;
   font-family: var(--font-mono);
@@ -1136,11 +1149,6 @@ button {
   .app-nav {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .range-gauge {
-    grid-template-columns: 1fr;
-    gap: 0.4rem;
   }
 
 }
