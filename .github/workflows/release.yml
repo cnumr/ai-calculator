@@ -19,6 +19,9 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    outputs:
+      released: ${{ steps.released.outputs.released }}
+      version: ${{ steps.released.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -44,3 +47,29 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Le tag vX.Y.Z pointe-t-il sur ce commit ? Vrai seulement au passage où
+      # create-release.mjs vient de le créer (merge de la PR "Version Packages").
+      - name: Release published on this commit?
+        id: released
+        run: |
+          version="v$(jq -r .version package.json)"
+          echo "version=${version}" >>"$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/${version}" >/dev/null &&
+            [ "$(git rev-list -n 1 "${version}")" = "$(git rev-parse HEAD)" ]; then
+            echo "released=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "released=false" >>"$GITHUB_OUTPUT"
+          fi
+
+  # Images de la release : :vX.Y.Z (suivie par la prod du VPS) et :latest.
+  images:
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build-images.yml
+    with:
+      ref: ${{ needs.release.outputs.version }}
+      tags: ${{ needs.release.outputs.version }} latest
