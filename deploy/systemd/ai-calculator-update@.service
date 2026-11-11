@@ -1,0 +1,21 @@
+# Mise à jour d'un environnement ai-calculator (%i = staging ou prod).
+# Installé dans /etc/systemd/system/, voir deploy/README.md.
+[Unit]
+Description=Mise à jour ai-calculator (%i) depuis ghcr.io
+Documentation=https://github.com/cnumr/ai-calculator/blob/main/deploy/README.md
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ai-calculator
+Group=ai-calculator
+ExecStart=/srv/ai-calculator-%i/update.sh %i
+# Un pull bloqué ne doit pas empêcher les passages suivants.
+TimeoutStartSec=15min
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/srv/ai-calculator-%i
+ProtectHome=yes
+PrivateTmp=yes

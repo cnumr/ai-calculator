@@ -1,0 +1,42 @@
+name: Images develop
+
+# À chaque push sur develop : contrôles de deploy/, puis images :develop et
+# :sha-<7 car.>. Le staging du VPS les tire dans les 5 minutes.
+on:
+  push:
+    branches:
+      - develop
+
+# Un nouveau push annule la construction en cours : seule la dernière compte.
+concurrency:
+  group: images-develop
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    uses: ./.github/workflows/deploy-checks.yml
+
+  # Les expressions GitHub n'ont pas de fonction de sous-chaîne : le commit
+  # court est calculé dans une étape.
+  version:
+    name: Commit court
+    runs-on: ubuntu-latest
+    outputs:
+      sha7: ${{ steps.sha.outputs.sha7 }}
+    steps:
+      - id: sha
+        run: echo "sha7=${GITHUB_SHA::7}" >>"$GITHUB_OUTPUT"
+
+  images:
+    needs: [checks, version]
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build-images.yml
+    with:
+      ref: ${{ github.sha }}
+      tags: develop sha-${{ needs.version.outputs.sha7 }}
+      app_build: ${{ needs.version.outputs.sha7 }}
