@@ -116,7 +116,7 @@ remote_available() {
 # Commit (7 caractères) d'une image locale, lu dans ses labels OCI.
 revision() {
   docker image inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' \
-    "${IMAGE_BASE}-frontend:$1" 2>/dev/null | cut -c1-7
+    "${IMAGE_BASE}-frontend:$1" 2>/dev/null | cut -c1-7 || true
 }
 
 # Supprime les images du projet qu'aucun conteneur n'utilise. Le filtre sur le

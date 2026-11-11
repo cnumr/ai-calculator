@@ -185,6 +185,13 @@ run_update staging
 check "le push cassé n'est pas retenté" not started
 check "pas de nouvelle alerte" [ ! -f "$FAKE_STATE/alerts" ]
 
+echo "# staging : --dry-run sans image locale"
+setup "$STAGING_ENV"; echo img-old >"$FAKE_STATE/running/backend"; publish develop img-a
+run_update staging --dry-run
+check "sort sans erreur" [ "$STATUS" -eq 0 ]
+check "annonce le dry-run" grep -q "dry-run : redémarrerait sur develop" <<<"$OUT"
+check "aucun redémarrage" not started
+
 echo "# arguments"
 setup "$PROD_ENV"
 run_update staging v1.0.0
