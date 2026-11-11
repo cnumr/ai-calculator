@@ -6,6 +6,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+# Commit court affiché dans le pied de page en staging (vide en release).
+ARG APP_BUILD=""
 RUN npm run build
 
 # Précompression des fichiers texte (GreenIT RWEB_0076) : nginx les sert tels
