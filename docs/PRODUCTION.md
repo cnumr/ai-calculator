@@ -108,3 +108,27 @@ scripts/verify-cache.sh https://mon-domaine   # ou une autre URL de base
 
 - Pas de HTTPS/TLS intégré : à placer derrière un reverse proxy externe (ex. Traefik, Caddy, load balancer) si l'application est exposée publiquement.
 - Pas de volumes persistants : le backend est stateless, rien à sauvegarder côté données applicatives.
+
+## Déploiement continu sur le VPS GreenIT
+
+Sur le VPS de l'association GreenIT, l'application n'est pas construite sur place :
+- GitHub Actions publie les images sur `ghcr.io/cnumr/ai-calculator-{backend,frontend}` ;
+- le serveur les tire toutes les 5 minutes (`deploy/update.sh`, lancé par un timer systemd) ;
+- une app YunoHost Redirect publie chaque environnement en HTTPS.
+
+```mermaid
+flowchart LR
+  D[push develop] --> G[(ghcr.io)]
+  R[release vX.Y.Z] --> G
+  G -->|toutes les 5 min| S[staging :8086]
+  G -->|toutes les 5 min| P[prod :8085]
+```
+
+| Environnement | Suit | Domaine |
+|---|---|---|
+| staging | `develop` | `ia-calculator-staging.greenit.eco` (comptes YunoHost) |
+| prod | dernière GitHub Release | `ia-calculator.greenit.eco` (public) |
+
+En cas d'échec, la prod revient à la version précédente et une alerte part sur Mattermost.
+
+Installation, exploitation, retour arrière et désinstallation : [deploy/README.md](../deploy/README.md). L'installation décrite plus haut (build local avec `docker-compose.yml`) reste valable pour les autres serveurs.
