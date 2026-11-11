@@ -20,7 +20,11 @@
     "doc_small": { "name": "Rédaction d'un document court", "subtitle": "Notes et synthèses courtes" },
     "doc_large": { "name": "Rédaction d'un document long", "subtitle": "Rapports, PDF, articles" },
     "ai_query": { "name": "Question à un assistant IA", "subtitle": "Chat et assistant" },
-    "email": { "name": "Rédaction d'un email", "subtitle": "Gmail, Outlook, agenda" }
+    "email": { "name": "Rédaction d'un mail court", "subtitle": "Gmail, Outlook, agenda" },
+    "slides": { "name": "Générer une présentation (slides)", "subtitle": "8 à 12 slides, Slides, PowerPoint" },
+    "spreadsheet": { "name": "Génération d'une feuille de calcul", "subtitle": "Tableau de 20 à 100 lignes, Sheets, Excel" },
+    "email_long": { "name": "Rédaction d'un mail long", "subtitle": "Mail détaillé de 300 à 900 mots" },
+    "dev_assistance": { "name": "Assistance au développement", "subtitle": "Session agentique" }
   },
   "calculator": {
     "title": "Calculateur d'impacts",
@@ -35,8 +39,8 @@
       "description": "Sélectionnez les fournisseurs LLM autorisés — ils seront disponibles dans les cas d'usage ci-dessous"
     },
     "sectionUsage": {
-      "title": "Usages quotidiens par utilisateur",
-      "description": "Choisissez le fournisseur et le profil, indiquez la fréquence quotidienne"
+      "title": "Usages par utilisateur",
+      "description": "Choisissez le fournisseur et le profil, indiquez la fréquence par jour, semaine ou mois"
     },
     "sectionEnterprise": {
       "title": "Impact à l'échelle de l'entreprise",
@@ -46,7 +50,26 @@
     "profileSelect": "Profil",
     "profileUnsupported": "Non disponible pour ce fournisseur",
     "notAvailable": "Non disponible",
-    "frequencyPerDay": "Fréquence quotidienne moyenne",
+    "settingsToggle": "Réglages",
+    "customizeTitle": "Personnalisation",
+    "dailyImpactsTitle": "Détail des impacts par jour ouvré",
+    "onlyUsed": "Seulement mes usages ({{count}})",
+    "columnFrequency": "Fréquence\nmoyenne",
+    "columnImpact": "Impact par jour ouvré",
+    "families": {
+      "writing": "Rédaction",
+      "analysis": "Analyse et synthèse",
+      "office": "Production bureautique",
+      "visual": "Création visuelle",
+      "development": "Développement"
+    },
+    "frequency": "Fréquence moyenne",
+    "frequencyUnitLabel": "Unité de la fréquence",
+    "frequencyUnit": {
+      "day": "/jour",
+      "week": "/semaine",
+      "month": "/mois"
+    },
     "detailsToggle": "Voir/Masquer le détail de vos impacts pour cette tâche",
     "cardImpactSummary": {
       "gwp": "Gaz à effet de serre",
@@ -67,6 +90,7 @@
       "eco": "Éco",
       "balanced": "Équilibré",
       "powerful": "Puissant",
+      "flagship": "Ultra",
       "research": "Recherche",
       "image": "Standard",
       "video": "Standard",
@@ -76,18 +100,17 @@
     "source": {
       "ecologits_llm": "Source : EcoLogits {{version}}, modélisation de l'inférence des LLM.",
       "ecologits_video": "Source : EcoLogits {{version}}, modélisation de la génération vidéo.",
-      "unsourced": "Valeur indicative, sans source publiée à ce jour."
+      "image_from_video": "Source : transposition depuis la génération vidéo EcoLogits {{version}} (Veo 3.1), d'après l'étude « The Hidden Cost of an Image »."
     },
     "sourceLink": "Méthodologie",
     "newTab": "nouvel onglet",
     "parameterDefault": "Valeur par défaut : {{value}}",
-    "perDayShort": "/jour",
-    "customize": "Personnaliser : {{values}}",
     "parameter": {
       "output_tokens": "Tokens générés par action",
       "resolution": "Résolution",
       "duration_s": "Durée",
-      "with_audio": "Audio"
+      "with_audio": "Audio",
+      "size": "Taille"
     },
     "parameterOption": {
       "output_tokens": "{{value}} tokens générés",
@@ -121,7 +144,48 @@
   },
   "methodology": {
     "title": "Méthodologie",
-    "body": "Les impacts sont calculés à partir d'EcoLogits, qui modélise l'inférence des modèles d'IA générative..."
+    "body": "Les impacts sont calculés à partir d'EcoLogits, qui modélise l'inférence des modèles d'IA générative...",
+    "frequency": {
+      "title": "Fréquence d'usage",
+      "principle": "La fréquence de chaque usage se saisit par jour, par semaine ou par mois. Le calculateur la ramène au nombre d'actions par an, sur la base de 218 jours ouvrés, puis à une moyenne par jour ouvré : c'est elle qui sert à l'« Impact par jour ouvré » de chaque ligne, pour comparer les usages entre eux quelle que soit leur unité.",
+      "unit": "Unité",
+      "perYear": "Périodes travaillées par an",
+      "perDay": "Équivalent par jour ouvré",
+      "rows": {
+        "day": [
+          "Par jour",
+          "218 jours ouvrés",
+          "n"
+        ],
+        "week": [
+          "Par semaine",
+          "43,6 semaines (218 ÷ 5 jours ouvrés)",
+          "n ÷ 5"
+        ],
+        "month": [
+          "Par mois",
+          "11 mois (un mois de congés)",
+          "n × 11 ÷ 218"
+        ]
+      },
+      "example": "Exemple : une vidéo par mois compte pour 11 vidéos par an, soit environ 0,05 par jour ouvré."
+    },
+    "images": {
+      "title": "Génération d'images",
+      "principle": "EcoLogits ne modélise pas la génération d'images. Le calculateur applique la méthode du projet : l'impact d'une image est déduit de celui d'une courte vidéo générée, calculé par EcoLogits, divisé par un facteur qui dépend de la taille de l'image.",
+      "reference": "Vidéo de référence : Veo 3.1 (Google), 720p, 8 secondes, avec audio, soit 27,7 à 60,6 Wh selon EcoLogits.",
+      "size": "Taille de l'image",
+      "factor": "Facteur appliqué",
+      "energy": "Énergie par image (moyenne)",
+      "divisor": "vidéo de référence ÷ {{divisor}}",
+      "energyValue": {
+        "small": "environ 1,5 Wh",
+        "large": "environ 5 Wh"
+      },
+      "study": "Ces facteurs reprennent l'énergie par image de l'étude « The Hidden Cost of an Image: Quantifying the Energy Consumption of AI Image Generation » : environ 1,5 Wh pour une image 1024 × 1024, et 5 Wh pour une image 2048 × 2048 par extrapolation.",
+      "studyLink": "Lire l'étude (arXiv 2506.17016)",
+      "scope": "Le même facteur s'applique aux cinq critères (émissions, énergie, ressources minérales, énergie primaire et eau) et à tous les fournisseurs : l'étude porte sur les modèles de diffusion en général, Veo 3.1 ne sert que de référence. Le profil affiche le modèle d'image utilisé (par exemple Gemini 2.5 Flash Image), mais son impact n'est pas mesuré directement."
+    }
   },
   "about": {
     "title": "À propos",

@@ -80,12 +80,17 @@ function fakeResult(request: CalculateRequest, scale = 1): CalculateResult {
     const unit =
       UNIT_GWP_KG[`${u.useCaseId}:${u.providerId}:${u.profileId}:${parameters.resolution ?? ""}`] *
       scale;
-    const daily = unit * u.frequencyPerDay;
+    // Same conversion as the backend: 43.6 weeks, 11 months a year.
+    const perYear = { day: 218, week: 218 / 5, month: 11 }[u.frequencyUnit];
+    const frequencyPerDay = (u.frequency * perYear) / 218;
+    const daily = unit * frequencyPerDay;
     return {
       useCaseId: u.useCaseId,
       providerId: u.providerId,
       profileId: u.profileId,
-      frequencyPerDay: u.frequencyPerDay,
+      frequency: u.frequency,
+      frequencyUnit: u.frequencyUnit,
+      frequencyPerDay,
       parameters,
       unitImpacts: gwpKg(unit),
       dailyImpacts: gwpKg(daily),
@@ -128,11 +133,11 @@ const enterpriseSummary = () =>
 const lastRequest = () => mockedCalculate.mock.calls.at(-1)![0];
 const card = (title: RegExp) =>
   screen.getByRole("heading", { name: title }).closest("article")!;
-/** Opens a card's "Customize" menu: its fields only exist once it is open. */
-async function openCustomize(title: RegExp) {
-  fireEvent.click(card(title).querySelector(".use-case-card__customize summary")!);
+/** Opens a card's settings: its selects and fields only exist once open. */
+async function openSettings(title: RegExp) {
+  fireEvent.click(within(card(title)).getByRole("button", { name: /settings/i }));
   await waitFor(() =>
-    expect(card(title).querySelector(".use-case-card__parameters")).not.toBeNull(),
+    expect(card(title).querySelector(".use-case-card__panel")).not.toBeNull(),
   );
 }
 const cardGwp = (title: RegExp) =>
@@ -158,8 +163,8 @@ async function renderDefault() {
 /** The page with each card used once a day. */
 async function renderLoaded() {
   const view = await renderDefault();
-  for (const title of [/video generation/i, /writing an email/i]) {
-    fireEvent.change(within(card(title)).getByLabelText("Average daily frequency"), {
+  for (const title of [/video generation/i, /writing a short email/i]) {
+    fireEvent.change(within(card(title)).getByLabelText("Average frequency"), {
       target: { value: "1" },
     });
   }
@@ -174,7 +179,7 @@ describe("CalculatorPage catalogue", () => {
 
     expect(mockedFetchUseCases).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("heading", { name: /video generation/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /writing an email/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /writing a short email/i })).toBeInTheDocument();
   });
 
   it("renders a chip per provider, initialised from selectedByDefault", async () => {
@@ -186,9 +191,10 @@ describe("CalculatorPage catalogue", () => {
 
   it("initializes each card with its catalogue provider and profile defaults", async () => {
     await renderLoaded();
+    await openSettings(/writing a short email/i);
 
-    expect(within(card(/writing an email/i)).getByLabelText("Provider")).toHaveValue("google");
-    expect(within(card(/writing an email/i)).getByLabelText("Profile")).toHaveValue("eco");
+    expect(within(card(/writing a short email/i)).getByLabelText("Provider")).toHaveValue("google");
+    expect(within(card(/writing a short email/i)).getByLabelText("Profile")).toHaveValue("eco");
   });
 
   it("shows a full-page error with retry when the catalogue fails to load", async () => {
@@ -198,8 +204,87 @@ describe("CalculatorPage catalogue", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: /retry/i }));
 
-    expect(await screen.findByRole("heading", { name: /writing an email/i })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /writing a short email/i })).toBeInTheDocument();
     expect(mockedFetchUseCases).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("CalculatorPage families", () => {
+  it("lists use cases under a heading per family, in the catalogue order", async () => {
+    mockedFetchUseCases.mockResolvedValueOnce({
+      ...CATALOG,
+      families: ["writing", "visual"],
+      useCases: CATALOG.useCases.map((uc) => ({
+        ...uc,
+        family: uc.id === "video" ? "visual" : "writing",
+      })),
+    });
+    await renderDefault();
+
+    const families = screen
+      .getAllByRole("region")
+      .filter((region) => region.classList.contains("use-case-family"));
+    expect(families.map((region) => region.getAttribute("aria-labelledby"))).toEqual([
+      "family-writing",
+      "family-visual",
+    ]);
+    expect(within(families[0]).getByRole("heading", { name: "Writing" })).toBeInTheDocument();
+    expect(families[0]).toContainElement(card(/writing a short email/i));
+    expect(families[1]).toContainElement(card(/video generation/i));
+  });
+
+  it("lists use cases without a heading when the catalogue has no families", async () => {
+    await renderDefault();
+
+    expect(screen.queryByRole("heading", { name: "Writing" })).not.toBeInTheDocument();
+    expect(card(/video generation/i)).toBeInTheDocument();
+  });
+});
+
+describe("CalculatorPage only-my-usages filter", () => {
+  const filter = () => screen.getByRole("checkbox", { name: /only my usages/i });
+  const setFrequency = (title: RegExp, value: string) =>
+    fireEvent.change(within(card(title)).getByLabelText("Average frequency"), {
+      target: { value },
+    });
+
+  it("is disabled until a use case has a frequency, and counts the used ones", async () => {
+    await renderDefault();
+
+    expect(filter()).toBeDisabled();
+    expect(filter()).toHaveAccessibleName("Only my usages (0)");
+
+    setFrequency(/writing a short email/i, "2");
+
+    expect(filter()).toBeEnabled();
+    expect(filter()).toHaveAccessibleName("Only my usages (1)");
+  });
+
+  it("lists only the used use cases, and keeps a row cleared while it is on", async () => {
+    await renderDefault();
+    setFrequency(/writing a short email/i, "2");
+
+    fireEvent.click(filter());
+
+    expect(screen.queryByRole("heading", { name: /video generation/i })).not.toBeInTheDocument();
+    expect(card(/writing a short email/i)).toBeInTheDocument();
+    // Cleared while editing: the row stays until the filter is turned off.
+    setFrequency(/writing a short email/i, "");
+    expect(card(/writing a short email/i)).toBeInTheDocument();
+
+    fireEvent.click(filter());
+    expect(card(/video generation/i)).toBeInTheDocument();
+  });
+
+  it("is turned off by the reset", async () => {
+    await renderDefault();
+    setFrequency(/writing a short email/i, "2");
+    fireEvent.click(filter());
+
+    fireEvent.click(screen.getByRole("button", { name: /reset/i }));
+
+    expect(filter()).not.toBeChecked();
+    expect(card(/video generation/i)).toBeInTheDocument();
   });
 });
 
@@ -207,8 +292,8 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
   it("starts every card at a frequency of 0", async () => {
     await renderDefault();
 
-    for (const title of [/video generation/i, /writing an email/i]) {
-      expect(within(card(title)).getByLabelText("Average daily frequency")).toHaveValue(0);
+    for (const title of [/video generation/i, /writing a short email/i]) {
+      expect(within(card(title)).getByLabelText("Average frequency")).toHaveValue(0);
       expect(cardGwp(title)).toHaveTextContent("0 kg CO2eq");
     }
   });
@@ -224,7 +309,8 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
           useCaseId: "video",
           providerId: "google",
           profileId: "video",
-          frequencyPerDay: 0,
+          frequency: 0,
+          frequencyUnit: "day",
           parameters: { resolution: "720p" },
         },
         {
@@ -232,7 +318,8 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
           useCaseId: "email",
           providerId: "google",
           profileId: "eco",
-          frequencyPerDay: 0,
+          frequency: 0,
+          frequencyUnit: "day",
           parameters: {},
         },
       ],
@@ -243,7 +330,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     await renderLoaded();
 
     expect(cardGwp(/video generation/i)).toHaveTextContent("1.00 kg CO2eq");
-    expect(cardGwp(/writing an email/i)).toHaveTextContent("100 kg CO2eq");
+    expect(cardGwp(/writing a short email/i)).toHaveTextContent("100 kg CO2eq");
     const breakdown = document.querySelector(".provider-breakdown")!;
     expect(breakdown).toHaveTextContent("Google");
     expect(breakdown).toHaveTextContent("100 %");
@@ -268,13 +355,27 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     const user = userEvent.setup();
     await renderLoaded();
 
-    const frequency = within(card(/writing an email/i)).getByLabelText("Average daily frequency");
+    const frequency = within(card(/writing a short email/i)).getByLabelText("Average frequency");
     await user.clear(frequency);
     await user.type(frequency, "3");
 
     // video 1 + email 3 x 100 = 301 kg per day x 218
     await waitFor(() => expect(individualSummary()).toBe("65.6 t CO2eq"));
-    expect(lastRequest().usages[1].frequencyPerDay).toBe(3);
+    expect(lastRequest().usages[1].frequency).toBe(3);
+  });
+
+  it("recalculates with the chosen frequency unit", async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+
+    await user.selectOptions(
+      within(card(/writing a short email/i)).getByLabelText("Frequency unit"),
+      "week",
+    );
+
+    // email once a week = 0.2 a working day: (1 + 0.2 x 100) kg x 218
+    await waitFor(() => expect(individualSummary()).toBe("4.58 t CO2eq"));
+    expect(lastRequest().usages[1]).toMatchObject({ frequency: 1, frequencyUnit: "week" });
   });
 
   it("waits for typing to settle before calling the backend", async () => {
@@ -283,10 +384,10 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     const callsBefore = mockedCalculate.mock.calls.length;
 
     await user.type(
-      within(card(/writing an email/i)).getByLabelText("Average daily frequency"),
+      within(card(/writing a short email/i)).getByLabelText("Average frequency"),
       "234",
     );
-    await waitFor(() => expect(lastRequest().usages[1].frequencyPerDay).toBe(1234));
+    await waitFor(() => expect(lastRequest().usages[1].frequency).toBe(1234));
 
     // One request for the settled value, not one per keystroke.
     expect(mockedCalculate.mock.calls.length - callsBefore).toBe(1);
@@ -296,7 +397,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     const user = userEvent.setup();
     await renderLoaded();
 
-    await openCustomize(/video generation/i);
+    await openSettings(/video generation/i);
     await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
 
     await waitFor(() => expect(cardGwp(/video generation/i)).toHaveTextContent("2.00 kg CO2eq"));
@@ -321,7 +422,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     await renderLoaded();
     mockedCalculate.mockRejectedValueOnce(new apiClient.ApiError(500, "boom"));
 
-    await openCustomize(/video generation/i);
+    await openSettings(/video generation/i);
     await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
 
     const alert = await screen.findByRole("alert");
@@ -340,7 +441,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     const late = deferred<CalculateResult>();
     mockedCalculate.mockImplementationOnce(() => late.promise);
 
-    await openCustomize(/video generation/i);
+    await openSettings(/video generation/i);
     const resolution = within(card(/video generation/i)).getByLabelText("Resolution");
     await user.selectOptions(resolution, "1080p");
     await waitFor(() =>
@@ -392,7 +493,7 @@ describe("CalculatorPage keeps the scenario consistent with the cards", () => {
     await renderLoaded();
     const initial = mockedCalculate.mock.calls[0][0];
 
-    await openCustomize(/video generation/i);
+    await openSettings(/video generation/i);
     await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
     await waitFor(() => expect(individualSummary()).toBe("22.2 t CO2eq"));
     await user.click(screen.getByRole("button", { name: /reset/i }));

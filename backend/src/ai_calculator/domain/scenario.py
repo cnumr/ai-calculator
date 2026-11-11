@@ -1,4 +1,8 @@
-"""Scenario calculation: daily usages → individual and enterprise annual impacts.
+"""Scenario calculation: usages → individual and enterprise annual impacts.
+
+A usage's frequency is given per working day, week or month; it is
+converted to an average per working day (see PERIODS_PER_YEAR), on which
+the daily impacts are based.
 
 This is the calculator's business logic (formerly computed by the frontend).
 Rules kept identical to the previous frontend behaviour:
@@ -12,6 +16,7 @@ Rules kept identical to the previous frontend behaviour:
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from typing import Literal
 
 from ai_calculator.domain.equivalents import Co2EquivalentQuantity, co2_equivalents
 from ai_calculator.domain.impacts import ImpactRange, UnitImpacts
@@ -23,6 +28,21 @@ from ai_calculator.domain.use_cases import (
 )
 
 WORKING_DAYS_PER_YEAR = 218
+
+FrequencyUnit = Literal["day", "week", "month"]
+
+# Worked periods per year, consistent with the 218 working days: 5 working
+# days a week (43.6 weeks), and 11 months (one month of leave).
+PERIODS_PER_YEAR: dict[FrequencyUnit, float] = {
+    "day": WORKING_DAYS_PER_YEAR,
+    "week": WORKING_DAYS_PER_YEAR / 5,
+    "month": 11,
+}
+
+
+def frequency_per_working_day(frequency: float, unit: FrequencyUnit) -> float:
+    """Average actions per working day for `frequency` actions per `unit`."""
+    return frequency * PERIODS_PER_YEAR[unit] / WORKING_DAYS_PER_YEAR
 
 _CRITERIA = ("gwp", "energy", "adpe", "pe", "water")
 
@@ -37,7 +57,8 @@ class UsageInput:
     use_case_id: str
     provider_id: str
     profile_id: str
-    frequency_per_day: float
+    frequency: float
+    frequency_unit: FrequencyUnit = "day"
     parameters: Mapping[str, ParameterValue] = field(default_factory=dict)
 
 
@@ -46,6 +67,9 @@ class UsageResult:
     use_case_id: str
     provider_id: str
     profile_id: str
+    frequency: float
+    frequency_unit: FrequencyUnit
+    # Equivalent per working day: the daily impacts follow it.
     frequency_per_day: float
     # Parameter values actually used (defaults filled in).
     parameters: dict[str, ParameterValue]
@@ -117,20 +141,25 @@ def _compute_usage(catalog: Catalog, usage: UsageInput) -> UsageResult:
             f"{context}: kind '{usage.kind}' does not match the use case kind "
             f"'{use_case.kind}'"
         )
-    if usage.frequency_per_day < 0:
-        raise ScenarioError(f"{context}: frequency_per_day must be positive")
+    if usage.frequency < 0:
+        raise ScenarioError(f"{context}: frequency must be positive")
+    if usage.frequency_unit not in PERIODS_PER_YEAR:
+        raise ScenarioError(f"{context}: unknown frequency unit '{usage.frequency_unit}'")
     try:
         values = profile.resolve_values(usage.parameters)
     except ParameterError as exc:
         raise ScenarioError(f"{context}: {exc}") from exc
 
     unit = profile.calculation.unit_impacts(values)
-    daily = scale_impacts(unit, usage.frequency_per_day)
+    per_day = frequency_per_working_day(usage.frequency, usage.frequency_unit)
+    daily = scale_impacts(unit, per_day)
     return UsageResult(
         use_case_id=usage.use_case_id,
         provider_id=usage.provider_id,
         profile_id=usage.profile_id,
-        frequency_per_day=usage.frequency_per_day,
+        frequency=usage.frequency,
+        frequency_unit=usage.frequency_unit,
+        frequency_per_day=per_day,
         parameters=values,
         unit_impacts=unit,
         daily_impacts=daily,

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Faux docker pour deploy/tests/update_test.sh. Il simule, dans $FAKE_STATE :
+#   remote/<svc>:<tag>  images publiées sur ghcr.io (contenu = identifiant)
+#   local/<svc>:<tag>   images téléchargées sur le serveur
+#   running/<svc>       image du conteneur en service
+#   broken              identifiants d'images dont l'API ne répond pas
+#   calls               journal des appels
+set -euo pipefail
+S="$FAKE_STATE"
+echo "docker $*" >>"$S/calls"
+
+# ghcr.io/cnumr/ai-calculator-backend:v1.0.0 -> backend:v1.0.0
+key() { echo "${1#ghcr.io/cnumr/ai-calculator-}"; }
+
+case "$1" in
+  manifest) [[ -f "$S/remote/$(key "$3")" ]] ;;
+  inspect)
+    cid="${!#}"
+    cat "$S/running/${cid#cid-}"
+    ;;
+  image)
+    case "$2" in
+      inspect)
+        k="$(key "${!#}")"
+        [[ -f "$S/local/$k" ]] || exit 1
+        if [[ $4 == *revision* ]]; then echo "abcdef1234567"; else cat "$S/local/$k"; fi
+        ;;
+      prune) ;;
+    esac
+    ;;
+  compose)
+    shift
+    env_file=""
+    while [[ $1 == --project-directory || $1 == -f || $1 == --env-file ]]; do
+      if [[ $1 == --env-file ]]; then env_file="$2"; fi
+      shift 2
+    done
+    tag="$(grep -E '^IMAGE_TAG=' "$env_file" | tail -n 1 | cut -d= -f2)"
+    case "$1" in
+      ps) if [[ -f "$S/running/$3" ]]; then echo "cid-$3"; fi ;;
+      pull)
+        for svc in backend frontend; do
+          cp "$S/remote/$svc:$tag" "$S/local/$svc:$tag"
+        done
+        ;;
+      up)
+        for svc in backend frontend; do
+          [[ -f "$S/local/$svc:$tag" ]] || cp "$S/remote/$svc:$tag" "$S/local/$svc:$tag"
+          cp "$S/local/$svc:$tag" "$S/running/$svc"
+        done
+        ! grep -qxF "$(cat "$S/running/backend")" "$S/broken" 2>/dev/null
+        ;;
+      logs) echo "logs simulés" ;;
+    esac
+    ;;
+esac

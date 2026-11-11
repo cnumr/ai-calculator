@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import i18n from "../src/i18n";
 import { UseCaseCard } from "../src/components/UseCaseCard";
 import type { Impacts, ParameterValue, UseCase } from "../src/api/client";
+import type { CardState } from "../src/domain/calculator";
 
 // Tests that need French switch to it explicitly; reset to the jsdom
 // default (English) so the language never leaks into the next test.
@@ -64,7 +66,7 @@ function renderEmail(props: Partial<Parameters<typeof UseCaseCard>[0]> = {}) {
       availableProviderIds={["openai", "anthropic"]}
       providerId="openai"
       profileId="eco"
-      frequencyPerDay={1}
+      frequency={1}
       dailyImpacts={DAILY}
       onChange={() => {}}
       {...props}
@@ -82,52 +84,90 @@ function summaryMetric(label: RegExp) {
   return metric!;
 }
 
-const detailsToggle = /voir\/masquer le détail|show\/hide the impact details/i;
+const settingsToggle = /réglages|settings/i;
 
-/** Opens a card's "Customize" menu: its fields only exist once it is open. */
-async function openCustomize(user = userEvent.setup()) {
-  await user.click(document.querySelector(".use-case-card__customize summary")!);
-  await waitFor(() =>
-    expect(document.querySelector(".use-case-card__parameters")).not.toBeNull(),
-  );
+/**
+ * Opens a card's settings panel: provider, profile, parameters, source and
+ * impact details only exist once it is open (RWEB_0046).
+ */
+async function openSettings(user = userEvent.setup()) {
+  await user.click(screen.getByRole("button", { name: settingsToggle }));
 }
 
 describe("UseCaseCard layout", () => {
-  it("puts provider, profile and frequency on one row, results below", () => {
+  it("keeps frequency and results on the row, the settings in a panel opened on demand", async () => {
+    const user = userEvent.setup();
     renderEmail();
 
-    const card = document.querySelector<HTMLElement>(".use-case-card")!;
-    const selects = card.querySelector(".use-case-card__selects");
-    const results = card.querySelector(".use-case-card__results");
-    const details = card.querySelector(".use-case-card__details");
+    const row = document.querySelector<HTMLElement>(".use-case-card__row")!;
+    expect(row).toContainElement(screen.getByLabelText(/^(fréquence moyenne|average frequency)$/i));
+    expect(row).toContainElement(screen.getByTitle(/gaz à effet de serre|greenhouse gases/i));
+    // Closed: no provider or profile select in the DOM (RWEB_0046).
+    const toggle = screen.getByRole("button", { name: settingsToggle });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByLabelText(/fournisseur|provider/i)).not.toBeInTheDocument();
 
-    expect(selects).toContainElement(screen.getByLabelText(/fournisseur|provider/i));
-    expect(selects).toContainElement(screen.getByLabelText(/profil|profile/i));
-    expect(selects).toContainElement(screen.getByLabelText(/fréquence|frequency/i));
-    expect(results).toContainElement(
-      screen.getByTitle(/gaz à effet de serre|greenhouse gases/i),
-    );
-    // The selection row comes before the results.
-    expect(
-      selects!.compareDocumentPosition(results!) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(details?.parentElement).toBe(card);
+    await openSettings(user);
+
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    const panel = document.getElementById(toggle.getAttribute("aria-controls")!);
+    expect(panel).toContainElement(screen.getByLabelText(/fournisseur|provider/i));
+    expect(panel).toContainElement(screen.getByLabelText(/profil|profile/i));
+
+    await user.click(toggle);
+    expect(screen.queryByLabelText(/fournisseur|provider/i)).not.toBeInTheDocument();
   });
 
-  it("labels the frequency as an average per day, visibly", async () => {
+  it("recalls the provider and profile on the row, and marks used use cases", async () => {
+    await i18n.changeLanguage("en");
+    const { rerender } = renderEmail({ frequency: 0 });
+
+    expect(document.querySelector(".use-case-card__meta")).toHaveTextContent("OpenAI · Eco");
+    expect(document.querySelector(".use-case-card")).toHaveClass("use-case-card--idle");
+
+    rerender(
+      <UseCaseCard
+        useCase={EMAIL}
+        availableProviderIds={["openai", "anthropic"]}
+        providerId="openai"
+        profileId="eco"
+        frequency={2}
+        dailyImpacts={DAILY}
+        onChange={() => {}}
+      />,
+    );
+    expect(document.querySelector(".use-case-card")).toHaveClass("use-case-card--used");
+  });
+
+  it("labels the frequency and its unit, per day by default", async () => {
     await i18n.changeLanguage("fr");
     renderEmail();
 
-    const frequency = document.querySelector(".use-case-card__frequency");
-    expect(frequency).toHaveTextContent("Fréquence quotidienne moyenne");
-    expect(frequency).toHaveTextContent("/jour");
-    expect(screen.getByLabelText("Fréquence quotidienne moyenne")).toHaveValue(1);
+    expect(screen.getByLabelText("Fréquence moyenne")).toHaveValue(1);
+    const unit = screen.getByLabelText("Unité de la fréquence");
+    expect(unit).toHaveValue("day");
+    expect(
+      Array.from(unit.querySelectorAll("option")).map((o) => o.textContent),
+    ).toEqual(["/jour", "/semaine", "/mois"]);
+  });
+
+  it("reports the chosen frequency unit", async () => {
+    const onChange = vi.fn();
+    renderEmail({ onChange });
+
+    await userEvent.selectOptions(screen.getByLabelText("Frequency unit"), "month");
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ frequency: 1, frequencyUnit: "month" }),
+    );
   });
 
   it("renders the use case name and its picto", () => {
     renderEmail();
 
-    expect(screen.getByText(/rédaction d'un email|writing an email/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /rédaction d'un mail court|writing a short email/i }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("img", { hidden: true })).toBeInTheDocument();
   });
 
@@ -142,10 +182,10 @@ describe("UseCaseCard layout", () => {
       "use-case-card__summary-icon",
     );
 
-    await userEvent.click(screen.getByText(detailsToggle));
+    await openSettings();
 
     const detailIcons = document
-      .querySelector(".use-case-card__details")!
+      .querySelector(".use-case-card__impacts")!
       .querySelectorAll(".use-case-card__detail-icon");
     expect(detailIcons).toHaveLength(5);
     detailIcons.forEach((icon) => {
@@ -172,8 +212,9 @@ describe("UseCaseCard layout", () => {
 });
 
 describe("UseCaseCard selection", () => {
-  it("only offers profiles available for the currently selected provider", () => {
+  it("only offers profiles available for the currently selected provider", async () => {
     renderEmail({ providerId: "anthropic" });
+    await openSettings();
 
     const options = Array.from(
       screen.getByLabelText(/profil|profile/i).querySelectorAll("option"),
@@ -197,6 +238,7 @@ describe("UseCaseCard selection", () => {
       ],
     };
     renderEmail({ useCase, availableProviderIds: ["openai"] });
+    await openSettings();
 
     const options = Array.from(
       screen.getByLabelText("Profil").querySelectorAll("option"),
@@ -207,13 +249,15 @@ describe("UseCaseCard selection", () => {
   it("calls onChange with the full card state when the profile changes", async () => {
     const onChange = vi.fn();
     renderEmail({ onChange });
+    await openSettings();
 
     await userEvent.selectOptions(screen.getByLabelText(/profil|profile/i), "powerful");
 
     expect(onChange).toHaveBeenCalledWith({
       providerId: "openai",
       profileId: "powerful",
-      frequencyPerDay: 1,
+      frequency: 1,
+      frequencyUnit: "day" as const,
       parameters: {},
     });
   });
@@ -222,10 +266,10 @@ describe("UseCaseCard selection", () => {
     const onChange = vi.fn();
     renderEmail({ onChange });
 
-    await userEvent.type(screen.getByLabelText("Average daily frequency"), "2");
+    await userEvent.type(screen.getByLabelText("Average frequency"), "2");
 
     expect(onChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ frequencyPerDay: 12 }),
+      expect.objectContaining({ frequency: 12 }),
     );
   });
 });
@@ -238,15 +282,13 @@ describe("UseCaseCard impacts (computed by the backend)", () => {
     // gwp 2-4 g, water 1-2 L -> midpoints 3 g and 1.5 L
     expect(summaryMetric(/greenhouse gases/i)).toHaveTextContent("3.00 g CO2eq");
     expect(summaryMetric(/^water$/i)).toHaveTextContent("1.50 mL");
-    expect(screen.getByText(detailsToggle).closest("details")).not.toHaveAttribute(
-      "open",
-    );
+    expect(document.querySelector(".use-case-card__panel")).toBeNull();
   });
 
   it("shows the daily min and max in the details", async () => {
     renderEmail();
 
-    await userEvent.click(screen.getByText(detailsToggle));
+    await openSettings();
 
     expect(screen.getByText(/min 2\.00 g CO2eq/)).toBeInTheDocument();
     expect(screen.getByText(/max 4\.00 g CO2eq/)).toBeInTheDocument();
@@ -259,8 +301,8 @@ describe("UseCaseCard impacts (computed by the backend)", () => {
 
     expect(summaryMetric(/water|eau/i)).toHaveTextContent(/not available|non disponible/i);
 
-    await userEvent.click(screen.getByText(detailsToggle));
-    const details = screen.getByText(detailsToggle).closest("details")!;
+    await openSettings();
+    const details = document.querySelector<HTMLElement>(".use-case-card__impacts")!;
     expect(within(details).getAllByText(/non disponible|not available/i)).toHaveLength(4);
     expect(screen.getByText(/min 370 g CO2eq/)).toBeInTheDocument();
   });
@@ -272,10 +314,10 @@ describe("UseCaseCard impacts (computed by the backend)", () => {
     // Closed: no gauge in the DOM (RWEB_0046).
     expect(document.querySelector(".range-gauge")).toBeNull();
 
-    await user.click(screen.getByText(detailsToggle));
+    await openSettings(user);
     await waitFor(() => expect(document.querySelectorAll(".range-gauge")).toHaveLength(5));
 
-    await user.click(screen.getByText(detailsToggle));
+    await openSettings(user);
     await waitFor(() => expect(document.querySelector(".range-gauge")).toBeNull());
   });
 
@@ -283,7 +325,7 @@ describe("UseCaseCard impacts (computed by the backend)", () => {
     renderEmail({ dailyImpacts: null });
 
     expect(summaryMetric(/greenhouse gases/i)).toHaveTextContent("…");
-    expect(document.querySelector(".use-case-card__details")).toBeNull();
+    expect(document.querySelector(".use-case-card__impacts")).toBeNull();
   });
 
   it("dims the impacts while they do not match the selection yet", () => {
@@ -306,7 +348,7 @@ describe("UseCaseCard methodological source", () => {
   const IMAGE: UseCase = {
     id: "image",
     kind: "image",
-    source: { id: "unsourced", version: null, url: null },
+    source: { id: "image_from_video", version: "0.11.3", url: "/methodologie#images" },
     providers: [{ providerId: "google", profiles: [{ id: "image" }] }],
   };
   const SOURCED_EMAIL: UseCase = {
@@ -321,11 +363,14 @@ describe("UseCaseCard methodological source", () => {
   it("names EcoLogits, its version and links to its methodology", async () => {
     await i18n.changeLanguage("fr");
     renderEmail({ useCase: SOURCED_EMAIL });
+    await openSettings();
 
     const note = screen.getByRole("note");
     expect(note).toHaveTextContent(
       "Source : EcoLogits 0.11.3, modélisation de l'inférence des LLM.",
     );
+    // With the impact details it justifies.
+    expect(screen.getByRole("region", { name: "Détail des impacts par jour ouvré" })).toContainElement(note);
     const link = within(note).getByRole("link", { name: /méthodologie/i });
     expect(link).toHaveAttribute(
       "href",
@@ -346,23 +391,38 @@ describe("UseCaseCard methodological source", () => {
       providerId: "google",
       profileId: "video",
     });
+    await openSettings();
 
     expect(screen.getByRole("note")).toHaveTextContent(
       "Source: EcoLogits 0.11.3, video generation model.",
     );
   });
 
-  it("warns that image values have no published source, without a link", async () => {
+  it("explains that image values are transposed from an EcoLogits video", async () => {
     await i18n.changeLanguage("fr");
-    renderEmail({ useCase: IMAGE, availableProviderIds: ["google"], providerId: "google", profileId: "image" });
+    render(
+      <MemoryRouter>
+        <UseCaseCard
+          useCase={IMAGE}
+          availableProviderIds={["google"]}
+          providerId="google"
+          profileId="image"
+          frequency={1}
+          dailyImpacts={DAILY}
+          onChange={() => {}}
+        />
+      </MemoryRouter>,
+    );
+    await openSettings();
 
-    const note = screen.getByRole("note");
-    expect(note).toHaveTextContent("Valeur indicative, sans source publiée à ce jour.");
-    expect(within(note).queryByRole("link")).not.toBeInTheDocument();
+    expect(screen.getByRole("note")).toHaveTextContent(
+      "Source : transposition depuis la génération vidéo EcoLogits 0.11.3 (Veo 3.1), d'après l'étude « The Hidden Cost of an Image ».",
+    );
   });
 
-  it("shows no note when the catalogue gives no source", () => {
+  it("shows no note when the catalogue gives no source", async () => {
     renderEmail();
+    await openSettings();
 
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
@@ -372,11 +432,12 @@ describe("UseCaseCard provider logo", () => {
   it("shows the selected provider's logo left of its select", async () => {
     const user = userEvent.setup();
     function Interactive() {
-      const [state, setState] = useState({
+      const [state, setState] = useState<CardState>({
         providerId: "openai",
         profileId: "eco",
-        frequencyPerDay: 1,
-        parameters: {} as Record<string, ParameterValue>,
+        frequency: 1,
+        frequencyUnit: "day",
+        parameters: {},
       });
       return (
         <UseCaseCard
@@ -389,6 +450,7 @@ describe("UseCaseCard provider logo", () => {
       );
     }
     render(<Interactive />);
+    await openSettings(user);
 
     const provider = document.querySelector(".use-case-card__provider")!;
     const logo = () => provider.querySelector<HTMLImageElement>(".use-case-card__provider-logo")!;
@@ -403,12 +465,50 @@ describe("UseCaseCard provider logo", () => {
     expect(logo().getAttribute("src")).not.toBe(openaiLogo);
   });
 
-  it("shows the provider's initial when it has no logo", () => {
+  it.each([
+    // The new provider offers the chosen profile: it is kept.
+    ["balanced", "balanced"],
+    // It does not: the use case's recommended profile is used.
+    ["flagship", "balanced"],
+  ])("keeps profile %s when changing provider, else the recommended one", async (chosen, expected) => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const useCase: UseCase = {
+      id: "email",
+      kind: "text",
+      recommendedProfileId: "balanced",
+      providers: [
+        { providerId: "openai", profiles: [{ id: "eco" }, { id: "balanced" }, { id: "flagship" }] },
+        { providerId: "mistral", profiles: [{ id: "eco" }, { id: "balanced" }] },
+      ],
+    };
+    render(
+      <UseCaseCard
+        useCase={useCase}
+        availableProviderIds={["openai", "mistral"]}
+        providerId="openai"
+        profileId={chosen}
+        frequency={1}
+        dailyImpacts={DAILY}
+        onChange={onChange}
+      />,
+    );
+
+    await openSettings(user);
+    await user.selectOptions(screen.getByLabelText("Provider"), "mistral");
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ providerId: "mistral", profileId: expected }),
+    );
+  });
+
+  it("shows the provider's initial when it has no logo", async () => {
     renderEmail({
       useCase: { ...EMAIL, providers: [{ providerId: "acme", profiles: [{ id: "eco" }] }] },
       availableProviderIds: ["acme"],
       providerId: "acme",
     });
+    await openSettings();
 
     expect(
       document.querySelector(".use-case-card__provider-logo--fallback"),
@@ -418,11 +518,12 @@ describe("UseCaseCard provider logo", () => {
 
 describe("UseCaseCard model parameters", () => {
   function InteractiveVideoCard({ onChange }: { onChange?: (p: Record<string, ParameterValue>) => void }) {
-    const [state, setState] = useState({
+    const [state, setState] = useState<CardState>({
       providerId: "google",
       profileId: "video",
-      frequencyPerDay: 1,
-      parameters: {} as Record<string, ParameterValue>,
+      frequency: 1,
+      frequencyUnit: "day",
+      parameters: {},
     });
     return (
       <UseCaseCard
@@ -441,7 +542,7 @@ describe("UseCaseCard model parameters", () => {
   it("shows one select per parameter, initialised from the defaults", async () => {
     await i18n.changeLanguage("fr");
     render(<InteractiveVideoCard />);
-    await openCustomize();
+    await openSettings();
 
     expect(screen.getByLabelText("Résolution")).toHaveDisplayValue("720p");
     expect(screen.getByLabelText("Durée")).toHaveDisplayValue("8 s");
@@ -457,7 +558,7 @@ describe("UseCaseCard model parameters", () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
     render(<InteractiveVideoCard onChange={onChange} />);
-    await openCustomize(user);
+    await openSettings(user);
 
     await user.selectOptions(screen.getByLabelText("Resolution"), "1080p");
     await user.selectOptions(screen.getByLabelText("Duration"), "5 s");
@@ -470,36 +571,35 @@ describe("UseCaseCard model parameters", () => {
     });
   });
 
-  it("folds the parameters into a Customize menu that recalls the values", async () => {
+  it("recalls the parameter values on the row, and renders the fields once opened", async () => {
     await i18n.changeLanguage("fr");
     const user = userEvent.setup();
     render(<InteractiveVideoCard />);
 
-    const menu = document.querySelector<HTMLDetailsElement>(".use-case-card__customize");
-    expect(menu).not.toBeNull();
-    expect(menu!.open).toBe(false);
+    // Two lines: provider and profile, then the settings.
+    const metaLines = () =>
+      Array.from(document.querySelectorAll(".use-case-card__meta span")).map((l) => l.textContent);
+    expect(metaLines()).toEqual(["Google · Standard", "720p · 8 s · Avec audio"]);
     // Closed: the fields are not rendered at all (RWEB_0046).
     expect(screen.queryByLabelText("Résolution")).not.toBeInTheDocument();
-    const summary = menu!.querySelector("summary");
-    expect(summary).toHaveTextContent("Personnaliser : 720p · 8 s · Avec audio");
 
-    await openCustomize(user);
-    expect(menu).toContainElement(screen.getByLabelText("Résolution"));
+    await openSettings(user);
     await user.selectOptions(screen.getByLabelText("Résolution"), "1080p");
 
-    expect(summary).toHaveTextContent("Personnaliser : 1080p · 8 s · Avec audio");
+    expect(metaLines()).toEqual(["Google · Standard", "1080p · 8 s · Avec audio"]);
   });
 
-  it("folds the editable token assumption of text profiles into Customize", async () => {
+  it("offers the editable token assumption of text profiles in the settings", async () => {
     await i18n.changeLanguage("fr");
     const onChange = vi.fn();
     const user = userEvent.setup();
     function TextCard() {
-      const [state, setState] = useState({
+      const [state, setState] = useState<CardState>({
         providerId: "openai",
         profileId: "eco",
-        frequencyPerDay: 1,
-        parameters: {} as Record<string, ParameterValue>,
+        frequency: 1,
+        frequencyUnit: "day",
+        parameters: {},
       });
       return (
         <UseCaseCard
@@ -531,10 +631,10 @@ describe("UseCaseCard model parameters", () => {
     }
     render(<TextCard />);
 
-    const summary = document.querySelector(".use-case-card__customize summary")!;
+    const tokensLine = () => document.querySelectorAll(".use-case-card__meta span")[1];
     // French groups thousands with U+202F, which toHaveTextContent normalises.
-    expect(summary.textContent).toBe("Personnaliser : 1\u202f000 tokens générés");
-    await openCustomize(user);
+    expect(tokensLine().textContent).toBe("1\u202f000 tokens générés");
+    await openSettings(user);
     const tokens = screen.getByLabelText("Tokens générés par action");
     expect(tokens).toHaveValue(1000);
     expect(tokens).toHaveAccessibleDescription(/Valeur par défaut : 1.000 tokens générés/);
@@ -543,13 +643,86 @@ describe("UseCaseCard model parameters", () => {
     await user.type(tokens, "250");
 
     expect(onChange).toHaveBeenLastCalledWith({ output_tokens: 250 });
-    expect(summary.textContent).toBe("Personnaliser : 250 tokens générés");
+    expect(tokensLine().textContent).toBe("250 tokens générés");
   });
 
-  it("shows no parameter select for profiles without parameters", () => {
-    renderEmail();
+  it("orders the settings: provider and profile, customisation, then impact details", async () => {
+    await i18n.changeLanguage("fr");
+    render(<InteractiveVideoCard />);
+    await openSettings();
 
-    expect(screen.queryByLabelText("Resolution")).not.toBeInTheDocument();
-    expect(document.querySelector(".use-case-card__customize")).not.toBeInTheDocument();
+    const panel = document.querySelector<HTMLElement>(".use-case-card__panel")!;
+    const firstRow = panel.querySelector(".use-case-card__selects")!;
+    expect(within(firstRow as HTMLElement).getAllByRole("combobox")).toHaveLength(2);
+    const sections = within(panel).getAllByRole("region");
+    expect(sections.map((section) => section.querySelector("h5")!.textContent)).toEqual([
+      "Personnalisation",
+      "Détail des impacts par jour ouvré",
+    ]);
+    expect(sections[0]).toContainElement(screen.getByLabelText("Résolution"));
+  });
+
+  it("shows no parameter field for profiles without parameters", async () => {
+    renderEmail();
+    await openSettings();
+
+    // Only the provider and profile selects, no customisation section.
+    expect(document.querySelectorAll(".use-case-card__selects .use-case-card__field")).toHaveLength(2);
+    expect(screen.queryByRole("heading", { name: /customisation/i })).not.toBeInTheDocument();
+  });
+});
+
+describe("UseCaseCard image sizes", () => {
+  const IMAGE: UseCase = {
+    id: "image",
+    kind: "image",
+    source: { id: "image_from_video", version: "0.11.3", url: "/methodologie#images" },
+    providers: [
+      {
+        providerId: "google",
+        profiles: [
+          {
+            id: "image",
+            parameters: [
+              { id: "size", options: ["1024x1024", "2048x2048"], defaultValue: "1024x1024", min: null, max: null },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  it("offers the image sizes and links its source to the methodology page", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <MemoryRouter>
+        <UseCaseCard
+          useCase={IMAGE}
+          availableProviderIds={["google"]}
+          providerId="google"
+          profileId="image"
+          frequency={1}
+          dailyImpacts={DAILY}
+          onChange={onChange}
+        />
+      </MemoryRouter>,
+    );
+
+    await openSettings(user);
+    // A page of this site: same tab, no "new tab" mention.
+    const link = screen.getByRole("link", { name: "Methodology" });
+    expect(link).toHaveAttribute("href", "/methodologie#images");
+    expect(link).not.toHaveAttribute("target");
+
+    const size = screen.getByLabelText("Size");
+    expect(within(size).getAllByRole("option").map((o) => o.textContent)).toEqual([
+      "1024 × 1024",
+      "2048 × 2048",
+    ]);
+    await user.selectOptions(size, "2048 × 2048");
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ parameters: { size: "2048x2048" } }),
+    );
   });
 });

@@ -32,6 +32,23 @@ class UnitImpacts:
     water: ImpactRange | None
 
 
+def scale_impacts(impacts: UnitImpacts, factor: float) -> UnitImpacts:
+    """Every criterion (min and max) multiplied by `factor`."""
+
+    def scale(value: ImpactRange | None) -> ImpactRange | None:
+        if value is None:
+            return None
+        return ImpactRange(min=value.min * factor, max=value.max * factor)
+
+    return UnitImpacts(
+        gwp=scale(impacts.gwp),
+        energy=scale(impacts.energy),
+        adpe=scale(impacts.adpe),
+        pe=scale(impacts.pe),
+        water=scale(impacts.water),
+    )
+
+
 def _to_range(value: float | RangeValue) -> ImpactRange:
     if isinstance(value, RangeValue):
         return ImpactRange(min=float(value.min), max=float(value.max))

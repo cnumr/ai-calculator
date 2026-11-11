@@ -1,16 +1,26 @@
+from dataclasses import dataclass
+
 import pytest
 
 from ai_calculator.domain.equivalents import load_equivalents
-from ai_calculator.domain.impacts import ImpactRange
+from ai_calculator.domain.impacts import ImpactRange, UnitImpacts
 from ai_calculator.domain.scenario import (
     WORKING_DAYS_PER_YEAR,
     ScenarioError,
     UsageInput,
     compute_scenario,
 )
-from ai_calculator.domain.use_cases import load_catalog
+from ai_calculator.domain.use_cases import (
+    Catalog,
+    ResolvedProfile,
+    ResolvedProviderMapping,
+    ResolvedUseCase,
+    load_catalog,
+)
 
-# Static profiles give exact, easy-to-check numbers (kg CO2eq per action).
+# The "image" use case of these tests uses fixed impacts (kg CO2eq per
+# action), defined here, so totals are exact and easy to check; the video use
+# case is loaded from YAML and computed by EcoLogits.
 CATALOG_YAML = """
 model_labels:
   google/veo-3.0: Veo 3
@@ -20,29 +30,6 @@ providers:
   - id: google
     selected_by_default: true
 use_cases:
-  - id: image
-    kind: image
-    default_provider: google
-    recommended_tier: image
-    providers:
-      - provider_id: openai
-        profiles:
-          - id: image
-            static_impacts:
-              gwp: {min: 1.0, max: 2.0}
-              adpe: null
-              energy: null
-              water: null
-              pe: null
-      - provider_id: google
-        profiles:
-          - id: image
-            static_impacts:
-              gwp: {min: 3.0, max: 6.0}
-              adpe: {min: 0.5, max: 0.5}
-              energy: null
-              water: null
-              pe: null
   - id: video
     kind: video
     default_provider: google
@@ -57,20 +44,58 @@ use_cases:
 """
 
 
+@dataclass(frozen=True)
+class FixedCalculation:
+    impacts: UnitImpacts
+
+    def unit_impacts(self, values):
+        return self.impacts
+
+
+def _fixed_profile(gwp, adpe=None):
+    return ResolvedProfile(
+        id="image",
+        calculation=FixedCalculation(
+            UnitImpacts(gwp=gwp, energy=None, adpe=adpe, pe=None, water=None)
+        ),
+    )
+
+
 @pytest.fixture
 def catalog(tmp_path):
     config_file = tmp_path / "use_cases.yaml"
     config_file.write_text(CATALOG_YAML)
-    return load_catalog(config_file)
+    loaded = load_catalog(config_file)
+    image_use_case = ResolvedUseCase(
+        id="image",
+        kind="image",
+        subtitle_key="useCases.image.subtitle",
+        default_provider="google",
+        recommended_tier="image",
+        providers=[
+            ResolvedProviderMapping(
+                provider_id="openai", profiles=[_fixed_profile(ImpactRange(1.0, 2.0))]
+            ),
+            ResolvedProviderMapping(
+                provider_id="google",
+                profiles=[
+                    _fixed_profile(ImpactRange(3.0, 6.0), adpe=ImpactRange(0.5, 0.5))
+                ],
+            ),
+        ],
+        source=loaded.use_cases[0].source,
+    )
+    return Catalog(providers=loaded.providers, use_cases=[image_use_case, *loaded.use_cases])
 
 
-def image(provider_id, frequency_per_day, **overrides):
+def image(provider_id, frequency, **overrides):
     return UsageInput(
         kind=overrides.get("kind", "image"),
         use_case_id="image",
         provider_id=provider_id,
         profile_id=overrides.get("profile_id", "image"),
-        frequency_per_day=frequency_per_day,
+        frequency=frequency,
+        frequency_unit=overrides.get("frequency_unit", "day"),
         parameters=overrides.get("parameters", {}),
     )
 
@@ -81,7 +106,7 @@ def video(**parameters):
         use_case_id="video",
         provider_id="google",
         profile_id="video",
-        frequency_per_day=1,
+        frequency=1,
         parameters=parameters,
     )
 
@@ -167,12 +192,41 @@ def test_video_parameters_are_resolved_and_change_the_impacts(catalog):
 
 
 @pytest.mark.parametrize(
+    "unit, per_year",
+    [("day", 218), ("week", 218 / 5), ("month", 11)],
+)
+def test_frequency_unit_sets_actions_per_year(catalog, unit, per_year):
+    usage = compute_scenario(
+        catalog, [image("openai", 2, frequency_unit=unit)], headcount=1
+    ).usages[0]
+
+    assert usage.frequency == 2
+    assert usage.frequency_unit == unit
+    # Daily impacts stay per working day, so usages compare with each other.
+    assert usage.frequency_per_day == pytest.approx(2 * per_year / 218)
+    assert usage.annual_impacts.gwp.max == pytest.approx(
+        usage.unit_impacts.gwp.max * 2 * per_year
+    )
+
+
+def test_a_weekly_usage_is_a_fifth_of_the_same_daily_usage(catalog):
+    daily, weekly = compute_scenario(
+        catalog,
+        [image("openai", 5), image("openai", 5, frequency_unit="week")],
+        headcount=1,
+    ).usages
+
+    assert weekly.daily_impacts.gwp.max == pytest.approx(daily.daily_impacts.gwp.max / 5)
+
+
+@pytest.mark.parametrize(
     "usage, message",
     [
         (image("openai", 1, profile_id="powerful"), "profile 'powerful'"),
         (image("mistral", 1), "provider 'mistral'"),
         (image("openai", 1, kind="text"), "kind 'text'"),
-        (image("openai", -1), "frequency_per_day"),
+        (image("openai", -1), "frequency must be positive"),
+        (image("openai", 1, frequency_unit="year"), "unknown frequency unit"),
         (image("openai", 1, parameters={"resolution": "720p"}), "unknown parameter"),
         (video(resolution="4k"), "resolution"),
     ],

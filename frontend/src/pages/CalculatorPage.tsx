@@ -30,6 +30,27 @@ const CRITERIA: Array<{ key: keyof Impacts; unit: string }> = [
   { key: "water", unit: "L" },
 ];
 
+/**
+ * Use cases grouped by family, in the catalogue's family order; use cases
+ * without a known family come last, without a heading. With `shown`, only
+ * those use cases (and their families) are listed.
+ */
+function groupByFamily(catalog: UseCasesCatalog, shown: Set<string> | null = null) {
+  const families = catalog.families ?? [];
+  const useCases = shown
+    ? catalog.useCases.filter((uc) => shown.has(uc.id))
+    : catalog.useCases;
+  const groups = families.map((family) => ({
+    family: family as string | null,
+    useCases: useCases.filter((uc) => uc.family === family),
+  }));
+  const others = useCases.filter(
+    (uc) => !uc.family || !families.includes(uc.family),
+  );
+  if (others.length > 0) groups.push({ family: null, useCases: others });
+  return groups.filter((group) => group.useCases.length > 0);
+}
+
 function createInitialCardStates(useCases: UseCasesCatalog["useCases"]) {
   const states: Record<string, CardState> = {};
   for (const useCase of useCases) {
@@ -44,8 +65,9 @@ function createInitialCardStates(useCases: UseCasesCatalog["useCases"]) {
     states[useCase.id] = {
       providerId: mapping?.providerId ?? "",
       profileId: profile?.id ?? "",
-      // No usage by default: the user enters their own daily frequencies.
-      frequencyPerDay: 0,
+      // No usage by default: the user enters their own frequencies.
+      frequency: 0,
+      frequencyUnit: "day",
       parameters: {},
     };
   }
@@ -172,6 +194,10 @@ export function CalculatorPage() {
   );
   const [cardStates, setCardStates] = useState<Record<string, CardState>>({});
   const [headcount, setHeadcount] = useState(1);
+  // "Only my usages": the use cases used when the filter was turned on (null
+  // when off). Kept fixed while on, so that a row does not vanish while its
+  // frequency is being edited (e.g. cleared before typing a new value).
+  const [shownUseCases, setShownUseCases] = useState<Set<string> | null>(null);
 
   const request = useMemo(
     () =>
@@ -186,6 +212,10 @@ export function CalculatorPage() {
     [catalog, cardStates, selectedProviders, headcount],
   );
   const { result, status, retry } = useCalculation(request);
+  // Use cases with a frequency: the ones "Only my usages" keeps.
+  const usedUseCaseIds = (catalog?.useCases ?? [])
+    .filter((uc) => (cardStates[uc.id]?.frequency ?? 0) > 0)
+    .map((uc) => uc.id);
 
   const loadCatalog = useCallback(() => {
     setLoadError(false);
@@ -222,6 +252,7 @@ export function CalculatorPage() {
   }
 
   function resetCalculator() {
+    setShownUseCases(null);
     if (!catalog) return;
     setSelectedProviders(new Set(catalog.providers.filter((p) => p.selectedByDefault).map((p) => p.id)));
     setCardStates(createInitialCardStates(catalog.useCases));
@@ -275,36 +306,69 @@ export function CalculatorPage() {
             description={t("calculator.sectionUsage.description")}
           />
           <div className="use-case-catalog">
-            {catalog.useCases.map((useCase) => {
-              const state = cardStates[useCase.id];
-              if (!state) return null;
-              const usageRequest = request?.usages.find(
-                (u) => u.useCaseId === useCase.id,
-              );
-              const usageResult = result?.usages.find(
-                (u) => u.useCaseId === useCase.id,
-              );
-              return (
-                <UseCaseCard
-                  key={useCase.id}
-                  useCase={useCase}
-                  availableProviderIds={Array.from(selectedProviders)}
-                  providerId={state.providerId}
-                  profileId={state.profileId}
-                  frequencyPerDay={state.frequencyPerDay}
-                  parameters={state.parameters}
-                  dailyImpacts={usageResult?.dailyImpacts ?? null}
-                  pending={
-                    !usageRequest ||
-                    !usageResult ||
-                    !isUsageResultCurrent(usageRequest, usageResult)
-                  }
-                  onChange={(next) =>
-                    setCardStates((prev) => ({ ...prev, [useCase.id]: next }))
+            <div className="use-case-catalog__columns">
+              <label className="use-case-catalog__filter">
+                <input
+                  type="checkbox"
+                  checked={shownUseCases !== null}
+                  disabled={shownUseCases === null && usedUseCaseIds.length === 0}
+                  onChange={(e) =>
+                    setShownUseCases(e.target.checked ? new Set(usedUseCaseIds) : null)
                   }
                 />
-              );
-            })}
+                {t("calculator.onlyUsed", { count: usedUseCaseIds.length })}
+              </label>
+              {/* Column titles of the rows below (each field keeps its own label). */}
+              <span aria-hidden="true">{t("calculator.columnFrequency")}</span>
+              <span aria-hidden="true">{t("calculator.columnImpact")}</span>
+              <span aria-hidden="true" />
+            </div>
+            {groupByFamily(catalog, shownUseCases).map((group) => (
+              <section
+                key={group.family ?? "other"}
+                className="use-case-family"
+                aria-labelledby={group.family ? `family-${group.family}` : undefined}
+              >
+                {group.family && (
+                  <h3 id={`family-${group.family}`} className="use-case-family__title">
+                    {t(`calculator.families.${group.family}`, { defaultValue: group.family })}
+                  </h3>
+                )}
+                <div className="use-case-family__list">
+                  {group.useCases.map((useCase) => {
+                    const state = cardStates[useCase.id];
+                    if (!state) return null;
+                    const usageRequest = request?.usages.find(
+                      (u) => u.useCaseId === useCase.id,
+                    );
+                    const usageResult = result?.usages.find(
+                      (u) => u.useCaseId === useCase.id,
+                    );
+                    return (
+                      <UseCaseCard
+                        key={useCase.id}
+                        useCase={useCase}
+                        availableProviderIds={Array.from(selectedProviders)}
+                        providerId={state.providerId}
+                        profileId={state.profileId}
+                        frequency={state.frequency}
+                        frequencyUnit={state.frequencyUnit}
+                        parameters={state.parameters}
+                        dailyImpacts={usageResult?.dailyImpacts ?? null}
+                        pending={
+                          !usageRequest ||
+                          !usageResult ||
+                          !isUsageResultCurrent(usageRequest, usageResult)
+                        }
+                        onChange={(next) =>
+                          setCardStates((prev) => ({ ...prev, [useCase.id]: next }))
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
           </div>
         </div>
 
