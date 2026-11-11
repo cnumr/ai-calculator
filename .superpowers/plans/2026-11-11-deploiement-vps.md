@@ -1437,10 +1437,10 @@ Pour changer la visibilité plus tard :
 **Qui** : l'administrateur de la zone.
 
 **Commande** :
-- **Maintenant** : créer `A ia-calculator-staging` vers `179.237.83.184`.
-- **Jour J** : remplacer l'enregistrement `A` de `ia-calculator`, qui vise l'ancien POC (`83.166.133.33`), par `179.237.83.184`. Puis installer le certificat (2.5).
+- **Maintenant** : créer `A ia-calculator-staging` vers `<IP-du-VPS>`.
+- **Jour J** : remplacer l'enregistrement `A` de `ia-calculator`, qui vise l'ancien POC (`83.166.133.33`), par `<IP-du-VPS>`. Puis installer le certificat (2.5).
 
-**Vérifier** : `dig +short ia-calculator-staging.greenit.eco` renvoie `179.237.83.184`.
+**Vérifier** : `dig +short ia-calculator-staging.greenit.eco` renvoie `<IP-du-VPS>`.
 
 **Annuler** :
 - supprimer l'enregistrement du staging ;

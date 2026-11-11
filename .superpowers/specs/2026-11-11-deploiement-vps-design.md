@@ -201,8 +201,8 @@ Les logs du script vont dans le journal système. Sa limite et sa purge sont cel
 ### 4.3 Hors VPS
 
 - **Infomaniak** (admin de la zone `greenit.eco`) :
-  - **maintenant** : créer `A ia-calculator-staging → 179.237.83.184` ;
-  - **jour J** : remplacer l'enregistrement A de `ia-calculator` par `179.237.83.184`, puis installer le certificat (étape 4.2.4).
+  - **maintenant** : créer `A ia-calculator-staging → <IP-du-VPS>` ;
+  - **jour J** : remplacer l'enregistrement A de `ia-calculator` par `<IP-du-VPS>`, puis installer le certificat (étape 4.2.4).
 - **GitHub** (admin de `cnumr`) : après la première publication, passer les packages `ai-calculator-backend` et `ai-calculator-frontend` en **Public**. La création de packages publics est déjà autorisée.
 - **Mattermost** : créer un incoming webhook dans le canal choisi, puis mettre son URL dans les deux `.env`.
 
