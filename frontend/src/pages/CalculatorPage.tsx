@@ -321,7 +321,6 @@ export function CalculatorPage() {
               {/* Column titles of the rows below (each field keeps its own label). */}
               <span aria-hidden="true">{t("calculator.columnFrequency")}</span>
               <span aria-hidden="true">{t("calculator.columnImpact")}</span>
-              <span aria-hidden="true" />
             </div>
             {groupByFamily(catalog, shownUseCases).map((group) => (
               <section

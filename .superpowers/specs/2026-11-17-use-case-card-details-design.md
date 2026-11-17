@@ -1,6 +1,6 @@
 # Détails des cartes de cas d'usage : « Configurer » et « Voir plus » — Design
 
-Statut : validé (17/11/2026). Branche : `feat/improve-usecase-ux-dhe` (depuis `develop`). Issue : cnumr/ai-calculator#40.
+Statut : validé (17/11/2026), implémenté. Branche : `feat/improve-usecase-ux-dhe` (depuis `develop`). Issue : cnumr/ai-calculator#40.
 
 Fait suite à `2026-11-08-use-case-card-ux-design.md` (ligne compacte de la carte, bouton « Réglages »).
 
@@ -22,59 +22,70 @@ Remplacer le bouton unique par deux points d'entrée, chacun placé à côté de
 
 ## Disposition
 
+Retours du 17/11/2026 sur une première version, avec deux boutons texte (« ⚙ Configurer » à la suite du rappel, « Voir plus ▾ » dans une 4ᵉ colonne) :
+
+- « Configurer » n'était pas aligné d'une ligne à l'autre, car il suivait la longueur du rappel ;
+- les deux boutons prenaient beaucoup de place ;
+- le rattachement de chaque bouton à ce qu'il concerne ne se voyait pas assez.
+
+Retenu : **les zones sont elles-mêmes les boutons**.
+
 ```
-┌──────────────────────────────────────────────────────────────────────────┐
-│ [ic] Rédiger un e-mail court                [ 1 ] /jour  ☁ 2,1 g  Voir ▾ │
-│      Mistral · Éco (Mistral Small)  ⚙ Configurer          💧 18 mL  plus │
-│      300 tokens générés                                                  │
-├──────────────────────────────────────────────────────────────────────────┤
-│  Panneau « Configurer »                                                  │
-│  Pour rédiger un e-mail de quelques lignes          (sous-titre)         │
-│  FOURNISSEUR [Mistral ▾]   PROFIL [Éco (Mistral Small) ▾]                │
-│  PERSONNALISATION  Tokens générés [ 300 ]                                │
-└──────────────────────────────────────────────────────────────────────────┘
-ou
-├──────────────────────────────────────────────────────────────────────────┤
-│  Panneau « Voir plus »                                                   │
-│  DÉTAIL DES IMPACTS PAR JOUR OUVRÉ                                       │
-│  ☁ GES  ▬▬▬▬▬▬▬▬  /  ⚡ Énergie  ▬▬▬▬  /  ADPe / EP / 💧 Eau            │
-│  ⓘ Source des données…                                                   │
-└──────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│ [ic] Rédaction d'un mail court     [ 3 ] /jour ┌──────────────┐ │
+│ ┌────────────────────────────────────┐          │☁ 57,2 mg   ▾ │ │
+│ │⚙ Microsoft Copilot · Éco (GPT-6…) │          │💧 0,470 mL    │ │
+│ │  300 tokens générés                │          └──────────────┘ │
+│ └────────────────────────────────────┘                           │
+│   zone « Configurer »                         zone « Voir plus »   │
+├──────────────────────────────────────────────────────────────────┤
+│  Panneau « Configurer » : sous-titre, fournisseur et profil,      │
+│  personnalisation                                                 │
+│  ou panneau « Voir plus » : jauges des 5 critères, source         │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-### Bouton « Configurer »
+### Zone « Configurer »
 
-- Dans l'en-tête de la carte, à la suite du rappel fournisseur · profil (`use-case-card__meta`), en bouton discret (texte + icône d'engrenage SVG inline, couleur `--forest`) pour ne pas alourdir la ligne.
-- Le rappel des choix reste affiché : il dit ce qui est configuré, le bouton permet de le changer.
-- Ouvre un panneau sous la ligne avec, dans l'ordre : sous-titre du cas d'usage, sélecteurs fournisseur et profil côte à côte, section « Personnalisation » si le profil a des paramètres. Contenu et comportement des champs inchangés (conservation du profil au changement de fournisseur, champ libre pour les tokens, etc.).
-- Absent quand le cas d'usage n'est pas pris en charge par les fournisseurs retenus (`!supported`) : le rappel affiche déjà « non pris en charge » et il n'y a rien à configurer.
+- Le rappel fournisseur · profil, puis paramètres (tokens, vidéo…), précédé d'un engrenage, est un bouton placé sous le titre : il commence au même endroit sur chaque ligne.
+- Ouvre un panneau sous la ligne avec, dans l'ordre : sous-titre du cas d'usage, sélecteurs fournisseur et profil côte à côte, section « Personnalisation » si le profil a des paramètres. Contenu et comportement des champs inchangés.
+- Absent quand le cas d'usage n'est pas pris en charge : le rappel, qui affiche « non pris en charge », reste un simple texte.
 
-### Bouton « Voir plus »
+### Zone « Voir plus »
 
-- Prend la place de « Réglages » dans la colonne `toggle` de la grille (même style, même chevron qui pivote à l'ouverture).
-- Libellé « Voir plus » replié, « Voir moins » déplié (« See more » / « See less »).
-- Ouvre un panneau sous la ligne avec la section « Détail des impacts par jour ouvré » (jauges des cinq critères) et la note de source. Contenu inchangé.
-- Absent quand le cas d'usage n'est pas pris en charge (aucun impact à détailler). La colonne garde sa largeur pour que les lignes restent alignées.
+- Le bloc GES / eau, suivi d'un chevron, est un bouton. La 4ᵉ colonne de la grille disparaît : `minmax(0, 1fr) 9rem 10.5rem`, et le titre gagne la place.
+- Ouvre un panneau sous la ligne avec « Détail des impacts par jour ouvré » (jauges des cinq critères) et la note de source. Ouvert avant le premier calcul, il affiche « … ».
+- Absent quand le cas d'usage n'est pas pris en charge.
+
+### Rattachement visuel
+
+- Au repos, les deux zones sont discrètes (bordure transparente). L'engrenage et le chevron, couleur `--forest`, signalent l'action.
+- Au survol : bordure `--line`.
+- Panneau ouvert : la zone correspondante prend une bordure `--forest` et un fond `--forest-tint`, et le chevron pivote. On voit ainsi quelle zone a ouvert le panneau.
+- Infobulle (`title`) « Configurer » ou « Voir plus » / « Voir moins » au survol.
 
 ### Un seul panneau ouvert à la fois
 
-L'état local de la carte passe de `open: boolean` à `panel: "configure" | "details" | null`. Ouvrir l'un ferme l'autre ; recliquer sur le bouton actif referme. Cela garde la carte compacte et évite deux panneaux empilés dont l'ordre serait arbitraire.
-
-Conséquence : après avoir changé de modèle dans « Configurer », l'utilisateur voit déjà l'effet sur GES et eau dans la ligne ; il ouvre « Voir plus » s'il veut le détail.
+L'état local de la carte passe de `open: boolean` à `panel: "configure" | "details" | null`. Ouvrir l'un ferme l'autre ; recliquer sur la zone active referme.
 
 ### Mobile (≤ 640 px)
 
-- Grille actuelle conservée : `"header header header" / "frequency summary toggle"`.
-- « Configurer » reste dans l'en-tête, sous le rappel des choix si la largeur manque ; son texte peut se réduire à l'icône (le nom accessible reste complet).
-- « Voir plus » : le texte est masqué comme aujourd'hui pour « Réglages », seul le chevron reste visible.
+Grille `"header header" / "frequency summary"` : titre et zone « Configurer » sur toute la largeur, puis fréquence et zone « Voir plus ».
+
+### Panneau de droite : seul le total reste visible
+
+La colonne de droite (total annuel, détail par personne, équivalences, répartition) était entièrement collante (`sticky`) alors qu'elle est plus haute que l'écran : quand une carte s'agrandissait, elle sautait (jusqu'à 480 px). Le défaut existait déjà avec « Réglages ».
+
+Désormais, seul le bloc « Impact annuel - 1 utilisateur » est collant. La colonne s'étire sur toute la hauteur de la section pour qu'il le reste tout du long, et le reste de la colonne défile normalement sous lui. En dessous de 800 px, rien n'est collant, comme avant.
 
 ## Accessibilité
 
-- Deux `<button type="button">` avec `aria-expanded` et `aria-controls` (renseigné seulement quand le panneau existe, comme aujourd'hui).
-- Noms accessibles distincts et explicites hors contexte : « Configurer : <titre du cas d'usage> », « Voir plus : <titre> » (suffixe masqué visuellement, comme l'actuel `settingsToggle`).
+- Deux `<button type="button">` avec `aria-expanded` et `aria-controls` (renseigné seulement quand le panneau existe).
+- Nom accessible = action + cas d'usage + contenu visible, par exemple « Configurer – Rédaction d'un mail court : Microsoft Copilot · Éco (GPT-6 Luna) 300 tokens générés » ou « Voir plus – … : 57,2 mg CO2eq 0,470 mL ». Le préfixe est masqué visuellement, et le texte visible fait partie du nom (WCAG 2.5.3).
+- Contenu des boutons en `<span>` seulement (le `<dl>` des impacts devient des `<span>`, un bouton n'acceptant que du contenu phrasé).
 - Identifiants de panneaux distincts : `use-case-<id>-configure` et `use-case-<id>-details`.
-- Ordre de tabulation : Configurer (en-tête) → fréquence → unité → Voir plus, conforme à l'ordre visuel.
-- Icône d'engrenage `aria-hidden="true"`.
+- Ordre de tabulation : Configurer → fréquence → unité → Voir plus, conforme à l'ordre visuel.
+- Engrenage et chevron `aria-hidden="true"`.
 
 ## Écoconception
 
@@ -87,11 +98,13 @@ Conséquence : après avoir changé de modèle dans « Configurer », l'utilisat
 
 | Fichier | Changement |
 |---|---|
-| `frontend/src/components/UseCaseCard.tsx` | État `panel`, deux boutons, contenu du panneau actuel scindé en deux. |
-| `frontend/src/index.css` | Style du bouton « Configurer » dans l'en-tête ; `use-case-card--open` remplacé par `--configure-open` / `--details-open` si besoin pour le chevron. |
-| `frontend/src/i18n/fr.json`, `en.json` | Suppression de `settingsToggle` ; ajout de `configureToggle` (« Configurer » / « Configure »), `detailsToggle` (« Voir plus » / « See more »), `detailsToggleOpen` (« Voir moins » / « See less »). |
-| `frontend/tests/UseCaseCard.test.tsx` | Tests du bouton « Réglages » remplacés par ceux des deux boutons. |
-| `frontend/tests/CalculatorPage.test.tsx` | Helper `openSettings` remplacé par `openConfigure` (sélecteurs, paramètres vidéo) et `openDetails` (jauges) selon le test. |
+| `frontend/src/components/UseCaseCard.tsx` | État `panel` ; rappel des choix et impacts en boutons ; panneau unique scindé en deux. |
+| `frontend/src/index.css` | Grille à 3 colonnes, styles des deux zones (survol, ouvert), `--configure-open` / `--details-open` ; seul `.gwp-summary` du panneau de droite est collant. |
+| `frontend/src/pages/CalculatorPage.tsx` | Titre de colonne vide de l'ancienne colonne du bouton supprimé. |
+| `frontend/src/i18n/fr.json`, `en.json` | Suppression de `settingsToggle` ; ajout de `configureToggle` (« Configurer » / « Configure »), `impactsToggle` (« Voir plus » / « See more »), `impactsToggleOpen` (« Voir moins » / « See less »). |
+| `frontend/tests/UseCaseCard.test.tsx` | Tests du bouton « Réglages » remplacés par ceux des deux zones. |
+| `frontend/tests/CalculatorPage.test.tsx` | Helper `openSettings` remplacé par `openConfigure` ; boutons fournisseurs cherchés par début de nom (`/^google/i`), le nom de « Configurer » contenant le fournisseur. |
+| `frontend/e2e/catalogue.spec.ts` | Zones « Configurer » et « Voir plus » à la place de « Réglages » ; même ancrage des boutons fournisseurs. |
 
 Backend, API et méthodologie : inchangés.
 
@@ -109,7 +122,15 @@ Backend, API et méthodologie : inchangés.
 
 1. **Panneaux exclusifs** : un seul panneau ouvert à la fois par carte.
 2. **Sous-titre du cas d'usage** dans « Configurer » : il décrit l'action dont on règle les hypothèses.
-3. **Libellé alterné** : « Voir plus » replié, « Voir moins » déplié.
+3. **Libellé alterné** : « Voir plus » replié, « Voir moins » déplié (infobulle et nom accessible).
+4. **Zones cliquables** : le rappel des choix et les impacts sont eux-mêmes les boutons (retours du 17/11, cf. Disposition).
+5. **Seul le total est collant** dans le panneau de droite.
+
+## Écarts à l'implémentation
+
+- Clés i18n `impactsToggle` / `impactsToggleOpen` et non `detailsToggle` : `calculator.detailsToggle` existe déjà (détail du résumé GES de la page).
+- « Voir plus » ouvert avant le premier calcul : la section affiche « … » à la place des jauges, comme le résumé de la ligne.
+- Les boutons fournisseurs se cherchent par début de nom dans les tests : le nom de « Configurer » contient aussi le fournisseur.
 
 ## Avant release
 

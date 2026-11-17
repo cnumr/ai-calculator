@@ -14,7 +14,7 @@ test("shows use-case cards in a single column", async ({ page }) => {
   expect(secondCard!.y).toBeGreaterThan(firstCard!.y);
 });
 
-test("lists use cases as compact rows grouped by family, settings on demand", async ({
+test("lists use cases as compact rows grouped by family, configuration on demand", async ({
   page,
 }) => {
   await page.goto("/");
@@ -51,9 +51,9 @@ test("lists use cases as compact rows grouped by family, settings on demand", as
   // A compact row: well under the former ~340 px card.
   expect((await card.boundingBox())!.height).toBeLessThan(100);
 
-  // Provider and profile appear once the settings are opened.
+  // Provider and profile appear once "Configure" is opened.
   await expect(card.getByLabel(/fournisseur|provider/i)).toHaveCount(0);
-  await card.getByRole("button", { name: /réglages|settings/i }).click();
+  await card.getByRole("button", { name: /^(configurer|configure) –/i }).click();
   await expect(card.getByLabel(/fournisseur|provider/i)).toBeVisible();
   await expect(card.getByLabel(/profil|profile/i)).toBeVisible();
 });
@@ -71,7 +71,7 @@ test("calculator: impacts come from POST /api/calculate and follow the cards", a
     has: page.getByRole("heading", { name: /génération de vidéos|video generation/i }),
   });
   await expect(videoCard).toBeVisible();
-  const openaiChip = page.getByRole("button", { name: /openai/i });
+  const openaiChip = page.getByRole("button", { name: /^openai/i });
   await expect(openaiChip).toHaveAttribute("aria-pressed", "true");
 
   const individualTotal = page.locator(".gwp-summary__value").first();
@@ -89,11 +89,11 @@ test("calculator: impacts come from POST /api/calculate and follow the cards", a
   expect(video.frequency_unit).toBe("day");
   await expect(individualTotal).not.toHaveText(before!);
 
-  // The impact details are in the settings panel.
-  await videoCard.getByRole("button", { name: /réglages|settings/i }).click();
+  // The impact details are in the "See more" panel.
+  await videoCard.getByRole("button", { name: /^(voir plus|see more) –/i }).click();
   await expect(videoCard.locator(".use-case-card__impacts .range-gauge")).toHaveCount(5);
 
-  const anthropicChip = page.getByRole("button", { name: /anthropic/i });
+  const anthropicChip = page.getByRole("button", { name: /^anthropic/i });
   // Every provider is selected by default: a click deselects it.
   await expect(anthropicChip).toHaveAttribute("aria-pressed", "true");
   await anthropicChip.click();
