@@ -22,6 +22,9 @@ import {
 import { formatNumber, scaleRange } from "../domain/units";
 import { useCalculation } from "../hooks/useCalculation";
 
+/** Headcount shown at first and restored by the reset. */
+const DEFAULT_HEADCOUNT = 1000;
+
 const CRITERIA: Array<{ key: keyof Impacts; unit: string }> = [
   { key: "gwp", unit: "kgCO2eq" },
   { key: "energy", unit: "kWh" },
@@ -193,7 +196,7 @@ export function CalculatorPage() {
     new Set()
   );
   const [cardStates, setCardStates] = useState<Record<string, CardState>>({});
-  const [headcount, setHeadcount] = useState(1);
+  const [headcount, setHeadcount] = useState(DEFAULT_HEADCOUNT);
   // "Only my usages": the use cases used when the filter was turned on (null
   // when off). Kept fixed while on, so that a row does not vanish while its
   // frequency is being edited (e.g. cleared before typing a new value).
@@ -256,7 +259,7 @@ export function CalculatorPage() {
     if (!catalog) return;
     setSelectedProviders(new Set(catalog.providers.filter((p) => p.selectedByDefault).map((p) => p.id)));
     setCardStates(createInitialCardStates(catalog.useCases));
-    setHeadcount(1);
+    setHeadcount(DEFAULT_HEADCOUNT);
   }
 
   if (loadError) {

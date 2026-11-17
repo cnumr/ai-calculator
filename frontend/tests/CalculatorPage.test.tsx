@@ -302,7 +302,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     await renderDefault();
 
     expect(lastRequest()).toEqual({
-      headcount: 1,
+      headcount: 1000,
       usages: [
         {
           kind: "video",
@@ -496,9 +496,13 @@ describe("CalculatorPage keeps the scenario consistent with the cards", () => {
     await openConfigure(/video generation/i);
     await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
     await waitFor(() => expect(individualSummary()).toBe("22.2 t CO2eq"));
+    const headcount = screen.getByLabelText(/headcount/i);
+    await user.clear(headcount);
+    await user.type(headcount, "50");
     await user.click(screen.getByRole("button", { name: /reset/i }));
 
-    // Back to the defaults: frequencies at 0, 720p.
+    // Back to the defaults: frequencies at 0, 720p, 1000 employees.
+    expect(headcount).toHaveValue(1000);
     await waitFor(() => expect(individualSummary()).toBe("0 kg CO2eq"));
     expect(lastRequest()).toEqual(initial);
   });
