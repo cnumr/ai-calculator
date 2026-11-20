@@ -322,6 +322,7 @@ export function CalculatorPage() {
                 {t("calculator.onlyUsed", { count: usedUseCaseIds.length })}
               </label>
               {/* Column titles of the rows below (each field keeps its own label). */}
+              <span aria-hidden="true">{t("calculator.columnUseCase")}</span>
               <span aria-hidden="true">{t("calculator.columnFrequency")}</span>
               <span aria-hidden="true">{t("calculator.columnImpact")}</span>
             </div>

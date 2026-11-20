@@ -56,6 +56,7 @@
     "customizeTitle": "Customisation",
     "dailyImpactsTitle": "Impact details per working day",
     "onlyUsed": "Only my usages ({{count}})",
+    "columnUseCase": "Use case settings",
     "columnFrequency": "Average\nfrequency",
     "columnImpact": "Impact per working day",
     "families": {

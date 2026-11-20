@@ -39,12 +39,22 @@ test("lists use cases as compact rows grouped by family, configuration on demand
   const middle = (box: { y: number; height: number } | null) => box!.y + box!.height / 2;
   expect(Math.abs(middle(resultsBox) - middle(frequencyBox))).toBeLessThan(8);
   expect(resultsBox!.x).toBeGreaterThan(frequencyBox!.x);
-  // The column titles sit right above the frequency and the results.
-  // (The first cell holds the "Only my usages" filter.)
+  // The column titles sit right above the use case, the frequency and the
+  // results; the "Only my usages" filter is on its own line above them.
   const titles = page.locator(".use-case-catalog__columns > span");
-  const [frequencyTitle, impactTitle] = await Promise.all(
-    [titles.nth(0), titles.nth(1)].map((l) => l.boundingBox()),
+  const [useCaseTitle, frequencyTitle, impactTitle] = await Promise.all(
+    [titles.nth(0), titles.nth(1), titles.nth(2)].map((l) => l.boundingBox()),
   );
+  const filter = await page.locator(".use-case-catalog__filter").boundingBox();
+  expect(filter!.y + filter!.height).toBeLessThanOrEqual(useCaseTitle!.y);
+  // Its text starts where the card titles do.
+  const useCaseTitleTextX = await titles.nth(0).evaluate((el) => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    return range.getBoundingClientRect().x;
+  });
+  const cardTitle = await card.locator("h4").boundingBox();
+  expect(Math.abs(useCaseTitleTextX - cardTitle!.x)).toBeLessThan(2);
   const frequencyCell = await card.locator(".use-case-card__frequency").boundingBox();
   expect(Math.abs(frequencyTitle!.x - frequencyCell!.x)).toBeLessThan(2);
   expect(Math.abs(impactTitle!.x - resultsBox!.x)).toBeLessThan(2);

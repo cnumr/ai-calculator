@@ -56,6 +56,7 @@
     "customizeTitle": "Personnalisation",
     "dailyImpactsTitle": "Détail des impacts par jour ouvré",
     "onlyUsed": "Seulement mes usages ({{count}})",
+    "columnUseCase": "Paramètres du cas d'usage",
     "columnFrequency": "Fréquence\nmoyenne",
     "columnImpact": "Impact par jour ouvré",
     "families": {

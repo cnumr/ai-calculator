@@ -288,11 +288,14 @@ export function UseCaseCard({
                 </svg>
                 <span className="use-case-card__meta">
                   {metaLines.map((line) => (
-                  <span key={line} title={line}>
-                    {line}
-                  </span>
-                ))}
+                    <span key={line} title={line}>
+                      {line}
+                    </span>
+                  ))}
                 </span>
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="use-case-card__chevron">
+                  <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" strokeWidth="2" />
+                </svg>
               </button>
             ) : (
               <p className="use-case-card__meta">

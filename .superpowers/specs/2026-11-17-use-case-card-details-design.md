@@ -45,6 +45,12 @@ Retenu : **les zones sont elles-mêmes les boutons**.
 └──────────────────────────────────────────────────────────────────┘
 ```
 
+Retours du 20/11/2026, après revue :
+
+- engrenage agrandi (0,875 → 1,125 rem) et centré verticalement sur le rappel, qu'il fasse une ou deux lignes ;
+- même chevron qu'à droite des impacts, à droite du rappel ; chaque chevron pivote quand son propre panneau est ouvert ;
+- titre de colonne « Paramètres du cas d'usage » (« Use case settings ») au-dessus des cartes, aligné sur leurs titres, en plus de « Fréquence moyenne » et « Impact par jour ouvré ». La case « Seulement mes usages » passe sur sa propre ligne, au-dessus des titres de colonnes.
+
 ### Zone « Configurer »
 
 - Le rappel fournisseur · profil, puis paramètres (tokens, vidéo…), précédé d'un engrenage, est un bouton placé sous le titre : il commence au même endroit sur chaque ligne.
@@ -59,9 +65,9 @@ Retenu : **les zones sont elles-mêmes les boutons**.
 
 ### Rattachement visuel
 
-- Au repos, les deux zones sont discrètes (bordure transparente). L'engrenage et le chevron, couleur `--forest`, signalent l'action.
+- Au repos, les deux zones sont discrètes (bordure transparente). Elles se terminent par le même chevron, et « Configurer » commence par un engrenage, tous couleur `--forest`.
 - Au survol : bordure `--line`.
-- Panneau ouvert : la zone correspondante prend une bordure `--forest` et un fond `--forest-tint`, et le chevron pivote. On voit ainsi quelle zone a ouvert le panneau.
+- Panneau ouvert : la zone correspondante prend une bordure `--forest` et un fond `--forest-tint`, et son chevron pivote. On voit ainsi quelle zone a ouvert le panneau.
 - Infobulle (`title`) « Configurer » ou « Voir plus » / « Voir moins » au survol.
 
 ### Un seul panneau ouvert à la fois
@@ -100,7 +106,7 @@ Désormais, seul le bloc « Impact annuel - 1 utilisateur » est collant. La col
 |---|---|
 | `frontend/src/components/UseCaseCard.tsx` | État `panel` ; rappel des choix et impacts en boutons ; panneau unique scindé en deux. |
 | `frontend/src/index.css` | Grille à 3 colonnes, styles des deux zones (survol, ouvert), `--configure-open` / `--details-open` ; seul `.gwp-summary` du panneau de droite est collant. |
-| `frontend/src/pages/CalculatorPage.tsx` | Titre de colonne vide de l'ancienne colonne du bouton supprimé. |
+| `frontend/src/pages/CalculatorPage.tsx` | Titre de colonne vide de l'ancienne colonne du bouton remplacé par « Paramètres du cas d'usage » (`columnUseCase`) en tête de ligne. |
 | `frontend/src/i18n/fr.json`, `en.json` | Suppression de `settingsToggle` ; ajout de `configureToggle` (« Configurer » / « Configure »), `impactsToggle` (« Voir plus » / « See more »), `impactsToggleOpen` (« Voir moins » / « See less »). |
 | `frontend/tests/UseCaseCard.test.tsx` | Tests du bouton « Réglages » remplacés par ceux des deux zones. |
 | `frontend/tests/CalculatorPage.test.tsx` | Helper `openSettings` remplacé par `openConfigure` ; boutons fournisseurs cherchés par début de nom (`/^google/i`), le nom de « Configurer » contenant le fournisseur. |

@@ -115,6 +115,9 @@ describe("UseCaseCard layout", () => {
     const details = screen.getByRole("button", { name: impactsToggle });
     // "Configure" is the reminder of the choices, "See more" the impacts.
     expect(configure).toContainElement(document.querySelector(".use-case-card__meta"));
+    // Both end with the same chevron.
+    expect(configure.querySelector(".use-case-card__chevron")).toBeInTheDocument();
+    expect(details.querySelector(".use-case-card__chevron")).toBeInTheDocument();
     expect(details).toContainElement(screen.getByTitle(/gaz à effet de serre|greenhouse gases/i));
     expect(configure).toHaveAttribute("aria-expanded", "false");
     expect(details).toHaveAttribute("aria-expanded", "false");
