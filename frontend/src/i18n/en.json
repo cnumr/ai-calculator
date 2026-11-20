@@ -197,7 +197,7 @@
     "body": "AI Calculator is a project by Collectif Conception Numérique Responsable (cnumr)."
   },
   "footer": {
-    "greenit": "GreenIT.fr association",
+    "greenit": "Green IT association",
     "github": "Source code on GitHub",
     "sources": "Data sources:",
     "retrievedOn": "retrieved on {{date}}",

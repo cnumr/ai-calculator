@@ -35,6 +35,7 @@ Sections : Éditeur · Hébergement · Conception et code source · Propriété 
 
 - `LegalNoticePage` est chargée à la demande (`React.lazy`), avec ses textes `legal.fr.json` / `legal.en.json` (espace i18next `legal`) : rien pour les visiteurs qui ne l'ouvrent pas (RWEB_0046).
 - Liens dans les textes via `Trans`, balise `<anchor>` : `<link>` est un élément HTML vide, que `Trans` vide de son texte.
+- Pied de page : le lien « Association GreenIT.fr » (www.greenit.fr) devient « Association Green IT » (greenit.eco), le site de l'éditeur.
 - `@font-face` en tête d'`index.css` (Inter et Fraunces variables : un fichier chacune ; IBM Plex Mono 500 et 600), `font-display: swap`, `unicode-range` latin. Préconnexions et feuille Google retirées d'`index.html`.
 
 ## Mesures (20/11/2026)
@@ -54,5 +55,4 @@ Page des mentions : fichier séparé de 8,4 Ko compressés, chargé à l'ouvertu
 ## Suites possibles
 
 - Fraunces pèse 67 Ko pour les seuls titres : une police système à empattements, ou un sous-ensemble plus réduit, allégerait toutes les pages (RWEB_0032).
-- Le pied de page affiche « Association GreenIT.fr » avec un lien vers www.greenit.fr, alors que l'éditeur est l'association Green IT (greenit.eco) : à harmoniser.
 - Fixer et documenter la durée de conservation des journaux du VPS (nginx YunoHost et conteneurs).
