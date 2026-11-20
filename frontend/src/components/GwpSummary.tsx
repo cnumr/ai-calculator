@@ -16,7 +16,11 @@ export function GwpSummary({ impact, scope }: GwpSummaryProps) {
   const midpoint = (range.min + range.max) / 2;
 
   return (
-    <section className="gwp-summary" aria-labelledby={`gwp-summary-${scope}`}>
+    <section
+      className="gwp-summary"
+      aria-labelledby={`gwp-summary-${scope}`}
+      data-tour={`${scope}-total`}
+    >
       <h3 id={`gwp-summary-${scope}`}>{t(`calculator.gwpSummary.${scope}`)}</h3>
       <p className="gwp-summary__value">
         {formatNumber(midpoint, locale)} <span>{range.unit}</span>

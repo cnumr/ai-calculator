@@ -1,0 +1,43 @@
+{
+  "dialogLabel": "Guided tour",
+  "progress": "{{current}} / {{total}}",
+  "previous": "Previous",
+  "next": "Next",
+  "finish": "Finish",
+  "close": "Leave the tour",
+  "steps": {
+    "ecosystem": {
+      "title": "Your AI ecosystem",
+      "body": "Start with the providers allowed in your organisation. Only their models will be offered in the use cases below."
+    },
+    "configure": {
+      "title": "Provider and model",
+      "body": "Each use case recalls its provider, model and settings (generated tokens, resolution…). Click this reminder to change them. Example: \"Writing a short email\" with the Eco model."
+    },
+    "frequency": {
+      "title": "Frequency",
+      "body": "Enter how often one person does this task, per day, per week or per month. Example: 5 short emails a day. A frequency of 0 is not counted."
+    },
+    "impacts": {
+      "title": "Impact per working day",
+      "body": "The greenhouse gas emissions and water use of this task, for one working day. Click them to see the five criteria in detail and the data source."
+    },
+    "onlyUsed": {
+      "title": "Only my usages",
+      "body": "Once your frequencies are entered, tick this box to keep only the use cases you use."
+    },
+    "annualTotal": {
+      "title": "Your annual impact",
+      "body": "The total for one person over a year of 218 working days, with its low and high range. Below: the detail per criterion, telling equivalents and the share of each provider."
+    },
+    "headcount": {
+      "title": "At the scale of the organisation",
+      "body": "Enter the number of employees concerned to extrapolate the annual impact of the whole organisation."
+    },
+    "reset": {
+      "title": "Start again",
+      "body": "\"Reset\" restores the default values. To understand how impacts are calculated, see the Methodology page.",
+      "link": "See the methodology"
+    }
+  }
+}

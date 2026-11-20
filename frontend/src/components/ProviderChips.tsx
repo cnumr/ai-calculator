@@ -16,7 +16,7 @@ export function ProviderChips({
   const { t } = useTranslation();
 
   return (
-    <div className="provider-chips">
+    <div className="provider-chips" data-tour="ecosystem">
       <h2 className="provider-chips__heading">
         {t("calculator.providersHeading")}
       </h2>

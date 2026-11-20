@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Impacts,
@@ -21,6 +21,10 @@ import {
 } from "../domain/calculator";
 import { formatNumber, scaleRange } from "../domain/units";
 import { useCalculation } from "../hooks/useCalculation";
+import { hasSeenTour, markTourSeen } from "../domain/tourInvitation";
+
+// Loaded at the first click on "Guided tour" only (GreenIT RWEB_0046).
+const GuidedTour = lazy(() => import("../components/GuidedTour"));
 
 /** Headcount shown at first and restored by the reset. */
 const DEFAULT_HEADCOUNT = 1000;
@@ -197,6 +201,16 @@ export function CalculatorPage() {
   );
   const [cardStates, setCardStates] = useState<Record<string, CardState>>({});
   const [headcount, setHeadcount] = useState(DEFAULT_HEADCOUNT);
+  const [tourOpen, setTourOpen] = useState(false);
+  // Discreet invitation on the button until the tour is taken or left.
+  const [tourInvite, setTourInvite] = useState(() => !hasSeenTour());
+  const tourButtonRef = useRef<HTMLButtonElement>(null);
+  const closeTour = useCallback(() => {
+    setTourOpen(false);
+    setTourInvite(false);
+    markTourSeen();
+    tourButtonRef.current?.focus();
+  }, []);
   // "Only my usages": the use cases used when the filter was turned on (null
   // when off). Kept fixed while on, so that a row does not vanish while its
   // frequency is being edited (e.g. cleared before typing a new value).
@@ -283,10 +297,31 @@ export function CalculatorPage() {
     <div className="calculator-page">
       <div className="calculator-hero">
         <h1>{t("calculator.title")}</h1>
-        <button type="button" className="calculator-reset" onClick={resetCalculator}>
-          {t("calculator.reset")}
-        </button>
+        <div className="calculator-hero__actions">
+          <button
+            ref={tourButtonRef}
+            type="button"
+            className={`calculator-tour-button${tourInvite ? " calculator-tour-button--invite" : ""}`}
+            onClick={() => setTourOpen(true)}
+          >
+            {t("calculator.tour")}
+            {tourInvite && <span className="visually-hidden"> {t("calculator.tourInvite")}</span>}
+          </button>
+          <button
+            type="button"
+            className="calculator-reset"
+            data-tour="reset"
+            onClick={resetCalculator}
+          >
+            {t("calculator.reset")}
+          </button>
+        </div>
       </div>
+      {tourOpen && (
+        <Suspense fallback={null}>
+          <GuidedTour anchor={tourButtonRef} onClose={closeTour} />
+        </Suspense>
+      )}
 
       <section className="calculator-section">
         <SectionHeader
@@ -310,7 +345,7 @@ export function CalculatorPage() {
           />
           <div className="use-case-catalog">
             <div className="use-case-catalog__columns">
-              <label className="use-case-catalog__filter">
+              <label className="use-case-catalog__filter" data-tour="only-used">
                 <input
                   type="checkbox"
                   checked={shownUseCases !== null}
@@ -416,7 +451,7 @@ export function CalculatorPage() {
           title={t("calculator.sectionEnterprise.title")}
           description={t("calculator.sectionEnterprise.description")}
         />
-        <div className="calculator-form__field">
+        <div className="calculator-form__field" data-tour="headcount">
           <label htmlFor="calculator-headcount">
             {t("calculator.headcount")}
           </label>
