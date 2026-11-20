@@ -42,15 +42,15 @@ describe("Footer", () => {
     expect(screen.getByRole("contentinfo")).toHaveTextContent(`AI Calculator · v${packageJson.version}`);
   });
 
-  it("links to GreenIT.fr and to the GitHub repository, in a new tab", async () => {
+  it("links to the Green IT association and to the GitHub repository, in a new tab", async () => {
     await i18next.changeLanguage("fr");
     mockedFetchUseCases.mockResolvedValue(CATALOG);
     renderFooter();
 
-    const greenit = screen.getByRole("link", { name: /Association GreenIT\.fr/ });
-    expect(greenit).toHaveAttribute("href", "https://www.greenit.fr/");
+    const greenit = screen.getByRole("link", { name: /Association Green IT/ });
+    expect(greenit).toHaveAttribute("href", "https://greenit.eco/");
     expect(greenit).toHaveAttribute("target", "_blank");
-    expect(greenit).toHaveAccessibleName("Association GreenIT.fr (nouvel onglet)");
+    expect(greenit).toHaveAccessibleName("Association Green IT (nouvel onglet)");
     expect(screen.getByRole("link", { name: /Code source sur GitHub/ })).toHaveAttribute(
       "href",
       "https://github.com/cnumr/ai-calculator",

@@ -1,0 +1,50 @@
+{
+  "title": "Legal notice",
+  "updated": "Last updated: November 2026",
+  "publisher": {
+    "title": "Publisher",
+    "intro": "The generative AI impact calculator is published by:",
+    "name": "Association Green IT – French non-profit association (loi 1901)",
+    "ids": "SIREN: 923 875 744 · RNA no.: W595 040 531",
+    "office": "Head office (SIRET 923 875 744 00032): 7 rue Pierre Brossolette, 94130 Nogent-sur-Marne, France",
+    "phone": "Phone: +33 6 16 19 22 73",
+    "contact": "Contact: <anchor>the association's contact form</anchor>",
+    "director": "Publication director: Renaud Héluin, president of the association."
+  },
+  "host": {
+    "title": "Hosting",
+    "body": "The site is served by a server of the Green IT association, hosted by Infomaniak Network SA, Rue Eugène-Marziano 25, 1227 Les Acacias (GE), Switzerland — <anchor>www.infomaniak.com</anchor>."
+  },
+  "design": {
+    "title": "Design and source code",
+    "body": "The calculator is designed and developed by volunteers of the Collectif Conception Numérique Responsable (responsible digital design collective). Its source code is open and published on <anchor>GitHub</anchor>."
+  },
+  "ip": {
+    "title": "Intellectual property and reuse",
+    "code": "The site's source code, texts included, is published under the MIT licence (© Collectif Conception Numérique Responsable): you may reuse it freely, keeping this notice.",
+    "data": "Impacts are calculated with the EcoLogits library (MPL-2.0 licence) and equivalents with ADEME's ImpactCO2 factors. This data remains the property of its authors; its sources are detailed in the <anchor>methodology</anchor>.",
+    "fonts": "The Inter, Fraunces and IBM Plex Mono fonts are distributed under the SIL Open Font License 1.1.",
+    "brands": "The names and trademarks of the AI providers mentioned (OpenAI, Anthropic, Google, Mistral AI, Microsoft…) belong to their owners. The calculator is not affiliated with any of them."
+  },
+  "results": {
+    "title": "Scope of the results",
+    "body": "The results are estimates, given as ranges, for awareness and decision support. They rely on assumptions (models, number of tokens, usage frequencies) and on public data, described in the <anchor>methodology</anchor>. They are neither a regulatory emissions report nor a measurement of a provider's actual consumption. The Green IT association cannot be held liable for decisions based on them alone."
+  },
+  "privacy": {
+    "title": "Personal data",
+    "none": "The calculator requires no account, sets no cookie and uses no audience measurement, advertising or social network tool. All its resources, fonts included, are served by the site itself: your browser contacts no third-party service.",
+    "inputs": "What you enter (providers, use cases, frequencies, headcount) is sent to the server for the calculation. It does not identify you and is neither recorded nor kept.",
+    "storage": "Two preferences are kept in your browser (local storage): the chosen language and whether you have already taken the guided tour. They stay on your device, are never sent, and are deleted with the site's data in your browser. Needed for the service you ask for, they do not require consent.",
+    "logs": "Like any web server, the server records technical logs: IP address, date and time, requested resource and browser type. They are used only for the security and proper operation of the site (legitimate interest of the association), are only accessible to the server's administrators, and are deleted automatically after a limited period. They are hosted in Switzerland, a country recognised by the European Commission as providing an adequate level of protection.",
+    "rights": "The data controller is the Green IT association. You have the right to access, rectify, erase, restrict and object, which you can exercise through <anchor>the association's contact form</anchor>. You may also lodge a complaint with the <cnil>CNIL</cnil>, the French data protection authority."
+  },
+  "links": {
+    "title": "External links",
+    "body": "The site links to other sites (ImpactCO2, EcoLogits, GitHub…). Their content and data practices are the responsibility of their publishers."
+  },
+  "contact": {
+    "title": "Contact us",
+    "privacy": "For a question about your data or this notice: <anchor>the association's contact form</anchor>.",
+    "issues": "To report an error or suggest an improvement to the calculator: <anchor>the project's issues on GitHub</anchor>. These exchanges are public: do not include personal data."
+  }
+}
