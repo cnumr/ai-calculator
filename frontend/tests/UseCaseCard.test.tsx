@@ -75,47 +75,106 @@ function renderEmail(props: Partial<Parameters<typeof UseCaseCard>[0]> = {}) {
 }
 
 function summaryMetric(label: RegExp) {
-  const summary = document.querySelector<HTMLDListElement>(
-    ".use-case-card__summary",
-  );
+  const summary = document.querySelector<HTMLElement>(".use-case-card__summary");
   expect(summary).toBeInTheDocument();
-  const metric = within(summary!).getByTitle(label).closest<HTMLDivElement>("div");
+  const metric = within(summary!).getByTitle(label).closest<HTMLElement>(
+    ".use-case-card__summary-item",
+  );
   expect(metric).toBeInTheDocument();
   return metric!;
 }
 
-const settingsToggle = /réglages|settings/i;
+const configureToggle = /^(configurer|configure) –/i;
+const impactsToggle = /^(voir plus|voir moins|see more|see less) –/i;
 
 /**
- * Opens a card's settings panel: provider, profile, parameters, source and
- * impact details only exist once it is open (RWEB_0046).
+ * Opens a card's "Configure" panel: provider, profile and parameters only
+ * exist once it is open (RWEB_0046).
  */
-async function openSettings(user = userEvent.setup()) {
-  await user.click(screen.getByRole("button", { name: settingsToggle }));
+async function openConfigure(user = userEvent.setup()) {
+  await user.click(screen.getByRole("button", { name: configureToggle }));
+}
+
+/**
+ * Toggles a card's "See more" panel: the impact details and their source
+ * only exist once it is open (RWEB_0046).
+ */
+async function openDetails(user = userEvent.setup()) {
+  await user.click(screen.getByRole("button", { name: impactsToggle }));
 }
 
 describe("UseCaseCard layout", () => {
-  it("keeps frequency and results on the row, the settings in a panel opened on demand", async () => {
+  it("keeps frequency and results on the row, configuration and details in panels opened on demand", async () => {
     const user = userEvent.setup();
     renderEmail();
 
     const row = document.querySelector<HTMLElement>(".use-case-card__row")!;
     expect(row).toContainElement(screen.getByLabelText(/^(fréquence moyenne|average frequency)$/i));
     expect(row).toContainElement(screen.getByTitle(/gaz à effet de serre|greenhouse gases/i));
-    // Closed: no provider or profile select in the DOM (RWEB_0046).
-    const toggle = screen.getByRole("button", { name: settingsToggle });
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    const configure = screen.getByRole("button", { name: configureToggle });
+    const details = screen.getByRole("button", { name: impactsToggle });
+    // "Configure" is the reminder of the choices, "See more" the impacts.
+    expect(configure).toContainElement(document.querySelector(".use-case-card__meta"));
+    // Both end with the same chevron.
+    expect(configure.querySelector(".use-case-card__chevron")).toBeInTheDocument();
+    expect(details.querySelector(".use-case-card__chevron")).toBeInTheDocument();
+    expect(details).toContainElement(screen.getByTitle(/gaz à effet de serre|greenhouse gases/i));
+    expect(configure).toHaveAttribute("aria-expanded", "false");
+    expect(details).toHaveAttribute("aria-expanded", "false");
+    // Closed: no select and no gauge in the DOM (RWEB_0046).
+    expect(screen.queryByLabelText(/fournisseur|provider/i)).not.toBeInTheDocument();
+    expect(document.querySelector(".range-gauge")).toBeNull();
+
+    await openConfigure(user);
+
+    expect(configure).toHaveAttribute("aria-expanded", "true");
+    const configurePanel = document.getElementById(configure.getAttribute("aria-controls")!);
+    expect(configurePanel).toContainElement(screen.getByLabelText(/fournisseur|provider/i));
+    expect(configurePanel).toContainElement(screen.getByLabelText(/profil|profile/i));
+    expect(document.querySelector(".range-gauge")).toBeNull();
+
+    // One panel at a time: opening the details closes the configuration.
+    await openDetails(user);
+
+    expect(configure).toHaveAttribute("aria-expanded", "false");
+    expect(configure).not.toHaveAttribute("aria-controls");
+    expect(details).toHaveAttribute("aria-expanded", "true");
+    const detailsPanel = document.getElementById(details.getAttribute("aria-controls")!);
+    expect(detailsPanel!.querySelectorAll(".range-gauge")).toHaveLength(5);
     expect(screen.queryByLabelText(/fournisseur|provider/i)).not.toBeInTheDocument();
 
-    await openSettings(user);
+    await user.click(details);
+    expect(details).toHaveAttribute("aria-expanded", "false");
+    expect(document.querySelector(".use-case-card__panel")).toBeNull();
+  });
 
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
-    const panel = document.getElementById(toggle.getAttribute("aria-controls")!);
-    expect(panel).toContainElement(screen.getByLabelText(/fournisseur|provider/i));
-    expect(panel).toContainElement(screen.getByLabelText(/profil|profile/i));
+  it("names both toggles after their action, the use case and what they show", async () => {
+    await i18n.changeLanguage("fr");
+    const user = userEvent.setup();
+    const { unmount } = renderEmail();
 
-    await user.click(toggle);
-    expect(screen.queryByLabelText(/fournisseur|provider/i)).not.toBeInTheDocument();
+    // The visible text (choices, impacts) is part of the name (WCAG 2.5.3).
+    expect(screen.getByRole("button", { name: configureToggle })).toHaveAccessibleName(
+      /^Configurer – Rédaction d'un mail court :\s*OpenAI · Éco/,
+    );
+    const details = screen.getByRole("button", { name: impactsToggle });
+    expect(details).toHaveAccessibleName(/^Voir plus – Rédaction d'un mail court :.*3,00 g CO2eq/);
+    await user.click(details);
+    expect(details).toHaveAccessibleName(/^Voir moins – Rédaction d'un mail court :/);
+
+    unmount();
+    await i18n.changeLanguage("en");
+    renderEmail();
+    expect(screen.getByRole("button", { name: /^Configure – Writing a short email :/ })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^See more – / }));
+    expect(screen.getByRole("button", { name: /^See less – / })).toBeInTheDocument();
+  });
+
+  it("offers neither button when the use case is not supported", () => {
+    renderEmail({ availableProviderIds: ["mistral"] });
+
+    expect(screen.queryByRole("button", { name: configureToggle })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: impactsToggle })).not.toBeInTheDocument();
   });
 
   it("recalls the provider and profile on the row, and marks used use cases", async () => {
@@ -182,7 +241,7 @@ describe("UseCaseCard layout", () => {
       "use-case-card__summary-icon",
     );
 
-    await openSettings();
+    await openDetails();
 
     const detailIcons = document
       .querySelector(".use-case-card__impacts")!
@@ -214,7 +273,7 @@ describe("UseCaseCard layout", () => {
 describe("UseCaseCard selection", () => {
   it("only offers profiles available for the currently selected provider", async () => {
     renderEmail({ providerId: "anthropic" });
-    await openSettings();
+    await openConfigure();
 
     const options = Array.from(
       screen.getByLabelText(/profil|profile/i).querySelectorAll("option"),
@@ -238,7 +297,7 @@ describe("UseCaseCard selection", () => {
       ],
     };
     renderEmail({ useCase, availableProviderIds: ["openai"] });
-    await openSettings();
+    await openConfigure();
 
     const options = Array.from(
       screen.getByLabelText("Profil").querySelectorAll("option"),
@@ -249,7 +308,7 @@ describe("UseCaseCard selection", () => {
   it("calls onChange with the full card state when the profile changes", async () => {
     const onChange = vi.fn();
     renderEmail({ onChange });
-    await openSettings();
+    await openConfigure();
 
     await userEvent.selectOptions(screen.getByLabelText(/profil|profile/i), "powerful");
 
@@ -288,7 +347,7 @@ describe("UseCaseCard impacts (computed by the backend)", () => {
   it("shows the daily min and max in the details", async () => {
     renderEmail();
 
-    await openSettings();
+    await openDetails();
 
     expect(screen.getByText(/min 2\.00 g CO2eq/)).toBeInTheDocument();
     expect(screen.getByText(/max 4\.00 g CO2eq/)).toBeInTheDocument();
@@ -301,7 +360,7 @@ describe("UseCaseCard impacts (computed by the backend)", () => {
 
     expect(summaryMetric(/water|eau/i)).toHaveTextContent(/not available|non disponible/i);
 
-    await openSettings();
+    await openDetails();
     const details = document.querySelector<HTMLElement>(".use-case-card__impacts")!;
     expect(within(details).getAllByText(/non disponible|not available/i)).toHaveLength(4);
     expect(screen.getByText(/min 370 g CO2eq/)).toBeInTheDocument();
@@ -314,10 +373,10 @@ describe("UseCaseCard impacts (computed by the backend)", () => {
     // Closed: no gauge in the DOM (RWEB_0046).
     expect(document.querySelector(".range-gauge")).toBeNull();
 
-    await openSettings(user);
+    await openDetails(user);
     await waitFor(() => expect(document.querySelectorAll(".range-gauge")).toHaveLength(5));
 
-    await openSettings(user);
+    await openDetails(user);
     await waitFor(() => expect(document.querySelector(".range-gauge")).toBeNull());
   });
 
@@ -363,7 +422,7 @@ describe("UseCaseCard methodological source", () => {
   it("names EcoLogits, its version and links to its methodology", async () => {
     await i18n.changeLanguage("fr");
     renderEmail({ useCase: SOURCED_EMAIL });
-    await openSettings();
+    await openDetails();
 
     const note = screen.getByRole("note");
     expect(note).toHaveTextContent(
@@ -391,7 +450,7 @@ describe("UseCaseCard methodological source", () => {
       providerId: "google",
       profileId: "video",
     });
-    await openSettings();
+    await openDetails();
 
     expect(screen.getByRole("note")).toHaveTextContent(
       "Source: EcoLogits 0.11.3, video generation model.",
@@ -413,7 +472,7 @@ describe("UseCaseCard methodological source", () => {
         />
       </MemoryRouter>,
     );
-    await openSettings();
+    await openDetails();
 
     expect(screen.getByRole("note")).toHaveTextContent(
       "Source : transposition depuis la génération vidéo EcoLogits 0.11.3 (Veo 3.1), d'après l'étude « The Hidden Cost of an Image ».",
@@ -422,7 +481,7 @@ describe("UseCaseCard methodological source", () => {
 
   it("shows no note when the catalogue gives no source", async () => {
     renderEmail();
-    await openSettings();
+    await openDetails();
 
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
@@ -450,7 +509,7 @@ describe("UseCaseCard provider logo", () => {
       );
     }
     render(<Interactive />);
-    await openSettings(user);
+    await openConfigure(user);
 
     const provider = document.querySelector(".use-case-card__provider")!;
     const logo = () => provider.querySelector<HTMLImageElement>(".use-case-card__provider-logo")!;
@@ -494,7 +553,7 @@ describe("UseCaseCard provider logo", () => {
       />,
     );
 
-    await openSettings(user);
+    await openConfigure(user);
     await user.selectOptions(screen.getByLabelText("Provider"), "mistral");
 
     expect(onChange).toHaveBeenLastCalledWith(
@@ -508,7 +567,7 @@ describe("UseCaseCard provider logo", () => {
       availableProviderIds: ["acme"],
       providerId: "acme",
     });
-    await openSettings();
+    await openConfigure();
 
     expect(
       document.querySelector(".use-case-card__provider-logo--fallback"),
@@ -542,7 +601,7 @@ describe("UseCaseCard model parameters", () => {
   it("shows one select per parameter, initialised from the defaults", async () => {
     await i18n.changeLanguage("fr");
     render(<InteractiveVideoCard />);
-    await openSettings();
+    await openConfigure();
 
     expect(screen.getByLabelText("Résolution")).toHaveDisplayValue("720p");
     expect(screen.getByLabelText("Durée")).toHaveDisplayValue("8 s");
@@ -558,7 +617,7 @@ describe("UseCaseCard model parameters", () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
     render(<InteractiveVideoCard onChange={onChange} />);
-    await openSettings(user);
+    await openConfigure(user);
 
     await user.selectOptions(screen.getByLabelText("Resolution"), "1080p");
     await user.selectOptions(screen.getByLabelText("Duration"), "5 s");
@@ -583,7 +642,7 @@ describe("UseCaseCard model parameters", () => {
     // Closed: the fields are not rendered at all (RWEB_0046).
     expect(screen.queryByLabelText("Résolution")).not.toBeInTheDocument();
 
-    await openSettings(user);
+    await openConfigure(user);
     await user.selectOptions(screen.getByLabelText("Résolution"), "1080p");
 
     expect(metaLines()).toEqual(["Google · Standard", "1080p · 8 s · Avec audio"]);
@@ -634,7 +693,7 @@ describe("UseCaseCard model parameters", () => {
     const tokensLine = () => document.querySelectorAll(".use-case-card__meta span")[1];
     // French groups thousands with U+202F, which toHaveTextContent normalises.
     expect(tokensLine().textContent).toBe("1\u202f000 tokens générés");
-    await openSettings(user);
+    await openConfigure(user);
     const tokens = screen.getByLabelText("Tokens générés par action");
     expect(tokens).toHaveValue(1000);
     expect(tokens).toHaveAccessibleDescription(/Valeur par défaut : 1.000 tokens générés/);
@@ -646,25 +705,26 @@ describe("UseCaseCard model parameters", () => {
     expect(tokensLine().textContent).toBe("250 tokens générés");
   });
 
-  it("orders the settings: provider and profile, customisation, then impact details", async () => {
+  it("orders the configuration: subtitle, provider and profile, then customisation", async () => {
     await i18n.changeLanguage("fr");
     render(<InteractiveVideoCard />);
-    await openSettings();
+    await openConfigure();
 
     const panel = document.querySelector<HTMLElement>(".use-case-card__panel")!;
+    expect(panel.firstElementChild).toHaveClass("use-case-card__subtitle");
     const firstRow = panel.querySelector(".use-case-card__selects")!;
     expect(within(firstRow as HTMLElement).getAllByRole("combobox")).toHaveLength(2);
+    // The impact details are in the other panel.
     const sections = within(panel).getAllByRole("region");
     expect(sections.map((section) => section.querySelector("h5")!.textContent)).toEqual([
       "Personnalisation",
-      "Détail des impacts par jour ouvré",
     ]);
     expect(sections[0]).toContainElement(screen.getByLabelText("Résolution"));
   });
 
   it("shows no parameter field for profiles without parameters", async () => {
     renderEmail();
-    await openSettings();
+    await openConfigure();
 
     // Only the provider and profile selects, no customisation section.
     expect(document.querySelectorAll(".use-case-card__selects .use-case-card__field")).toHaveLength(2);
@@ -709,12 +769,13 @@ describe("UseCaseCard image sizes", () => {
       </MemoryRouter>,
     );
 
-    await openSettings(user);
+    await openDetails(user);
     // A page of this site: same tab, no "new tab" mention.
     const link = screen.getByRole("link", { name: "Methodology" });
     expect(link).toHaveAttribute("href", "/methodologie#images");
     expect(link).not.toHaveAttribute("target");
 
+    await openConfigure(user);
     const size = screen.getByLabelText("Size");
     expect(within(size).getAllByRole("option").map((o) => o.textContent)).toEqual([
       "1024 × 1024",

@@ -60,6 +60,8 @@ const SUMMARY_CRITERIA: Array<{ key: "gwp" | "water"; unit: string }> = [
   { key: "water", unit: "L" },
 ];
 
+type Panel = "configure" | "details" | null;
+
 interface UseCaseCardProps {
   useCase: UseCase;
   availableProviderIds: string[];
@@ -94,7 +96,8 @@ export function UseCaseCard({
 }: UseCaseCardProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language;
-  const [open, setOpen] = useState(false);
+  // One panel at a time: configuring the calculation, or its impact details.
+  const [panel, setPanel] = useState<Panel>(null);
 
   const {
     offeredProviders,
@@ -227,15 +230,24 @@ export function UseCaseCard({
             .join(" · "),
         ].filter(Boolean)
       : [t("calculator.profileUnsupported")];
-  const panelId = `${inputIdPrefix}-settings`;
+  const configureId = `${inputIdPrefix}-configure`;
+  const detailsId = `${inputIdPrefix}-details`;
   const className = [
     "use-case-card",
     pending && "use-case-card--pending",
     frequency > 0 ? "use-case-card--used" : "use-case-card--idle",
-    open && "use-case-card--open",
+    panel && `use-case-card--${panel}-open`,
   ]
     .filter(Boolean)
     .join(" ");
+
+  const impactsToggleLabel = t(
+    panel === "details" ? "calculator.impactsToggleOpen" : "calculator.impactsToggle",
+  );
+
+  function togglePanel(next: Exclude<Panel, null>) {
+    setPanel((current) => (current === next ? null : next));
+  }
 
   return (
     <article className={className} aria-busy={pending || undefined}>
@@ -247,13 +259,53 @@ export function UseCaseCard({
           )}
           <div className="use-case-card__title">
             <h4>{title}</h4>
-            <p className="use-case-card__meta">
-              {metaLines.map((line) => (
-                <span key={line} title={line}>
-                  {line}
+            {supported ? (
+              // The reminder of the choices is itself the way to change them.
+              <button
+                type="button"
+                className="use-case-card__configure"
+                aria-expanded={panel === "configure"}
+                aria-controls={panel === "configure" ? configureId : undefined}
+                title={t("calculator.configureToggle")}
+                onClick={() => togglePanel("configure")}
+              >
+                <span className="visually-hidden">
+                  {t("calculator.configureToggle")} – {title} :{" "}
                 </span>
-              ))}
-            </p>
+                {/* Gear, inline: no image request. */}
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="use-case-card__configure-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+                <span className="use-case-card__meta">
+                  {metaLines.map((line) => (
+                    <span key={line} title={line}>
+                      {line}
+                    </span>
+                  ))}
+                </span>
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="use-case-card__chevron">
+                  <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" strokeWidth="2" />
+                </svg>
+              </button>
+            ) : (
+              <p className="use-case-card__meta">
+                {metaLines.map((line) => (
+                  <span key={line} title={line}>
+                    {line}
+                  </span>
+                ))}
+              </p>
+            )}
           </div>
         </div>
 
@@ -294,215 +346,211 @@ export function UseCaseCard({
               </div>
             </div>
 
-            <dl className="use-case-card__summary">
-              {SUMMARY_CRITERIA.map(({ key, unit }) => {
-                const range = impacts ? impacts[key] : undefined;
-                const value = range && scaleRange(range.min, range.max, unit);
-                return (
-                  <div key={key}>
-                    <dt>
+            {/* The impacts are themselves the way to their details. */}
+            <button
+              type="button"
+              className="use-case-card__summary"
+              aria-expanded={panel === "details"}
+              aria-controls={panel === "details" ? detailsId : undefined}
+              title={impactsToggleLabel}
+              onClick={() => togglePanel("details")}
+            >
+              <span className="visually-hidden">
+                {impactsToggleLabel} – {title} :{" "}
+              </span>
+              <span className="use-case-card__summary-values">
+                {SUMMARY_CRITERIA.map(({ key, unit }) => {
+                  const range = impacts ? impacts[key] : undefined;
+                  const value = range && scaleRange(range.min, range.max, unit);
+                  return (
+                    <span key={key} className="use-case-card__summary-item">
                       <ImpactIcon
                         criterion={key}
                         title={t(`calculator.cardImpactSummary.${key}`)}
                         className="use-case-card__summary-icon"
                       />
-                    </dt>
-                    <dd>
-                      {range === undefined
-                        ? "…"
-                        : value
-                          ? `${formatNumber((value.min + value.max) / 2, locale)} ${value.unit}`
-                          : t("calculator.notAvailable")}
-                    </dd>
-                  </div>
-                );
-              })}
-            </dl>
+                      <span className="use-case-card__summary-value">
+                        {range === undefined
+                          ? "…"
+                          : value
+                            ? `${formatNumber((value.min + value.max) / 2, locale)} ${value.unit}`
+                            : t("calculator.notAvailable")}
+                      </span>
+                    </span>
+                  );
+                })}
+              </span>
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="use-case-card__chevron">
+                <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" strokeWidth="2" />
+              </svg>
+            </button>
           </>
         )}
-
-        <button
-          type="button"
-          className="use-case-card__toggle"
-          aria-expanded={open}
-          aria-controls={open ? panelId : undefined}
-          onClick={() => setOpen((value) => !value)}
-        >
-          <span className="use-case-card__toggle-text">{t("calculator.settingsToggle")}</span>
-          <span className="visually-hidden"> : {title}</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="use-case-card__chevron">
-            <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" strokeWidth="2" />
-          </svg>
-        </button>
       </div>
 
-      {/* Settings and details: rendered only once opened (GreenIT RWEB_0046). */}
-      {open && (
-        <div id={panelId} className="use-case-card__panel">
+      {/* Panels: rendered only once opened, one at a time (GreenIT RWEB_0046). */}
+      {panel === "configure" && currentMapping && currentProfile && (
+        <div id={configureId} className="use-case-card__panel">
           <p className="use-case-card__subtitle">
             {t(useCase.subtitleKey ?? `useCases.${useCase.id}.subtitle`, { defaultValue: "" })}
           </p>
-          {!currentMapping || !currentProfile ? (
-            <p className="use-case-card__unsupported">
-              {t("calculator.profileUnsupported")}
-            </p>
-          ) : (
-            <>
-              <div className="use-case-card__selects">
-                <div className="use-case-card__field">
-                  <label htmlFor={`${inputIdPrefix}-provider`}>
-                    {t("calculator.providerSelect")}
-                  </label>
-                  <div className="use-case-card__provider">
-                    <ProviderLogo
-                      providerId={currentMapping.providerId}
-                      label={t(`providers.${currentMapping.providerId}`, {
-                        defaultValue: currentMapping.providerId,
-                      })}
-                      className="use-case-card__provider-logo"
-                      fallbackClassName="use-case-card__provider-logo use-case-card__provider-logo--fallback"
-                    />
-                    <select
-                      id={`${inputIdPrefix}-provider`}
-                      value={currentMapping.providerId}
-                      onChange={(e) => {
-                        const nextMapping = offeredProviders.find(
-                          (pm) => pm.providerId === e.target.value,
-                        );
-                        // Keep the chosen profile when the new provider offers
-                        // it, else the use case's recommended one, else its first.
-                        const nextProfiles = nextMapping?.profiles ?? [];
-                        const keep = (id: string) =>
-                          nextProfiles.some((profile) => profile.id === id) ? id : null;
-                        emit({
-                          providerId: e.target.value,
-                          profileId:
-                            keep(currentProfile.id) ??
-                            keep(useCase.recommendedProfileId ?? "") ??
-                            nextProfiles[0]?.id ??
-                            "",
-                        });
-                      }}
-                    >
-                      {offeredProviders.map((pm) => (
-                        <option key={pm.providerId} value={pm.providerId}>
-                          {t(`providers.${pm.providerId}`, { defaultValue: pm.providerId })}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="use-case-card__field">
-                  <label htmlFor={`${inputIdPrefix}-profile`}>
-                    {t("calculator.profileSelect")}
-                  </label>
-                  <select
-                    id={`${inputIdPrefix}-profile`}
-                    value={currentProfile.id}
-                    onChange={(e) => emit({ profileId: e.target.value })}
-                  >
-                    {profiles.map((profile) => (
-                      <option key={profile.id} value={profile.id}>
-                        {profileLabel(profile)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-              </div>
-
-              {customizable.length > 0 && (
-                <section className="use-case-card__section" aria-labelledby={`${panelId}-customize`}>
-                  <h5 id={`${panelId}-customize`}>{t("calculator.customizeTitle")}</h5>
-                  <div className="use-case-card__selects">
-                    {customizable.map(renderParameter)}
-                  </div>
-                </section>
-              )}
-
-              {(impacts || source) && (
-                <section
-                  className="use-case-card__section use-case-card__impacts"
-                  aria-labelledby={`${panelId}-impacts`}
+          <div className="use-case-card__selects">
+            <div className="use-case-card__field">
+              <label htmlFor={`${inputIdPrefix}-provider`}>
+                {t("calculator.providerSelect")}
+              </label>
+              <div className="use-case-card__provider">
+                <ProviderLogo
+                  providerId={currentMapping.providerId}
+                  label={t(`providers.${currentMapping.providerId}`, {
+                    defaultValue: currentMapping.providerId,
+                  })}
+                  className="use-case-card__provider-logo"
+                  fallbackClassName="use-case-card__provider-logo use-case-card__provider-logo--fallback"
+                />
+                <select
+                  id={`${inputIdPrefix}-provider`}
+                  value={currentMapping.providerId}
+                  onChange={(e) => {
+                    const nextMapping = offeredProviders.find(
+                      (pm) => pm.providerId === e.target.value,
+                    );
+                    // Keep the chosen profile when the new provider offers
+                    // it, else the use case's recommended one, else its first.
+                    const nextProfiles = nextMapping?.profiles ?? [];
+                    const keep = (id: string) =>
+                      nextProfiles.some((profile) => profile.id === id) ? id : null;
+                    emit({
+                      providerId: e.target.value,
+                      profileId:
+                        keep(currentProfile.id) ??
+                        keep(useCase.recommendedProfileId ?? "") ??
+                        nextProfiles[0]?.id ??
+                        "",
+                    });
+                  }}
                 >
-                  <h5 id={`${panelId}-impacts`}>{t("calculator.dailyImpactsTitle")}</h5>
-                  {impacts && (
-                    <>
-                      {CRITERIA.map(({ key, unit }) => {
-                        const value = impacts[key];
-                        const label = t(`calculator.criterion.${key}`);
-                        return value === null ? (
-                          <p key={key} className="use-case-card__unavailable">
-                            {label}: {t("calculator.notAvailable")}
-                          </p>
+                  {offeredProviders.map((pm) => (
+                    <option key={pm.providerId} value={pm.providerId}>
+                      {t(`providers.${pm.providerId}`, { defaultValue: pm.providerId })}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="use-case-card__field">
+              <label htmlFor={`${inputIdPrefix}-profile`}>
+                {t("calculator.profileSelect")}
+              </label>
+              <select
+                id={`${inputIdPrefix}-profile`}
+                value={currentProfile.id}
+                onChange={(e) => emit({ profileId: e.target.value })}
+              >
+                {profiles.map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profileLabel(profile)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {customizable.length > 0 && (
+            <section className="use-case-card__section" aria-labelledby={`${configureId}-customize`}>
+              <h5 id={`${configureId}-customize`}>{t("calculator.customizeTitle")}</h5>
+              <div className="use-case-card__selects">
+                {customizable.map(renderParameter)}
+              </div>
+            </section>
+          )}
+        </div>
+      )}
+
+      {panel === "details" && currentProfile && (
+        <div id={detailsId} className="use-case-card__panel">
+          <section
+            className="use-case-card__section use-case-card__impacts"
+            aria-labelledby={`${detailsId}-impacts`}
+          >
+            <h5 id={`${detailsId}-impacts`}>{t("calculator.dailyImpactsTitle")}</h5>
+            {impacts ? (
+              <>
+                {CRITERIA.map(({ key, unit }) => {
+                  const value = impacts[key];
+                  const label = t(`calculator.criterion.${key}`);
+                  return value === null ? (
+                    <p key={key} className="use-case-card__unavailable">
+                      {label}: {t("calculator.notAvailable")}
+                    </p>
+                  ) : (
+                    <RangeGauge
+                      key={key}
+                      min={value.min}
+                      max={value.max}
+                      unit={unit}
+                      label={
+                        isImpactCriterion(key) ? (
+                          <>
+                            <ImpactIcon
+                              criterion={key}
+                              title={label}
+                              className="impact-icon--detail use-case-card__detail-icon"
+                              decorative
+                            />
+                            <span>{label}</span>
+                          </>
                         ) : (
-                          <RangeGauge
-                            key={key}
-                            min={value.min}
-                            max={value.max}
-                            unit={unit}
-                            label={
-                              isImpactCriterion(key) ? (
-                                <>
-                                  <ImpactIcon
-                                    criterion={key}
-                                    title={label}
-                                    className="impact-icon--detail use-case-card__detail-icon"
-                                    decorative
-                                  />
-                                  <span>{label}</span>
-                                </>
-                              ) : (
-                                label
-                              )
-                            }
-                          />
-                        );
-                      })}
+                          label
+                        )
+                      }
+                    />
+                  );
+                })}
+              </>
+            ) : (
+              // Opened before the first calculation.
+              <p className="use-case-card__unavailable">…</p>
+            )}
+            {source && (
+              <p className="use-case-card__data-note" role="note">
+                <svg
+                  className="use-case-card__data-note-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 16v-4M12 8h.01" />
+                </svg>
+                <span>
+                  {t(`calculator.source.${source.id}`, {
+                    version: source.version ?? "",
+                    defaultValue: "",
+                  })}
+                  {source.url && (
+                    <>
+                      {" "}
+                      {source.url.startsWith("/") ? (
+                        // A page of this site (e.g. the methodology): same tab.
+                        <Link to={source.url}>{t("calculator.sourceLink")}</Link>
+                      ) : (
+                        <a href={source.url} target="_blank" rel="noreferrer">
+                          {t("calculator.sourceLink")}{" "}
+                          <span className="visually-hidden">
+                            ({t("calculator.newTab")})
+                          </span>
+                        </a>
+                      )}
                     </>
                   )}
-                {source && (
-                  <p className="use-case-card__data-note" role="note">
-                    <svg
-                      className="use-case-card__data-note-icon"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      aria-hidden="true"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M12 16v-4M12 8h.01" />
-                    </svg>
-                    <span>
-                      {t(`calculator.source.${source.id}`, {
-                        version: source.version ?? "",
-                        defaultValue: "",
-                      })}
-                      {source.url && (
-                        <>
-                          {" "}
-                          {source.url.startsWith("/") ? (
-                            // A page of this site (e.g. the methodology): same tab.
-                            <Link to={source.url}>{t("calculator.sourceLink")}</Link>
-                          ) : (
-                            <a href={source.url} target="_blank" rel="noreferrer">
-                              {t("calculator.sourceLink")}{" "}
-                              <span className="visually-hidden">
-                                ({t("calculator.newTab")})
-                              </span>
-                            </a>
-                          )}
-                        </>
-                      )}
-                    </span>
-                  </p>
-                )}
-                </section>
-              )}
-            </>
-          )}
+                </span>
+              </p>
+            )}
+          </section>
         </div>
       )}
     </article>

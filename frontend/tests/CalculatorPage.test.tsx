@@ -133,15 +133,15 @@ const enterpriseSummary = () =>
 const lastRequest = () => mockedCalculate.mock.calls.at(-1)![0];
 const card = (title: RegExp) =>
   screen.getByRole("heading", { name: title }).closest("article")!;
-/** Opens a card's settings: its selects and fields only exist once open. */
-async function openSettings(title: RegExp) {
-  fireEvent.click(within(card(title)).getByRole("button", { name: /settings/i }));
+/** Opens a card's configuration: its selects and fields only exist once open. */
+async function openConfigure(title: RegExp) {
+  fireEvent.click(within(card(title)).getByRole("button", { name: /^configure –/i }));
   await waitFor(() =>
     expect(card(title).querySelector(".use-case-card__panel")).not.toBeNull(),
   );
 }
 const cardGwp = (title: RegExp) =>
-  within(card(title)).getByTitle(/greenhouse gases/i).closest("div")!;
+  within(card(title)).getByTitle(/greenhouse gases/i).closest(".use-case-card__summary-item")!;
 
 beforeEach(async () => {
   await i18next.changeLanguage("en");
@@ -185,13 +185,13 @@ describe("CalculatorPage catalogue", () => {
   it("renders a chip per provider, initialised from selectedByDefault", async () => {
     await renderLoaded();
 
-    expect(screen.getByRole("button", { name: /openai/i })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: /google/i })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^openai/i })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^google/i })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("initializes each card with its catalogue provider and profile defaults", async () => {
     await renderLoaded();
-    await openSettings(/writing a short email/i);
+    await openConfigure(/writing a short email/i);
 
     expect(within(card(/writing a short email/i)).getByLabelText("Provider")).toHaveValue("google");
     expect(within(card(/writing a short email/i)).getByLabelText("Profile")).toHaveValue("eco");
@@ -302,7 +302,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     await renderDefault();
 
     expect(lastRequest()).toEqual({
-      headcount: 1,
+      headcount: 1000,
       usages: [
         {
           kind: "video",
@@ -397,7 +397,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     const user = userEvent.setup();
     await renderLoaded();
 
-    await openSettings(/video generation/i);
+    await openConfigure(/video generation/i);
     await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
 
     await waitFor(() => expect(cardGwp(/video generation/i)).toHaveTextContent("2.00 kg CO2eq"));
@@ -422,7 +422,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     await renderLoaded();
     mockedCalculate.mockRejectedValueOnce(new apiClient.ApiError(500, "boom"));
 
-    await openSettings(/video generation/i);
+    await openConfigure(/video generation/i);
     await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
 
     const alert = await screen.findByRole("alert");
@@ -441,7 +441,7 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     const late = deferred<CalculateResult>();
     mockedCalculate.mockImplementationOnce(() => late.promise);
 
-    await openSettings(/video generation/i);
+    await openConfigure(/video generation/i);
     const resolution = within(card(/video generation/i)).getByLabelText("Resolution");
     await user.selectOptions(resolution, "1080p");
     await waitFor(() =>
@@ -493,12 +493,16 @@ describe("CalculatorPage keeps the scenario consistent with the cards", () => {
     await renderLoaded();
     const initial = mockedCalculate.mock.calls[0][0];
 
-    await openSettings(/video generation/i);
+    await openConfigure(/video generation/i);
     await user.selectOptions(within(card(/video generation/i)).getByLabelText("Resolution"), "1080p");
     await waitFor(() => expect(individualSummary()).toBe("22.2 t CO2eq"));
+    const headcount = screen.getByLabelText(/headcount/i);
+    await user.clear(headcount);
+    await user.type(headcount, "50");
     await user.click(screen.getByRole("button", { name: /reset/i }));
 
-    // Back to the defaults: frequencies at 0, 720p.
+    // Back to the defaults: frequencies at 0, 720p, 1000 employees.
+    expect(headcount).toHaveValue(1000);
     await waitFor(() => expect(individualSummary()).toBe("0 kg CO2eq"));
     expect(lastRequest()).toEqual(initial);
   });
@@ -507,7 +511,7 @@ describe("CalculatorPage keeps the scenario consistent with the cards", () => {
     const user = userEvent.setup();
     await renderLoaded();
 
-    await user.click(screen.getByRole("button", { name: /google/i }));
+    await user.click(screen.getByRole("button", { name: /^google/i }));
 
     // video is unsupported, email falls back to openai: 10 kg x 218
     await waitFor(() => expect(individualSummary()).toBe("2.18 t CO2eq"));
@@ -518,7 +522,7 @@ describe("CalculatorPage keeps the scenario consistent with the cards", () => {
     const user = userEvent.setup();
     await renderLoaded();
 
-    await user.click(screen.getByRole("button", { name: /google/i }));
+    await user.click(screen.getByRole("button", { name: /^google/i }));
 
     await waitFor(() => expect(lastRequest().usages[0].providerId).toBe("openai"));
     await waitFor(() =>

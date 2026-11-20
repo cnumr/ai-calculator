@@ -14,7 +14,7 @@ test("shows use-case cards in a single column", async ({ page }) => {
   expect(secondCard!.y).toBeGreaterThan(firstCard!.y);
 });
 
-test("lists use cases as compact rows grouped by family, settings on demand", async ({
+test("lists use cases as compact rows grouped by family, configuration on demand", async ({
   page,
 }) => {
   await page.goto("/");
@@ -39,21 +39,31 @@ test("lists use cases as compact rows grouped by family, settings on demand", as
   const middle = (box: { y: number; height: number } | null) => box!.y + box!.height / 2;
   expect(Math.abs(middle(resultsBox) - middle(frequencyBox))).toBeLessThan(8);
   expect(resultsBox!.x).toBeGreaterThan(frequencyBox!.x);
-  // The column titles sit right above the frequency and the results.
-  // (The first cell holds the "Only my usages" filter.)
+  // The column titles sit right above the use case, the frequency and the
+  // results; the "Only my usages" filter is on its own line above them.
   const titles = page.locator(".use-case-catalog__columns > span");
-  const [frequencyTitle, impactTitle] = await Promise.all(
-    [titles.nth(0), titles.nth(1)].map((l) => l.boundingBox()),
+  const [useCaseTitle, frequencyTitle, impactTitle] = await Promise.all(
+    [titles.nth(0), titles.nth(1), titles.nth(2)].map((l) => l.boundingBox()),
   );
+  const filter = await page.locator(".use-case-catalog__filter").boundingBox();
+  expect(filter!.y + filter!.height).toBeLessThanOrEqual(useCaseTitle!.y);
+  // Its text starts where the card titles do.
+  const useCaseTitleTextX = await titles.nth(0).evaluate((el) => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    return range.getBoundingClientRect().x;
+  });
+  const cardTitle = await card.locator("h4").boundingBox();
+  expect(Math.abs(useCaseTitleTextX - cardTitle!.x)).toBeLessThan(2);
   const frequencyCell = await card.locator(".use-case-card__frequency").boundingBox();
   expect(Math.abs(frequencyTitle!.x - frequencyCell!.x)).toBeLessThan(2);
   expect(Math.abs(impactTitle!.x - resultsBox!.x)).toBeLessThan(2);
   // A compact row: well under the former ~340 px card.
   expect((await card.boundingBox())!.height).toBeLessThan(100);
 
-  // Provider and profile appear once the settings are opened.
+  // Provider and profile appear once "Configure" is opened.
   await expect(card.getByLabel(/fournisseur|provider/i)).toHaveCount(0);
-  await card.getByRole("button", { name: /réglages|settings/i }).click();
+  await card.getByRole("button", { name: /^(configurer|configure) –/i }).click();
   await expect(card.getByLabel(/fournisseur|provider/i)).toBeVisible();
   await expect(card.getByLabel(/profil|profile/i)).toBeVisible();
 });
@@ -71,7 +81,7 @@ test("calculator: impacts come from POST /api/calculate and follow the cards", a
     has: page.getByRole("heading", { name: /génération de vidéos|video generation/i }),
   });
   await expect(videoCard).toBeVisible();
-  const openaiChip = page.getByRole("button", { name: /openai/i });
+  const openaiChip = page.getByRole("button", { name: /^openai/i });
   await expect(openaiChip).toHaveAttribute("aria-pressed", "true");
 
   const individualTotal = page.locator(".gwp-summary__value").first();
@@ -89,11 +99,11 @@ test("calculator: impacts come from POST /api/calculate and follow the cards", a
   expect(video.frequency_unit).toBe("day");
   await expect(individualTotal).not.toHaveText(before!);
 
-  // The impact details are in the settings panel.
-  await videoCard.getByRole("button", { name: /réglages|settings/i }).click();
+  // The impact details are in the "See more" panel.
+  await videoCard.getByRole("button", { name: /^(voir plus|see more) –/i }).click();
   await expect(videoCard.locator(".use-case-card__impacts .range-gauge")).toHaveCount(5);
 
-  const anthropicChip = page.getByRole("button", { name: /anthropic/i });
+  const anthropicChip = page.getByRole("button", { name: /^anthropic/i });
   // Every provider is selected by default: a click deselects it.
   await expect(anthropicChip).toHaveAttribute("aria-pressed", "true");
   await anthropicChip.click();
