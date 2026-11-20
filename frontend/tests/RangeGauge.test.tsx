@@ -29,6 +29,12 @@ describe("RangeGauge", () => {
     expect(screen.getByText(/3.4/)).toBeInTheDocument();
   });
 
+  it("shows the central value marked by the tick, in the bounds' unit", () => {
+    render(<RangeGauge min={2530} max={3090} unit="kgCO2eq" label="GWP" />);
+
+    expect(screen.getByText(/2[.,]81 t CO2eq/)).toHaveClass("range-gauge__value");
+  });
+
   it("scales tiny values to a readable unit instead of scientific notation", () => {
     render(
       <RangeGauge

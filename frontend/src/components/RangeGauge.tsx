@@ -28,10 +28,21 @@ export function RangeGauge({ min, max, unit, label }: RangeGaugeProps) {
   const { fillLeftPct, fillRightPct, tickLeftPct } = gaugePositions(min, max);
   const scaled = scaleRange(min, max, unit);
   const locale = useTranslation().i18n.language;
+  // Central value, as in the summary card: the tick sits on it.
+  const value = (scaled.min + scaled.max) / 2;
 
   return (
     <div className="range-gauge">
       <div className="range-gauge__label">{label}</div>
+      {/* Sits over the tick; shifted by its own position so it never overflows. */}
+      <div className="range-gauge__value-row">
+        <strong
+          className="range-gauge__value"
+          style={{ left: `${tickLeftPct}%`, transform: `translateX(-${tickLeftPct}%)` }}
+        >
+          {formatNumber(value, locale)} {scaled.unit}
+        </strong>
+      </div>
       <div className="range-gauge__track">
         <div
           className="range-gauge__fill"

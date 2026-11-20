@@ -1,0 +1,43 @@
+{
+  "dialogLabel": "Visite guidée",
+  "progress": "{{current}} / {{total}}",
+  "previous": "Précédent",
+  "next": "Suivant",
+  "finish": "Terminer",
+  "close": "Quitter la visite",
+  "steps": {
+    "ecosystem": {
+      "title": "Votre écosystème IA",
+      "body": "Commencez par les fournisseurs autorisés dans votre organisation. Seuls leurs modèles seront proposés dans les cas d'usage ci-dessous."
+    },
+    "configure": {
+      "title": "Le fournisseur et le modèle",
+      "body": "Chaque cas d'usage rappelle le fournisseur, le modèle et ses paramètres (tokens générés, résolution…). Cliquez sur ce rappel pour les modifier. Exemple : « Rédaction d'un mail court » avec le modèle Éco."
+    },
+    "frequency": {
+      "title": "La fréquence",
+      "body": "Indiquez combien de fois une personne réalise cette tâche, par jour, par semaine ou par mois. Exemple : 5 mails courts par jour. Une fréquence à 0 n'est pas comptée."
+    },
+    "impacts": {
+      "title": "L'impact par jour ouvré",
+      "body": "Les émissions de gaz à effet de serre et la consommation d'eau de cette tâche, pour un jour ouvré. Cliquez dessus pour voir le détail des cinq critères et la source des données."
+    },
+    "onlyUsed": {
+      "title": "Seulement mes usages",
+      "body": "Une fois vos fréquences saisies, cochez cette case pour ne garder que les cas d'usage que vous utilisez."
+    },
+    "annualTotal": {
+      "title": "Votre impact annuel",
+      "body": "Le total pour une personne sur une année de 218 jours ouvrés, avec sa fourchette basse et haute. En dessous : le détail par critère, des équivalences parlantes et la répartition par fournisseur."
+    },
+    "headcount": {
+      "title": "À l'échelle de l'entreprise",
+      "body": "Saisissez le nombre de salariés concernés pour extrapoler l'impact annuel de toute l'organisation."
+    },
+    "reset": {
+      "title": "Repartir de zéro",
+      "body": "« Réinitialiser » remet les valeurs par défaut. Pour comprendre comment les impacts sont calculés, consultez la page Méthodologie.",
+      "link": "Voir la méthodologie"
+    }
+  }
+}

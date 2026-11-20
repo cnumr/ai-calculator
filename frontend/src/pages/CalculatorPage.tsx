@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Impacts,
@@ -21,6 +21,13 @@ import {
 } from "../domain/calculator";
 import { formatNumber, scaleRange } from "../domain/units";
 import { useCalculation } from "../hooks/useCalculation";
+import { hasSeenTour, markTourSeen } from "../domain/tourInvitation";
+
+// Loaded at the first click on "Guided tour" only (GreenIT RWEB_0046).
+const GuidedTour = lazy(() => import("../components/GuidedTour"));
+
+/** Headcount shown at first and restored by the reset. */
+const DEFAULT_HEADCOUNT = 1000;
 
 const CRITERIA: Array<{ key: keyof Impacts; unit: string }> = [
   { key: "gwp", unit: "kgCO2eq" },
@@ -29,6 +36,27 @@ const CRITERIA: Array<{ key: keyof Impacts; unit: string }> = [
   { key: "pe", unit: "MJ" },
   { key: "water", unit: "L" },
 ];
+
+/**
+ * Use cases grouped by family, in the catalogue's family order; use cases
+ * without a known family come last, without a heading. With `shown`, only
+ * those use cases (and their families) are listed.
+ */
+function groupByFamily(catalog: UseCasesCatalog, shown: Set<string> | null = null) {
+  const families = catalog.families ?? [];
+  const useCases = shown
+    ? catalog.useCases.filter((uc) => shown.has(uc.id))
+    : catalog.useCases;
+  const groups = families.map((family) => ({
+    family: family as string | null,
+    useCases: useCases.filter((uc) => uc.family === family),
+  }));
+  const others = useCases.filter(
+    (uc) => !uc.family || !families.includes(uc.family),
+  );
+  if (others.length > 0) groups.push({ family: null, useCases: others });
+  return groups.filter((group) => group.useCases.length > 0);
+}
 
 function createInitialCardStates(useCases: UseCasesCatalog["useCases"]) {
   const states: Record<string, CardState> = {};
@@ -44,8 +72,9 @@ function createInitialCardStates(useCases: UseCasesCatalog["useCases"]) {
     states[useCase.id] = {
       providerId: mapping?.providerId ?? "",
       profileId: profile?.id ?? "",
-      // No usage by default: the user enters their own daily frequencies.
-      frequencyPerDay: 0,
+      // No usage by default: the user enters their own frequencies.
+      frequency: 0,
+      frequencyUnit: "day",
       parameters: {},
     };
   }
@@ -171,7 +200,21 @@ export function CalculatorPage() {
     new Set()
   );
   const [cardStates, setCardStates] = useState<Record<string, CardState>>({});
-  const [headcount, setHeadcount] = useState(1);
+  const [headcount, setHeadcount] = useState(DEFAULT_HEADCOUNT);
+  const [tourOpen, setTourOpen] = useState(false);
+  // Discreet invitation on the button until the tour is taken or left.
+  const [tourInvite, setTourInvite] = useState(() => !hasSeenTour());
+  const tourButtonRef = useRef<HTMLButtonElement>(null);
+  const closeTour = useCallback(() => {
+    setTourOpen(false);
+    setTourInvite(false);
+    markTourSeen();
+    tourButtonRef.current?.focus();
+  }, []);
+  // "Only my usages": the use cases used when the filter was turned on (null
+  // when off). Kept fixed while on, so that a row does not vanish while its
+  // frequency is being edited (e.g. cleared before typing a new value).
+  const [shownUseCases, setShownUseCases] = useState<Set<string> | null>(null);
 
   const request = useMemo(
     () =>
@@ -186,6 +229,10 @@ export function CalculatorPage() {
     [catalog, cardStates, selectedProviders, headcount],
   );
   const { result, status, retry } = useCalculation(request);
+  // Use cases with a frequency: the ones "Only my usages" keeps.
+  const usedUseCaseIds = (catalog?.useCases ?? [])
+    .filter((uc) => (cardStates[uc.id]?.frequency ?? 0) > 0)
+    .map((uc) => uc.id);
 
   const loadCatalog = useCallback(() => {
     setLoadError(false);
@@ -222,10 +269,11 @@ export function CalculatorPage() {
   }
 
   function resetCalculator() {
+    setShownUseCases(null);
     if (!catalog) return;
     setSelectedProviders(new Set(catalog.providers.filter((p) => p.selectedByDefault).map((p) => p.id)));
     setCardStates(createInitialCardStates(catalog.useCases));
-    setHeadcount(1);
+    setHeadcount(DEFAULT_HEADCOUNT);
   }
 
   if (loadError) {
@@ -249,10 +297,31 @@ export function CalculatorPage() {
     <div className="calculator-page">
       <div className="calculator-hero">
         <h1>{t("calculator.title")}</h1>
-        <button type="button" className="calculator-reset" onClick={resetCalculator}>
-          {t("calculator.reset")}
-        </button>
+        <div className="calculator-hero__actions">
+          <button
+            ref={tourButtonRef}
+            type="button"
+            className={`calculator-tour-button${tourInvite ? " calculator-tour-button--invite" : ""}`}
+            onClick={() => setTourOpen(true)}
+          >
+            {t("calculator.tour")}
+            {tourInvite && <span className="visually-hidden"> {t("calculator.tourInvite")}</span>}
+          </button>
+          <button
+            type="button"
+            className="calculator-reset"
+            data-tour="reset"
+            onClick={resetCalculator}
+          >
+            {t("calculator.reset")}
+          </button>
+        </div>
       </div>
+      {tourOpen && (
+        <Suspense fallback={null}>
+          <GuidedTour anchor={tourButtonRef} onClose={closeTour} />
+        </Suspense>
+      )}
 
       <section className="calculator-section">
         <SectionHeader
@@ -275,36 +344,69 @@ export function CalculatorPage() {
             description={t("calculator.sectionUsage.description")}
           />
           <div className="use-case-catalog">
-            {catalog.useCases.map((useCase) => {
-              const state = cardStates[useCase.id];
-              if (!state) return null;
-              const usageRequest = request?.usages.find(
-                (u) => u.useCaseId === useCase.id,
-              );
-              const usageResult = result?.usages.find(
-                (u) => u.useCaseId === useCase.id,
-              );
-              return (
-                <UseCaseCard
-                  key={useCase.id}
-                  useCase={useCase}
-                  availableProviderIds={Array.from(selectedProviders)}
-                  providerId={state.providerId}
-                  profileId={state.profileId}
-                  frequencyPerDay={state.frequencyPerDay}
-                  parameters={state.parameters}
-                  dailyImpacts={usageResult?.dailyImpacts ?? null}
-                  pending={
-                    !usageRequest ||
-                    !usageResult ||
-                    !isUsageResultCurrent(usageRequest, usageResult)
-                  }
-                  onChange={(next) =>
-                    setCardStates((prev) => ({ ...prev, [useCase.id]: next }))
+            <div className="use-case-catalog__columns">
+              <label className="use-case-catalog__filter" data-tour="only-used">
+                <input
+                  type="checkbox"
+                  checked={shownUseCases !== null}
+                  disabled={shownUseCases === null && usedUseCaseIds.length === 0}
+                  onChange={(e) =>
+                    setShownUseCases(e.target.checked ? new Set(usedUseCaseIds) : null)
                   }
                 />
-              );
-            })}
+                {t("calculator.onlyUsed", { count: usedUseCaseIds.length })}
+              </label>
+              {/* Column titles of the rows below (each field keeps its own label). */}
+              <span aria-hidden="true">{t("calculator.columnUseCase")}</span>
+              <span aria-hidden="true">{t("calculator.columnFrequency")}</span>
+              <span aria-hidden="true">{t("calculator.columnImpact")}</span>
+            </div>
+            {groupByFamily(catalog, shownUseCases).map((group) => (
+              <section
+                key={group.family ?? "other"}
+                className="use-case-family"
+                aria-labelledby={group.family ? `family-${group.family}` : undefined}
+              >
+                {group.family && (
+                  <h3 id={`family-${group.family}`} className="use-case-family__title">
+                    {t(`calculator.families.${group.family}`, { defaultValue: group.family })}
+                  </h3>
+                )}
+                <div className="use-case-family__list">
+                  {group.useCases.map((useCase) => {
+                    const state = cardStates[useCase.id];
+                    if (!state) return null;
+                    const usageRequest = request?.usages.find(
+                      (u) => u.useCaseId === useCase.id,
+                    );
+                    const usageResult = result?.usages.find(
+                      (u) => u.useCaseId === useCase.id,
+                    );
+                    return (
+                      <UseCaseCard
+                        key={useCase.id}
+                        useCase={useCase}
+                        availableProviderIds={Array.from(selectedProviders)}
+                        providerId={state.providerId}
+                        profileId={state.profileId}
+                        frequency={state.frequency}
+                        frequencyUnit={state.frequencyUnit}
+                        parameters={state.parameters}
+                        dailyImpacts={usageResult?.dailyImpacts ?? null}
+                        pending={
+                          !usageRequest ||
+                          !usageResult ||
+                          !isUsageResultCurrent(usageRequest, usageResult)
+                        }
+                        onChange={(next) =>
+                          setCardStates((prev) => ({ ...prev, [useCase.id]: next }))
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
           </div>
         </div>
 
@@ -349,7 +451,7 @@ export function CalculatorPage() {
           title={t("calculator.sectionEnterprise.title")}
           description={t("calculator.sectionEnterprise.description")}
         />
-        <div className="calculator-form__field">
+        <div className="calculator-form__field" data-tour="headcount">
           <label htmlFor="calculator-headcount">
             {t("calculator.headcount")}
           </label>

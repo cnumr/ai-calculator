@@ -1,0 +1,10 @@
+# Lance ai-calculator-update@%i.service toutes les 5 minutes.
+[Unit]
+Description=Mise à jour ai-calculator (%i) toutes les 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target

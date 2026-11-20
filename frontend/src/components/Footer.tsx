@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { DataSource } from "../api/client";
 import { loadCatalog } from "../api/catalogStore";
 
-const GREENIT_URL = "https://www.greenit.fr/";
+const GREENIT_URL = "https://greenit.eco/";
 const GITHUB_URL = "https://github.com/cnumr/ai-calculator";
 
 function ExternalLink({ href, children }: { href: string; children: string }) {

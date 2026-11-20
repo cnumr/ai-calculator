@@ -1,0 +1,46 @@
+# Déploiement sur le VPS GreenIT à partir des images ghcr.io (voir deploy/README.md).
+# Le docker-compose.yml racine (build local) reste celui des autres serveurs.
+# Variables lues dans le .env du dossier : IMAGE_TAG, HTTP_PORT, COMPOSE_PROJECT_NAME.
+
+# Logs des conteneurs limités à 5 fichiers de 10 Mo, avec rotation automatique.
+x-logging: &logging
+  driver: local
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  backend:
+    image: ghcr.io/cnumr/ai-calculator-backend:${IMAGE_TAG:?IMAGE_TAG manquant dans .env}
+    restart: unless-stopped
+    logging: *logging
+    healthcheck:
+      # L'image n'a pas curl : contrôle en Python (bibliothèque standard).
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/use-cases', timeout=4)"
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+      start_interval: 2s
+
+  frontend:
+    image: ghcr.io/cnumr/ai-calculator-frontend:${IMAGE_TAG:?IMAGE_TAG manquant dans .env}
+    restart: unless-stopped
+    logging: *logging
+    ports:
+      # Écoute locale seulement : l'app YunoHost Redirect publie le domaine en HTTPS.
+      - "127.0.0.1:${HTTP_PORT:?HTTP_PORT manquant dans .env}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1/api/use-cases"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+      start_interval: 2s

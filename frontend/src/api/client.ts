@@ -73,7 +73,7 @@ export interface ProviderMapping {
 
 /** Methodological source behind a use case's impacts. */
 export interface MethodologicalSource {
-  /** "ecologits_llm", "ecologits_video" or "unsourced". */
+  /** "ecologits_llm", "ecologits_video" or "image_from_video". */
   id: string;
   version: string | null;
   url: string | null;
@@ -86,6 +86,8 @@ export interface UseCase {
   subtitleKey?: string;
   defaultProviderId?: string;
   recommendedProfileId?: string;
+  /** Family the use case is listed under (e.g. "writing"). */
+  family?: string | null;
   providers: ProviderMapping[];
 }
 
@@ -102,12 +104,15 @@ export interface DataSource {
 
 export interface UseCasesCatalog {
   providers: CatalogProvider[];
+  /** Families of use cases, in display order. */
+  families?: string[];
   useCases: UseCase[];
   dataSources?: DataSource[];
 }
 
 interface UseCasesResponseBody {
   providers: Array<{ id: string; selected_by_default: boolean }>;
+  families?: Array<{ id: string }>;
   data_sources?: Array<{
     id: string;
     name: string;
@@ -122,6 +127,7 @@ interface UseCasesResponseBody {
     subtitle_key?: string;
     default_provider?: string;
     recommended_tier?: string;
+    family?: string | null;
     providers: Array<{
       provider_id: string;
       profiles: Array<{
@@ -150,6 +156,7 @@ export async function fetchUseCases(): Promise<UseCasesCatalog> {
       id: p.id,
       selectedByDefault: p.selected_by_default,
     })),
+    families: (body.families ?? []).map((f) => f.id),
     dataSources: (body.data_sources ?? []).map((s) => ({
       id: s.id,
       name: s.name,
@@ -164,6 +171,7 @@ export async function fetchUseCases(): Promise<UseCasesCatalog> {
       subtitleKey: uc.subtitle_key,
       defaultProviderId: uc.default_provider,
       recommendedProfileId: uc.recommended_tier,
+      family: uc.family ?? null,
       providers: uc.providers.map((pm) => ({
         providerId: pm.provider_id,
         profiles: pm.profiles.map((p) => ({
@@ -186,14 +194,21 @@ export async function fetchUseCases(): Promise<UseCasesCatalog> {
 /* POST /api/calculate                                                       */
 /* ------------------------------------------------------------------------ */
 
-/** One daily usage of a use case, as sent to the calculation. */
+/** Period of a usage frequency: working day, week or month. */
+export type FrequencyUnit = "day" | "week" | "month";
+
+export const FREQUENCY_UNITS: FrequencyUnit[] = ["day", "week", "month"];
+
+/** One usage of a use case, as sent to the calculation. */
 export interface UsageRequest {
   kind: UseCaseKind;
   useCaseId: string;
   providerId: string;
   profileId: string;
-  frequencyPerDay: number;
-  /** Text and video usages only (image usages have no parameter). */
+  /** Average actions per `frequencyUnit`. */
+  frequency: number;
+  frequencyUnit: FrequencyUnit;
+  /** Parameter values (tokens, video settings, image size). */
   parameters?: Record<string, ParameterValue>;
 }
 
@@ -206,6 +221,9 @@ export interface UsageResult {
   useCaseId: string;
   providerId: string;
   profileId: string;
+  frequency: number;
+  frequencyUnit: FrequencyUnit;
+  /** Equivalent per working day, converted by the backend. */
   frequencyPerDay: number;
   /** Parameter values actually used (defaults filled in). */
   parameters: Record<string, ParameterValue>;
@@ -242,6 +260,8 @@ interface CalculateResponseBody {
     use_case_id: string;
     provider_id: string;
     profile_id: string;
+    frequency: number;
+    frequency_unit: FrequencyUnit;
     frequency_per_day: number;
     parameters: Record<string, ParameterValue>;
     unit_impacts: Impacts;
@@ -272,8 +292,9 @@ export async function calculate(
         use_case_id: u.useCaseId,
         provider_id: u.providerId,
         profile_id: u.profileId,
-        frequency_per_day: u.frequencyPerDay,
-        ...(u.kind !== "image" ? { parameters: u.parameters ?? {} } : {}),
+        frequency: u.frequency,
+        frequency_unit: u.frequencyUnit,
+        parameters: u.parameters ?? {},
       })),
     }),
     signal,
@@ -288,6 +309,8 @@ export async function calculate(
       useCaseId: u.use_case_id,
       providerId: u.provider_id,
       profileId: u.profile_id,
+      frequency: u.frequency,
+      frequencyUnit: u.frequency_unit,
       frequencyPerDay: u.frequency_per_day,
       parameters: u.parameters,
       unitImpacts: u.unit_impacts,

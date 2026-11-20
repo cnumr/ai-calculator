@@ -4,6 +4,7 @@
 # - le JS et le CSS du build (/assets/, noms hachés) : gardés un an, immutable ;
 # - index.html et les routes de l'application : no-cache, et 304 quand la page
 #   n'a pas changé ;
+# - le catalogue de l'API : cache de 5 minutes, puis 304 via son ETag ;
 # - un asset absent : 404 (et non index.html).
 # Usage : scripts/verify-cache.sh [URL de base, défaut http://localhost:${HTTP_PORT:-80}]
 set -euo pipefail
@@ -54,6 +55,19 @@ if [ -n "$etag" ] && [ "$got" = "304" ]; then
   echo "OK:   / revalidé sans renvoyer la page (304)."
 else
   echo "FAIL: / n'est pas revalidé en 304 (ETag '$etag', statut $got)." >&2
+  status=1
+fi
+
+# Catalogue de l'API (RWEB_0021) : cache court puis revalidation par ETag,
+# demandé compressé comme par un navigateur (nginx rend alors l'ETag faible).
+check /api/use-cases "public, max-age=300"
+api_etag=$(curl -s -o /dev/null -D - -H "Accept-Encoding: gzip" "$BASE_URL/api/use-cases" \
+  | tr -d '\r' | awk -F': ' 'tolower($1) == "etag" { print $2 }')
+got=$(status_of -H "Accept-Encoding: gzip" -H "If-None-Match: $api_etag" "$BASE_URL/api/use-cases")
+if [ -n "$api_etag" ] && [ "$got" = "304" ]; then
+  echo "OK:   /api/use-cases revalidé sans renvoyer le catalogue (304)."
+else
+  echo "FAIL: /api/use-cases n'est pas revalidé en 304 (ETag '$api_etag', statut $got)." >&2
   status=1
 fi
 

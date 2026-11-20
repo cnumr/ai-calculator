@@ -1,52 +1,107 @@
 # Display names of the models used below, shown next to each profile
-# ("Éco (GPT-4o mini)"). Keys are EcoLogits model ids (or, for static
+# ("Éco (GPT-6 Luna)"). Keys are EcoLogits model ids (or, for image
 # profiles, the `model` they declare). Every model used must be listed.
 model_labels:
-  gpt-4o-mini: GPT-4o mini
-  gpt-4o: GPT-4o
-  gpt-4.1: GPT-4.1
+  gpt-6-luna: GPT-6 Luna
+  gpt-6.1-sol: GPT-6.1 Sol
+  gpt-6-astra: GPT-6 Astra
+  gpt-5.5-pro: GPT-5.5 Pro
   o4-mini-deep-research: o4-mini Deep Research
-  claude-haiku-4-5: Claude Haiku 4.5
-  claude-sonnet-4-5: Claude Sonnet 4.5
-  claude-opus-4-8: Claude Opus 4.8
-  ministral-8b-latest: Ministral 8B
+  claude-haiku-5-5: Claude Haiku 5.5
+  claude-sonnet-5-5: Claude Sonnet 5.5
+  claude-opus-5-5: Claude Opus 5.5
+  claude-fable-5-1: Claude Fable 5.1
   mistral-small-latest: Mistral Small
-  mistral-large-latest: Mistral Large
-  gemini-2.5-flash-lite: Gemini 2.5 Flash-Lite
-  gemini-2.5-flash: Gemini 2.5 Flash
-  gemini-2.5-pro: Gemini 2.5 Pro
+  mistral-medium-3-5: Mistral Medium 3.5
+  mistral-large-4: Mistral Large 4
+  gemini-3.5-flash-lite: Gemini 3.5 Flash-Lite
+  gemini-3.8-flash: Gemini 3.8 Flash
+  gemini-3.1-pro-preview: Gemini 3.1 Pro
+  gemini-pro-latest: Gemini Pro
   gemini-2.5-flash-image: Gemini 2.5 Flash Image
   dall-e-3: DALL·E 3
-  google/veo-3.0: Veo 3
-  google/veo-3.0-fast: Veo 3 Fast
+  google/veo-3.1: Veo 3.1
+  google/veo-3.1-fast: Veo 3.1 Fast
   openai/sora-2-pro: Sora 2 Pro
+# Text models shared by every text use case: provider -> profile -> model.
+# Profiles, from the lightest to the largest model (EcoLogits 0.11.3 sizes):
+#   eco       fast, small model
+#   balanced  standard model (recommended for new use cases)
+#   powerful  provider's large model
+#   flagship  provider's largest model ("Ultra"); Mistral has none above
+#             Mistral Large 4
+#   research  OpenAI deep-research model
+# Microsoft Copilot runs OpenAI models, and Anthropic ones for its largest
+# profiles. Changing a model here changes it for every text use case.
+text_models:
+  openai:
+    eco: {ecologits_provider: openai, ecologits_model: gpt-6-luna}
+    balanced: {ecologits_provider: openai, ecologits_model: gpt-6.1-sol}
+    powerful: {ecologits_provider: openai, ecologits_model: gpt-6-astra}
+    flagship: {ecologits_provider: openai, ecologits_model: gpt-5.5-pro}
+    research: {ecologits_provider: openai, ecologits_model: o4-mini-deep-research}
+  anthropic:
+    eco: {ecologits_provider: anthropic, ecologits_model: claude-haiku-5-5}
+    balanced: {ecologits_provider: anthropic, ecologits_model: claude-sonnet-5-5}
+    powerful: {ecologits_provider: anthropic, ecologits_model: claude-opus-5-5}
+    flagship: {ecologits_provider: anthropic, ecologits_model: claude-fable-5-1}
+  mistral:
+    eco: {ecologits_provider: mistralai, ecologits_model: mistral-small-latest}
+    balanced: {ecologits_provider: mistralai, ecologits_model: mistral-medium-3-5}
+    powerful: {ecologits_provider: mistralai, ecologits_model: mistral-large-4}
+  google:
+    eco: {ecologits_provider: google_genai, ecologits_model: gemini-3.5-flash-lite}
+    balanced: {ecologits_provider: google_genai, ecologits_model: gemini-3.8-flash}
+    powerful: {ecologits_provider: google_genai, ecologits_model: gemini-3.1-pro-preview}
+    flagship: {ecologits_provider: google_genai, ecologits_model: gemini-pro-latest}
+  microsoft_copilot:
+    eco: {ecologits_provider: openai, ecologits_model: gpt-6-luna}
+    balanced: {ecologits_provider: openai, ecologits_model: gpt-6.1-sol}
+    powerful: {ecologits_provider: anthropic, ecologits_model: claude-opus-5-5}
+    flagship: {ecologits_provider: anthropic, ecologits_model: claude-fable-5-1}
 providers:
   - id: openai
     selected_by_default: true
   - id: anthropic
-    selected_by_default: false
+    selected_by_default: true
   - id: mistral
-    selected_by_default: false
+    selected_by_default: true
   - id: google
     selected_by_default: true
   - id: microsoft_copilot
     selected_by_default: true
+# Families of use cases, in display order: the calculator lists use cases
+# under a heading per family (labels in frontend/src/i18n). Every use case
+# declares its family.
+families:
+  - id: writing
+  - id: analysis
+  - id: office
+  - id: visual
+  - id: development
 # Each use case declares its kind, which sets how its impacts are computed
 # and which parameters POST /api/calculate accepts for it:
-#   text  -> EcoLogits LLM (ecologits_model); output_tokens is the default
-#            tokens per action, which users can change
+#   text  -> EcoLogits LLM; offers every model of text_models above, and
+#            output_tokens is the default tokens per action (users can
+#            change it)
 #   video -> EcoLogits video (ecologits_video), resolution / duration / audio
-#   image -> static_impacts declared below, no parameter
+#   image -> transposed from a reference video (image_from_video), size
 use_cases:
   # Video: computed by EcoLogits (estimations.video) for one generated clip.
   # The user can change resolution, duration and audio: their options come
   # from each model's EcoLogits capabilities, and every combination is
   # precomputed at startup. `defaults` must be supported by the model.
-  # Reference clip: 8 s (offered by all three models), 720p, with audio. The
-  # datacenter is the model provider's EcoLogits configuration.
+  # Reference clip from the project methodology: Veo 3.1, 720p, 8 s, with
+  # audio (27.7-60.6 Wh with EcoLogits 0.11.3, as in the methodology). 8 s is
+  # offered by all three models (Veo 3.1 and 3.1 Fast: 4, 6 or 8 s; Sora 2
+  # Pro: 4, 8 or 12 s). The datacenter is the model provider's EcoLogits
+  # configuration.
+  # 4K is not offered: no EcoLogits 0.11.3 video model supports it (720p and
+  # 1080p at best), although the methodology lists it.
   # Replaces the POC V1 static value (veo-2, 377 g CO2eq, no published
   # source; veo-2 is not modelled by EcoLogits).
   - id: video
+    family: visual
     kind: video
     default_provider: google
     recommended_tier: video
@@ -55,14 +110,14 @@ use_cases:
         profiles:
           - id: video
             ecologits_video:
-              model: google/veo-3.0
+              model: google/veo-3.1
               defaults:
                 resolution: 720p
                 duration_s: 8
                 with_audio: true
           - id: video_fast
             ecologits_video:
-              model: google/veo-3.0-fast
+              model: google/veo-3.1-fast
               defaults:
                 resolution: 720p
                 duration_s: 8
@@ -76,15 +131,17 @@ use_cases:
                 resolution: 720p
                 duration_s: 8
                 with_audio: true
-  # Image: EcoLogits does not model image generation. These static values
-  # (per generated image, kg CO2eq and kg Sbeq) come from the POC V1
-  # (https://ia-calculator.greenit.eco, entries "gemini-2.5-flash-image" and
-  # "dall-e-3", 12 568 mg / 12 500 mg CO2eq), which cites no published source
-  # and states that they include a broader infrastructure estimate.
-  # Kept deliberately until a published source is adopted; the UI flags the
-  # missing source on the card (i18n key useCases.image.dataNote). Candidate
-  # source reviewed: Luccioni et al., "Power Hungry Processing" (FAccT 2024).
+  # Image: EcoLogits does not model image generation. Following the project
+  # methodology, the impacts of an image are those of a reference video clip
+  # computed by EcoLogits (Veo 3.1, 720p, 8 s, with audio: 27.7-60.6 Wh)
+  # divided by a factor per size, for every criterion. The factors match the
+  # energy per image of "The Hidden Cost of an Image" (arXiv 2506.17016):
+  # 1024x1024 about 1.5 Wh (reference / 30), 2048x2048 about 5 Wh
+  # (reference / 8). The same transposition applies to every provider: the
+  # study covers diffusion models in general, Veo 3.1 is only the reference.
+  # The profile keeps the name of the image model the user works with.
   - id: image
+    family: visual
     kind: image
     default_provider: google
     recommended_tier: image
@@ -93,503 +150,90 @@ use_cases:
         profiles:
           - id: image
             model: gemini-2.5-flash-image
-            static_impacts:
-              gwp:
-                min: 0.012568
-                max: 0.012568
-              adpe:
-                min: 2.7e-07
-                max: 2.7e-07
-              energy: null
-              water: null
-              pe: null
+            image_from_video: &image_from_video
+              reference:
+                model: google/veo-3.1
+                resolution: 720p
+                duration_s: 8
+                with_audio: true
+              size_divisors:
+                1024x1024: 30
+                2048x2048: 8
+              default_size: 1024x1024
       - provider_id: openai
         profiles:
           - id: image
             model: dall-e-3
-            static_impacts:
-              gwp:
-                min: 0.0125
-                max: 0.0125
-              adpe:
-                min: 2.68e-07
-                max: 2.68e-07
-              energy: null
-              water: null
-              pe: null
+            image_from_video: *image_from_video
+  # Output tokens per action from the project methodology: 5000 (5-page report, EcoLogits reference).
   - id: deep_research
+    family: analysis
     kind: text
     default_provider: openai
     recommended_tier: research
-    providers:
-      - provider_id: openai
-        profiles:
-          - id: eco
-            ecologits_provider: openai
-            ecologits_model: gpt-4o-mini
-            output_tokens: 200000
-          - id: balanced
-            ecologits_provider: openai
-            ecologits_model: gpt-4o
-            output_tokens: 200000
-          - id: powerful
-            ecologits_provider: openai
-            ecologits_model: gpt-4.1
-            output_tokens: 200000
-          - id: research
-            ecologits_provider: openai
-            ecologits_model: o4-mini-deep-research
-            output_tokens: 200000
-      - provider_id: anthropic
-        profiles:
-          - id: eco
-            ecologits_provider: anthropic
-            ecologits_model: claude-haiku-4-5
-            output_tokens: 200000
-          - id: balanced
-            ecologits_provider: anthropic
-            ecologits_model: claude-sonnet-4-5
-            output_tokens: 200000
-          - id: powerful
-            ecologits_provider: anthropic
-            ecologits_model: claude-opus-4-8
-            output_tokens: 200000
-      - provider_id: mistral
-        profiles:
-          - id: eco
-            ecologits_provider: mistralai
-            ecologits_model: ministral-8b-latest
-            output_tokens: 200000
-          - id: balanced
-            ecologits_provider: mistralai
-            ecologits_model: mistral-small-latest
-            output_tokens: 200000
-          - id: powerful
-            ecologits_provider: mistralai
-            ecologits_model: mistral-large-latest
-            output_tokens: 200000
-      - provider_id: google
-        profiles:
-          - id: eco
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-flash-lite
-            output_tokens: 200000
-          - id: balanced
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-flash
-            output_tokens: 200000
-          - id: powerful
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-pro
-            output_tokens: 200000
-      - provider_id: microsoft_copilot
-        profiles:
-          - id: eco
-            ecologits_provider: openai
-            ecologits_model: gpt-4o-mini
-            output_tokens: 200000
-          - id: balanced
-            ecologits_provider: openai
-            ecologits_model: gpt-4o
-            output_tokens: 200000
-          - id: powerful
-            ecologits_provider: anthropic
-            ecologits_model: claude-sonnet-4-5
-            output_tokens: 200000
+    output_tokens: 5000
   # id shortened from the design spec's "meeting_summary" to match the
   # pre-existing asset filename (assets/use-cases/meet_summary.svg)
+  # Output tokens per action from the project methodology: 1200 (1 to 2-page summary; range 800-2000).
   - id: meet_summary
+    family: analysis
     kind: text
     default_provider: microsoft_copilot
     recommended_tier: eco
-    providers:
-      - provider_id: openai
-        profiles:
-          - id: eco
-            ecologits_provider: openai
-            ecologits_model: gpt-4o-mini
-            output_tokens: 8000
-          - id: balanced
-            ecologits_provider: openai
-            ecologits_model: gpt-4o
-            output_tokens: 8000
-          - id: powerful
-            ecologits_provider: openai
-            ecologits_model: gpt-4.1
-            output_tokens: 8000
-          - id: research
-            ecologits_provider: openai
-            ecologits_model: o4-mini-deep-research
-            output_tokens: 8000
-      - provider_id: anthropic
-        profiles:
-          - id: eco
-            ecologits_provider: anthropic
-            ecologits_model: claude-haiku-4-5
-            output_tokens: 8000
-          - id: balanced
-            ecologits_provider: anthropic
-            ecologits_model: claude-sonnet-4-5
-            output_tokens: 8000
-          - id: powerful
-            ecologits_provider: anthropic
-            ecologits_model: claude-opus-4-8
-            output_tokens: 8000
-      - provider_id: mistral
-        profiles:
-          - id: eco
-            ecologits_provider: mistralai
-            ecologits_model: ministral-8b-latest
-            output_tokens: 8000
-          - id: balanced
-            ecologits_provider: mistralai
-            ecologits_model: mistral-small-latest
-            output_tokens: 8000
-          - id: powerful
-            ecologits_provider: mistralai
-            ecologits_model: mistral-large-latest
-            output_tokens: 8000
-      - provider_id: google
-        profiles:
-          - id: eco
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-flash-lite
-            output_tokens: 8000
-          - id: balanced
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-flash
-            output_tokens: 8000
-          - id: powerful
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-pro
-            output_tokens: 8000
-      - provider_id: microsoft_copilot
-        profiles:
-          - id: eco
-            ecologits_provider: openai
-            ecologits_model: gpt-4o-mini
-            output_tokens: 8000
-          - id: balanced
-            ecologits_provider: openai
-            ecologits_model: gpt-4o
-            output_tokens: 8000
-          - id: powerful
-            ecologits_provider: anthropic
-            ecologits_model: claude-sonnet-4-5
-            output_tokens: 8000
+    output_tokens: 1200
+  # Output tokens per action from the project methodology: 2000 (2-page summary; range 1500-3000).
   - id: doc_small
+    family: writing
     kind: text
     default_provider: openai
     recommended_tier: eco
-    providers:
-      - provider_id: openai
-        profiles:
-          - id: eco
-            ecologits_provider: openai
-            ecologits_model: gpt-4o-mini
-            output_tokens: 3000
-          - id: balanced
-            ecologits_provider: openai
-            ecologits_model: gpt-4o
-            output_tokens: 3000
-          - id: powerful
-            ecologits_provider: openai
-            ecologits_model: gpt-4.1
-            output_tokens: 3000
-          - id: research
-            ecologits_provider: openai
-            ecologits_model: o4-mini-deep-research
-            output_tokens: 3000
-      - provider_id: anthropic
-        profiles:
-          - id: eco
-            ecologits_provider: anthropic
-            ecologits_model: claude-haiku-4-5
-            output_tokens: 3000
-          - id: balanced
-            ecologits_provider: anthropic
-            ecologits_model: claude-sonnet-4-5
-            output_tokens: 3000
-          - id: powerful
-            ecologits_provider: anthropic
-            ecologits_model: claude-opus-4-8
-            output_tokens: 3000
-      - provider_id: mistral
-        profiles:
-          - id: eco
-            ecologits_provider: mistralai
-            ecologits_model: ministral-8b-latest
-            output_tokens: 3000
-          - id: balanced
-            ecologits_provider: mistralai
-            ecologits_model: mistral-small-latest
-            output_tokens: 3000
-          - id: powerful
-            ecologits_provider: mistralai
-            ecologits_model: mistral-large-latest
-            output_tokens: 3000
-      - provider_id: google
-        profiles:
-          - id: eco
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-flash-lite
-            output_tokens: 3000
-          - id: balanced
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-flash
-            output_tokens: 3000
-          - id: powerful
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-pro
-            output_tokens: 3000
-      - provider_id: microsoft_copilot
-        profiles:
-          - id: eco
-            ecologits_provider: openai
-            ecologits_model: gpt-4o-mini
-            output_tokens: 3000
-          - id: balanced
-            ecologits_provider: openai
-            ecologits_model: gpt-4o
-            output_tokens: 3000
-          - id: powerful
-            ecologits_provider: anthropic
-            ecologits_model: claude-sonnet-4-5
-            output_tokens: 3000
+    output_tokens: 2000
+  # Output tokens per action from the project methodology: 5000 (5-page summary, EcoLogits reference).
   - id: doc_large
+    family: writing
     kind: text
     default_provider: openai
     recommended_tier: balanced
-    providers:
-      - provider_id: openai
-        profiles:
-          - id: eco
-            ecologits_provider: openai
-            ecologits_model: gpt-4o-mini
-            output_tokens: 15000
-          - id: balanced
-            ecologits_provider: openai
-            ecologits_model: gpt-4o
-            output_tokens: 15000
-          - id: powerful
-            ecologits_provider: openai
-            ecologits_model: gpt-4.1
-            output_tokens: 15000
-          - id: research
-            ecologits_provider: openai
-            ecologits_model: o4-mini-deep-research
-            output_tokens: 15000
-      - provider_id: anthropic
-        profiles:
-          - id: eco
-            ecologits_provider: anthropic
-            ecologits_model: claude-haiku-4-5
-            output_tokens: 15000
-          - id: balanced
-            ecologits_provider: anthropic
-            ecologits_model: claude-sonnet-4-5
-            output_tokens: 15000
-          - id: powerful
-            ecologits_provider: anthropic
-            ecologits_model: claude-opus-4-8
-            output_tokens: 15000
-      - provider_id: mistral
-        profiles:
-          - id: eco
-            ecologits_provider: mistralai
-            ecologits_model: ministral-8b-latest
-            output_tokens: 15000
-          - id: balanced
-            ecologits_provider: mistralai
-            ecologits_model: mistral-small-latest
-            output_tokens: 15000
-          - id: powerful
-            ecologits_provider: mistralai
-            ecologits_model: mistral-large-latest
-            output_tokens: 15000
-      - provider_id: google
-        profiles:
-          - id: eco
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-flash-lite
-            output_tokens: 15000
-          - id: balanced
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-flash
-            output_tokens: 15000
-          - id: powerful
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-pro
-            output_tokens: 15000
-      - provider_id: microsoft_copilot
-        profiles:
-          - id: eco
-            ecologits_provider: openai
-            ecologits_model: gpt-4o-mini
-            output_tokens: 15000
-          - id: balanced
-            ecologits_provider: openai
-            ecologits_model: gpt-4o
-            output_tokens: 15000
-          - id: powerful
-            ecologits_provider: anthropic
-            ecologits_model: claude-sonnet-4-5
-            output_tokens: 15000
+    output_tokens: 5000
+  # Output tokens per action from the project methodology: 2000 (8 to 12 slides with titles, key messages, bullets, notes and layout instructions).
+  - id: slides
+    family: office
+    kind: text
+    default_provider: google
+    recommended_tier: balanced
+    output_tokens: 2000
+  # Output tokens per action from the project methodology: 2500 (20 to 100-row table with headers, formulas, checks, comments; range 1000-5000).
+  - id: spreadsheet
+    family: office
+    kind: text
+    default_provider: microsoft_copilot
+    recommended_tier: balanced
+    output_tokens: 2500
+  # Output tokens per action from the project methodology: 250 (about 200-word answer, EcoLogits reference).
   - id: ai_query
+    family: analysis
     kind: text
     default_provider: google
     recommended_tier: eco
-    providers:
-      - provider_id: openai
-        profiles:
-          - id: eco
-            ecologits_provider: openai
-            ecologits_model: gpt-4o-mini
-            output_tokens: 1000
-          - id: balanced
-            ecologits_provider: openai
-            ecologits_model: gpt-4o
-            output_tokens: 1000
-          - id: powerful
-            ecologits_provider: openai
-            ecologits_model: gpt-4.1
-            output_tokens: 1000
-          - id: research
-            ecologits_provider: openai
-            ecologits_model: o4-mini-deep-research
-            output_tokens: 1000
-      - provider_id: anthropic
-        profiles:
-          - id: eco
-            ecologits_provider: anthropic
-            ecologits_model: claude-haiku-4-5
-            output_tokens: 1000
-          - id: balanced
-            ecologits_provider: anthropic
-            ecologits_model: claude-sonnet-4-5
-            output_tokens: 1000
-          - id: powerful
-            ecologits_provider: anthropic
-            ecologits_model: claude-opus-4-8
-            output_tokens: 1000
-      - provider_id: mistral
-        profiles:
-          - id: eco
-            ecologits_provider: mistralai
-            ecologits_model: ministral-8b-latest
-            output_tokens: 1000
-          - id: balanced
-            ecologits_provider: mistralai
-            ecologits_model: mistral-small-latest
-            output_tokens: 1000
-          - id: powerful
-            ecologits_provider: mistralai
-            ecologits_model: mistral-large-latest
-            output_tokens: 1000
-      - provider_id: google
-        profiles:
-          - id: eco
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-flash-lite
-            output_tokens: 1000
-          - id: balanced
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-flash
-            output_tokens: 1000
-          - id: powerful
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-pro
-            output_tokens: 1000
-      - provider_id: microsoft_copilot
-        profiles:
-          - id: eco
-            ecologits_provider: openai
-            ecologits_model: gpt-4o-mini
-            output_tokens: 1000
-          - id: balanced
-            ecologits_provider: openai
-            ecologits_model: gpt-4o
-            output_tokens: 1000
-          - id: powerful
-            ecologits_provider: anthropic
-            ecologits_model: claude-sonnet-4-5
-            output_tokens: 1000
+    output_tokens: 250
+  # Output tokens per action from the project methodology: 300 (100 to 250 words; range 150-500).
   - id: email
+    family: writing
     kind: text
     default_provider: microsoft_copilot
     recommended_tier: eco
-    providers:
-      - provider_id: openai
-        profiles:
-          - id: eco
-            ecologits_provider: openai
-            ecologits_model: gpt-4o-mini
-            output_tokens: 300
-          - id: balanced
-            ecologits_provider: openai
-            ecologits_model: gpt-4o
-            output_tokens: 300
-          - id: powerful
-            ecologits_provider: openai
-            ecologits_model: gpt-4.1
-            output_tokens: 300
-          - id: research
-            ecologits_provider: openai
-            ecologits_model: o4-mini-deep-research
-            output_tokens: 300
-      - provider_id: anthropic
-        profiles:
-          - id: eco
-            ecologits_provider: anthropic
-            ecologits_model: claude-haiku-4-5
-            output_tokens: 300
-          - id: balanced
-            ecologits_provider: anthropic
-            ecologits_model: claude-sonnet-4-5
-            output_tokens: 300
-          - id: powerful
-            ecologits_provider: anthropic
-            ecologits_model: claude-opus-4-8
-            output_tokens: 300
-      - provider_id: mistral
-        profiles:
-          - id: eco
-            ecologits_provider: mistralai
-            ecologits_model: ministral-8b-latest
-            output_tokens: 300
-          - id: balanced
-            ecologits_provider: mistralai
-            ecologits_model: mistral-small-latest
-            output_tokens: 300
-          - id: powerful
-            ecologits_provider: mistralai
-            ecologits_model: mistral-large-latest
-            output_tokens: 300
-      - provider_id: google
-        profiles:
-          - id: eco
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-flash-lite
-            output_tokens: 300
-          - id: balanced
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-flash
-            output_tokens: 300
-          - id: powerful
-            ecologits_provider: google_genai
-            ecologits_model: gemini-2.5-pro
-            output_tokens: 300
-      - provider_id: microsoft_copilot
-        profiles:
-          - id: eco
-            ecologits_provider: openai
-            ecologits_model: gpt-4o-mini
-            output_tokens: 300
-          - id: balanced
-            ecologits_provider: openai
-            ecologits_model: gpt-4o
-            output_tokens: 300
-          - id: powerful
-            ecologits_provider: anthropic
-            ecologits_model: claude-sonnet-4-5
-            output_tokens: 300
+    output_tokens: 300
+  # Output tokens per action from the project methodology: 1000 (detailed email, 300 to 900 words; range 500-1800).
+  - id: email_long
+    family: writing
+    kind: text
+    default_provider: microsoft_copilot
+    recommended_tier: balanced
+    output_tokens: 1000
+  # Output tokens per action from the project methodology: 100000 (autonomous agentic coding session).
+  - id: dev_assistance
+    family: development
+    kind: text
+    default_provider: anthropic
+    recommended_tier: balanced
+    output_tokens: 100000

@@ -11,7 +11,7 @@ def test_get_use_cases_returns_200_with_providers_and_use_cases():
     assert response.status_code == 200
     body = response.json()
     assert len(body["providers"]) == 5
-    assert len(body["use_cases"]) == 8
+    assert len(body["use_cases"]) == 12
     email = next(uc for uc in body["use_cases"] if uc["id"] == "email")
     assert email["default_provider"] == "microsoft_copilot"
     assert email["recommended_tier"] == "eco"
@@ -22,9 +22,8 @@ def test_get_use_cases_reflects_selected_by_default():
 
     body = response.json()
     providers_by_id = {p["id"]: p for p in body["providers"]}
-    assert providers_by_id["openai"]["selected_by_default"] is True
-    assert providers_by_id["anthropic"]["selected_by_default"] is False
-    assert providers_by_id["mistral"]["selected_by_default"] is False
+    # Every provider is offered by default; users deselect the ones they do not use.
+    assert all(provider["selected_by_default"] for provider in providers_by_id.values())
 
 
 def test_get_use_cases_omits_unsupported_provider_combinations():
@@ -58,7 +57,7 @@ def test_get_use_cases_serialises_video_parameters():
 
     assert profile["parameters"] == [
         {"id": "resolution", "default": "720p", "options": ["720p", "1080p"], "min": None, "max": None},
-        {"id": "duration_s", "default": 8, "options": [5, 8, 10], "min": None, "max": None},
+        {"id": "duration_s", "default": 8, "options": [4, 6, 8], "min": None, "max": None},
         {"id": "with_audio", "default": True, "options": [True, False], "min": None, "max": None},
     ]
 
@@ -81,7 +80,7 @@ def test_get_use_cases_exposes_profile_model_names():
     email = next(uc for uc in body["use_cases"] if uc["id"] == "email")
     openai = next(p for p in email["providers"] if p["provider_id"] == "openai")
     eco = next(p for p in openai["profiles"] if p["id"] == "eco")
-    assert eco["models"] == ["GPT-4o mini"]
+    assert eco["models"] == ["GPT-6 Luna"]
 
 
 def test_get_use_cases_declares_the_kind_of_each_use_case():
@@ -111,7 +110,10 @@ def test_get_use_cases_exposes_the_methodological_source():
     assert sources["email"]["url"].startswith("https://ecologits.ai/")
     assert sources["email"]["version"]
     assert sources["video"]["id"] == "ecologits_video"
-    assert sources["image"] == {"id": "unsourced", "version": None, "url": None}
+    # Images are transposed from an EcoLogits video, described in the methodology page.
+    assert sources["image"]["id"] == "image_from_video"
+    assert sources["image"]["version"] == sources["video"]["version"]
+    assert sources["image"]["url"] == "/methodologie#images"
 
 
 def test_get_use_cases_lists_the_data_sources_and_their_versions():
@@ -121,3 +123,50 @@ def test_get_use_cases_lists_the_data_sources_and_their_versions():
     assert set(sources) == {"ecologits", "impactco2"}
     assert sources["ecologits"]["version"]
     assert sources["impactco2"]["retrieved_on"]
+
+
+def test_get_use_cases_lists_families_and_the_family_of_each_use_case():
+    body = client.get("/api/use-cases").json()
+
+    assert [f["id"] for f in body["families"]] == [
+        "writing", "analysis", "office", "visual", "development"
+    ]
+    families = {uc["id"]: uc["family"] for uc in body["use_cases"]}
+    assert families["email"] == "writing"
+    assert families["video"] == "visual"
+    assert families["dev_assistance"] == "development"
+
+
+def test_get_use_cases_is_cacheable_with_a_short_max_age_and_an_etag():
+    response = client.get("/api/use-cases")
+
+    assert response.headers["cache-control"] == "public, max-age=300"
+    etag = response.headers["etag"]
+    assert etag.startswith('"') and etag.endswith('"')
+    assert client.get("/api/use-cases").headers["etag"] == etag
+
+
+def test_get_use_cases_answers_304_without_body_when_the_etag_matches():
+    etag = client.get("/api/use-cases").headers["etag"]
+
+    response = client.get("/api/use-cases", headers={"If-None-Match": etag})
+
+    assert response.status_code == 304
+    assert response.content == b""
+    assert response.headers["etag"] == etag
+    assert response.headers["cache-control"] == "public, max-age=300"
+
+
+def test_get_use_cases_accepts_the_weak_etag_set_by_nginx_compression():
+    etag = client.get("/api/use-cases").headers["etag"]
+
+    response = client.get("/api/use-cases", headers={"If-None-Match": f'"other", W/{etag}'})
+
+    assert response.status_code == 304
+
+
+def test_get_use_cases_returns_the_catalogue_when_the_etag_differs():
+    response = client.get("/api/use-cases", headers={"If-None-Match": '"stale"'})
+
+    assert response.status_code == 200
+    assert len(response.json()["use_cases"]) == 12

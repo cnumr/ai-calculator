@@ -35,7 +35,8 @@ const EMAIL: UseCase = {
 const state = (overrides: Partial<CardState> = {}): CardState => ({
   providerId: "google",
   profileId: "eco",
-  frequencyPerDay: 1,
+  frequency: 1,
+  frequencyUnit: "day",
   parameters: {},
   ...overrides,
 });
@@ -121,7 +122,7 @@ describe("resolveParameters with a free integer", () => {
 describe("buildCalculateRequest", () => {
   const states = {
     video: state({ profileId: "video", parameters: { resolution: "1080p" } }),
-    email: state({ frequencyPerDay: 3 }),
+    email: state({ frequency: 3, frequencyUnit: "week" }),
   };
 
   it("sends one usage per card, with its kind and frequency", () => {
@@ -135,7 +136,8 @@ describe("buildCalculateRequest", () => {
           useCaseId: "video",
           providerId: "google",
           profileId: "video",
-          frequencyPerDay: 1,
+          frequency: 1,
+          frequencyUnit: "day",
           parameters: { resolution: "1080p", duration_s: 8 },
         },
         {
@@ -143,7 +145,8 @@ describe("buildCalculateRequest", () => {
           useCaseId: "email",
           providerId: "google",
           profileId: "eco",
-          frequencyPerDay: 3,
+          frequency: 3,
+          frequencyUnit: "week",
           parameters: {},
         },
       ],
@@ -189,12 +192,12 @@ describe("buildCalculateRequest", () => {
   it("never sends a negative or invalid frequency", () => {
     const request = buildCalculateRequest(
       [EMAIL],
-      { email: state({ frequencyPerDay: Number.NaN }) },
+      { email: state({ frequency: Number.NaN }) },
       ["google"],
       1,
     );
 
-    expect(request.usages[0].frequencyPerDay).toBe(0);
+    expect(request.usages[0].frequency).toBe(0);
   });
 });
 
@@ -204,7 +207,8 @@ describe("isUsageResultCurrent", () => {
     useCaseId: "video",
     providerId: "google",
     profileId: "video",
-    frequencyPerDay: 2,
+    frequency: 2,
+    frequencyUnit: "week",
     parameters: { resolution: "1080p" },
   };
   const ZERO = { min: 0, max: 0 };
@@ -213,7 +217,9 @@ describe("isUsageResultCurrent", () => {
     useCaseId: "video",
     providerId: "google",
     profileId: "video",
-    frequencyPerDay: 2,
+    frequency: 2,
+    frequencyUnit: "week",
+    frequencyPerDay: 0.4,
     parameters: { resolution: "1080p", duration_s: 8 },
     unitImpacts: impacts,
     dailyImpacts: impacts,
@@ -227,7 +233,8 @@ describe("isUsageResultCurrent", () => {
   it.each([
     ["provider", { providerId: "openai" }],
     ["profile", { profileId: "video_fast" }],
-    ["frequency", { frequencyPerDay: 3 }],
+    ["frequency", { frequency: 3 }],
+    ["frequency unit", { frequencyUnit: "month" as const }],
     ["parameter", { parameters: { resolution: "720p" } }],
   ])("is stale when the %s changed", (_, change) => {
     expect(isUsageResultCurrent({ ...usage, ...change }, result)).toBe(false);

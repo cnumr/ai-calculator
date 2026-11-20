@@ -14,33 +14,58 @@ test("shows use-case cards in a single column", async ({ page }) => {
   expect(secondCard!.y).toBeGreaterThan(firstCard!.y);
 });
 
-test("puts provider, profile and frequency on one row, with results below", async ({
+test("lists use cases as compact rows grouped by family, configuration on demand", async ({
   page,
 }) => {
   await page.goto("/");
 
+  // One heading per family, in the catalogue order.
+  const families = page.locator(".use-case-family__title");
+  await expect(families).toHaveText([
+    /rédaction|writing/i,
+    /analyse|analysis/i,
+    /bureautique|office/i,
+    /visuelle|visual/i,
+    /développement|development/i,
+  ]);
+
+  // Frequency and results on the row, vertically centred together.
   const card = page.locator(".use-case-card").first();
-  await expect(card).toBeVisible();
-  const provider = card.getByLabel(/fournisseur|provider/i);
-  const profile = card.getByLabel(/profil|profile/i);
-  const frequency = card.getByLabel(/fréquence|frequency/i);
-  const selects = card.locator(".use-case-card__selects");
-  const results = card.locator(".use-case-card__results");
-
-  const [providerBox, profileBox, frequencyBox, selectsBox, resultsBox] =
-    await Promise.all(
-      [provider, profile, frequency, selects, results].map((l) => l.boundingBox()),
-    );
-
-  // Same line (vertically centred together), left to right.
+  const frequency = card.getByLabel(/^(fréquence moyenne|average frequency)$/i);
+  const results = card.locator(".use-case-card__summary");
+  const [frequencyBox, resultsBox] = await Promise.all(
+    [frequency, results].map((l) => l.boundingBox()),
+  );
   const middle = (box: { y: number; height: number } | null) => box!.y + box!.height / 2;
-  expect(Math.abs(middle(profileBox) - middle(providerBox))).toBeLessThan(3);
-  expect(Math.abs(middle(frequencyBox) - middle(providerBox))).toBeLessThan(3);
-  expect(profileBox!.x).toBeGreaterThan(providerBox!.x);
-  expect(frequencyBox!.x).toBeGreaterThan(profileBox!.x);
-  // Results below the selection row, as wide as it.
-  expect(resultsBox!.y).toBeGreaterThan(selectsBox!.y + selectsBox!.height);
-  expect(Math.abs(resultsBox!.width - selectsBox!.width)).toBeLessThan(2);
+  expect(Math.abs(middle(resultsBox) - middle(frequencyBox))).toBeLessThan(8);
+  expect(resultsBox!.x).toBeGreaterThan(frequencyBox!.x);
+  // The column titles sit right above the use case, the frequency and the
+  // results; the "Only my usages" filter is on its own line above them.
+  const titles = page.locator(".use-case-catalog__columns > span");
+  const [useCaseTitle, frequencyTitle, impactTitle] = await Promise.all(
+    [titles.nth(0), titles.nth(1), titles.nth(2)].map((l) => l.boundingBox()),
+  );
+  const filter = await page.locator(".use-case-catalog__filter").boundingBox();
+  expect(filter!.y + filter!.height).toBeLessThanOrEqual(useCaseTitle!.y);
+  // Its text starts where the card titles do.
+  const useCaseTitleTextX = await titles.nth(0).evaluate((el) => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    return range.getBoundingClientRect().x;
+  });
+  const cardTitle = await card.locator("h4").boundingBox();
+  expect(Math.abs(useCaseTitleTextX - cardTitle!.x)).toBeLessThan(2);
+  const frequencyCell = await card.locator(".use-case-card__frequency").boundingBox();
+  expect(Math.abs(frequencyTitle!.x - frequencyCell!.x)).toBeLessThan(2);
+  expect(Math.abs(impactTitle!.x - resultsBox!.x)).toBeLessThan(2);
+  // A compact row: well under the former ~340 px card.
+  expect((await card.boundingBox())!.height).toBeLessThan(100);
+
+  // Provider and profile appear once "Configure" is opened.
+  await expect(card.getByLabel(/fournisseur|provider/i)).toHaveCount(0);
+  await card.getByRole("button", { name: /^(configurer|configure) –/i }).click();
+  await expect(card.getByLabel(/fournisseur|provider/i)).toBeVisible();
+  await expect(card.getByLabel(/profil|profile/i)).toBeVisible();
 });
 
 test("calculator: impacts come from POST /api/calculate and follow the cards", async ({
@@ -52,9 +77,11 @@ test("calculator: impacts come from POST /api/calculate and follow the cards", a
   await page.goto("/");
   expect((await firstCalculation).ok()).toBe(true);
 
-  const firstCard = page.locator(".use-case-card").first();
-  await expect(firstCard).toBeVisible();
-  const openaiChip = page.getByRole("button", { name: /openai/i });
+  const videoCard = page.locator(".use-case-card", {
+    has: page.getByRole("heading", { name: /génération de vidéos|video generation/i }),
+  });
+  await expect(videoCard).toBeVisible();
+  const openaiChip = page.getByRole("button", { name: /^openai/i });
   await expect(openaiChip).toHaveAttribute("aria-pressed", "true");
 
   const individualTotal = page.locator(".gwp-summary__value").first();
@@ -65,18 +92,20 @@ test("calculator: impacts come from POST /api/calculate and follow the cards", a
   const recalculation = page.waitForResponse(
     (r) => r.url().endsWith("/api/calculate") && r.request().method() === "POST",
   );
-  await firstCard.getByLabel(/fréquence|frequency/i).fill("5");
+  await videoCard.getByLabel(/^(fréquence moyenne|average frequency)$/i).fill("5");
   const request = (await recalculation).request().postDataJSON();
-  expect(request.usages[0].frequency_per_day).toBe(5);
+  const video = request.usages.find((u: { use_case_id: string }) => u.use_case_id === "video");
+  expect(video.frequency).toBe(5);
+  expect(video.frequency_unit).toBe("day");
   await expect(individualTotal).not.toHaveText(before!);
 
-  const impactDetails = firstCard.locator(".use-case-card__details").last();
-  await impactDetails
-    .getByText(/voir\/masquer le détail|show\/hide the impact details/i)
-    .click();
-  await expect(impactDetails).toHaveAttribute("open", "");
+  // The impact details are in the "See more" panel.
+  await videoCard.getByRole("button", { name: /^(voir plus|see more) –/i }).click();
+  await expect(videoCard.locator(".use-case-card__impacts .range-gauge")).toHaveCount(5);
 
-  const anthropicChip = page.getByRole("button", { name: /anthropic/i });
-  await anthropicChip.click();
+  const anthropicChip = page.getByRole("button", { name: /^anthropic/i });
+  // Every provider is selected by default: a click deselects it.
   await expect(anthropicChip).toHaveAttribute("aria-pressed", "true");
+  await anthropicChip.click();
+  await expect(anthropicChip).toHaveAttribute("aria-pressed", "false");
 });

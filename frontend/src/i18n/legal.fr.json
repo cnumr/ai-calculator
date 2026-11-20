@@ -1,0 +1,50 @@
+{
+  "title": "Mentions légales",
+  "updated": "Dernière mise à jour : novembre 2026",
+  "publisher": {
+    "title": "Éditeur",
+    "intro": "Le calculateur d'impacts de l'IA générative est édité par :",
+    "name": "Association Green IT – association loi 1901",
+    "ids": "SIREN : 923 875 744 · N° RNA : W595 040 531",
+    "office": "Siège (SIRET 923 875 744 00032) : 7 rue Pierre Brossolette, 94130 Nogent-sur-Marne",
+    "phone": "Téléphone : 06 16 19 22 73",
+    "contact": "Contact : <anchor>formulaire de contact de l'association</anchor>",
+    "director": "Directeur de la publication : Renaud Héluin, président de l'association."
+  },
+  "host": {
+    "title": "Hébergement",
+    "body": "Le site est servi par un serveur de l'association Green IT, hébergé par Infomaniak Network SA, Rue Eugène-Marziano 25, 1227 Les Acacias (GE), Suisse — <anchor>www.infomaniak.com</anchor>."
+  },
+  "design": {
+    "title": "Conception et code source",
+    "body": "Le calculateur est conçu et développé par des bénévoles du Collectif Conception Numérique Responsable. Son code source est ouvert et publié sur <anchor>GitHub</anchor>."
+  },
+  "ip": {
+    "title": "Propriété intellectuelle et réutilisation",
+    "code": "Le code source du site, textes compris, est publié sous licence MIT (© Collectif Conception Numérique Responsable) : vous pouvez le réutiliser librement, en conservant cette mention.",
+    "data": "Les impacts sont calculés avec la bibliothèque EcoLogits (licence MPL-2.0) et les équivalences avec les facteurs d'ImpactCO2 de l'ADEME. Ces données restent la propriété de leurs auteurs ; leurs sources sont détaillées dans la <anchor>méthodologie</anchor>.",
+    "fonts": "Les polices Inter, Fraunces et IBM Plex Mono sont distribuées sous licence SIL Open Font License 1.1.",
+    "brands": "Les noms et marques des fournisseurs d'IA cités (OpenAI, Anthropic, Google, Mistral AI, Microsoft…) appartiennent à leurs propriétaires. Le calculateur n'est affilié à aucun d'eux."
+  },
+  "results": {
+    "title": "Portée des résultats",
+    "body": "Les résultats sont des estimations, données en fourchettes, à des fins de sensibilisation et d'aide à la décision. Ils reposent sur des hypothèses (modèles, nombre de tokens, fréquences d'usage) et sur des données publiques, décrites dans la <anchor>méthodologie</anchor>. Ils ne constituent ni un bilan d'émissions réglementaire, ni une mesure des consommations réelles d'un fournisseur. L'association Green IT ne saurait être tenue responsable des décisions prises sur leur seule base."
+  },
+  "privacy": {
+    "title": "Données personnelles",
+    "none": "Le calculateur ne demande aucun compte, ne dépose aucun cookie et n'utilise aucun outil de mesure d'audience, de publicité ou de réseau social. Toutes ses ressources, polices comprises, sont servies par le site lui-même : votre navigateur ne contacte aucun service tiers.",
+    "inputs": "Vos saisies (fournisseurs, cas d'usage, fréquences, nombre de salariés) sont envoyées au serveur pour le calcul. Elles ne vous identifient pas et ne sont ni enregistrées ni conservées.",
+    "storage": "Deux préférences sont gardées dans votre navigateur (stockage local) : la langue choisie et le fait d'avoir déjà suivi la visite guidée. Elles restent sur votre appareil, ne sont jamais transmises et s'effacent avec les données du site dans votre navigateur. Nécessaires au fonctionnement que vous demandez, elles ne requièrent pas de consentement.",
+    "logs": "Comme tout serveur web, le serveur enregistre des journaux techniques : adresse IP, date et heure, ressource demandée et type de navigateur. Ils servent uniquement à la sécurité et au bon fonctionnement du site (intérêt légitime de l'association), ne sont accessibles qu'aux administrateurs du serveur et sont supprimés automatiquement au terme d'une durée limitée. Ils sont hébergés en Suisse, pays reconnu par la Commission européenne comme offrant un niveau de protection adéquat.",
+    "rights": "Le responsable de traitement est l'association Green IT. Vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation et d'opposition, que vous pouvez exercer via le <anchor>formulaire de contact de l'association</anchor>. Vous pouvez aussi adresser une réclamation à la <cnil>CNIL</cnil>."
+  },
+  "links": {
+    "title": "Liens externes",
+    "body": "Le site renvoie vers d'autres sites (ImpactCO2, EcoLogits, GitHub…). Leur contenu et leurs pratiques en matière de données relèvent de leurs éditeurs."
+  },
+  "contact": {
+    "title": "Nous contacter",
+    "privacy": "Pour une question sur vos données ou sur ces mentions : <anchor>formulaire de contact de l'association</anchor>.",
+    "issues": "Pour signaler une erreur ou proposer une amélioration du calculateur : <anchor>issues du projet sur GitHub</anchor>. Ces échanges sont publics : n'y indiquez pas de données personnelles."
+  }
+}

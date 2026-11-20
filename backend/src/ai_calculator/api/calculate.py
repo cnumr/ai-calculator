@@ -14,7 +14,6 @@ from ai_calculator.schemas.calculate import (
     ProviderShareOut,
     UsageIn,
     UsageOut,
-    ImageUsageIn,
 )
 from ai_calculator.schemas.impacts import to_impacts_out
 
@@ -22,17 +21,14 @@ router = APIRouter()
 
 
 def _to_usage_input(usage: UsageIn) -> UsageInput:
-    parameters = (
-        {}
-        if isinstance(usage, ImageUsageIn)
-        else usage.parameters.model_dump(exclude_none=True)
-    )
+    parameters = usage.parameters.model_dump(exclude_none=True)
     return UsageInput(
         kind=usage.kind,
         use_case_id=usage.use_case_id,
         provider_id=usage.provider_id,
         profile_id=usage.profile_id,
-        frequency_per_day=usage.frequency_per_day,
+        frequency=usage.frequency,
+        frequency_unit=usage.frequency_unit,
         parameters=parameters,
     )
 
@@ -45,6 +41,8 @@ def _to_response(result: ScenarioResult) -> CalculateResponse:
                 use_case_id=u.use_case_id,
                 provider_id=u.provider_id,
                 profile_id=u.profile_id,
+                frequency=u.frequency,
+                frequency_unit=u.frequency_unit,
                 frequency_per_day=u.frequency_per_day,
                 parameters=u.parameters,
                 unit_impacts=to_impacts_out(u.unit_impacts),
