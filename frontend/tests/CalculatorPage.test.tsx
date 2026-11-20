@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import i18next from "../src/i18n";
 import { CalculatorPage } from "../src/pages/CalculatorPage";
+import { MemoryRouter } from "react-router-dom";
 import * as apiClient from "../src/api/client";
 import type {
   CalculateRequest,
@@ -529,5 +530,61 @@ describe("CalculatorPage keeps the scenario consistent with the cards", () => {
       expect(document.querySelector(".provider-breakdown ul")).toHaveTextContent("OpenAI"),
     );
     expect(document.querySelector(".provider-breakdown ul")).not.toHaveTextContent("Google");
+  });
+});
+
+describe("CalculatorPage guided tour", () => {
+  beforeEach(() => localStorage.removeItem("ai-calculator-tour-seen"));
+
+  async function renderWithRouter() {
+    render(
+      <MemoryRouter>
+        <CalculatorPage />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(individualSummary()).toBe("0 kg CO2eq"));
+  }
+
+  it("invites to the tour, loads it on click only, and stops inviting once left", async () => {
+    const user = userEvent.setup();
+    await renderWithRouter();
+    const calls = mockedCalculate.mock.calls.length;
+
+    const button = screen.getByRole("button", {
+      name: /^Guided tour\s*\(recommended for a first visit\)$/,
+    });
+    expect(button).toHaveClass("calculator-tour-button--invite");
+    // Not loaded before the click (RWEB_0046).
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    await user.click(button);
+    const dialog = await screen.findByRole("dialog", { name: "1 / 8 Your AI ecosystem" });
+    // The tour outlines the real providers.
+    expect(document.querySelector('[data-tour="ecosystem"]')).toHaveAttribute("data-tour-active");
+
+    await user.click(within(dialog).getByRole("button", { name: "Next" }));
+    // On the short email card.
+    expect(
+      card(/writing a short email/i).querySelector('[data-tour="configure"]'),
+    ).toHaveAttribute("data-tour-active");
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(document.querySelector("[data-tour-active]")).toBeNull();
+    expect(button).toHaveFocus();
+    expect(button).toHaveAccessibleName("Guided tour");
+    expect(button).not.toHaveClass("calculator-tour-button--invite");
+    expect(localStorage.getItem("ai-calculator-tour-seen")).toBe("1");
+    // The tour tells about the scenario, it does not change it.
+    expect(mockedCalculate.mock.calls.length).toBe(calls);
+  });
+
+  it("no longer invites once the tour has been seen in this browser", async () => {
+    localStorage.setItem("ai-calculator-tour-seen", "1");
+    await renderWithRouter();
+
+    expect(screen.getByRole("button", { name: "Guided tour" })).not.toHaveClass(
+      "calculator-tour-button--invite",
+    );
   });
 });

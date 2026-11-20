@@ -135,6 +135,8 @@
     "errorCatalogLoad": "Could not load the use case catalogue.",
     "retry": "Retry",
     "reset": "Reset",
+    "tour": "Guided tour",
+    "tourInvite": "(recommended for a first visit)",
     "co2Equivalent": {
       "car_km": "{{value}} km by car",
       "streaming_hour_one": "{{value}} hour of video streaming",

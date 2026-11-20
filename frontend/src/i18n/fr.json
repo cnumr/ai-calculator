@@ -135,6 +135,8 @@
     "errorCatalogLoad": "Impossible de charger le catalogue de cas d'usage.",
     "retry": "Réessayer",
     "reset": "Réinitialiser",
+    "tour": "Visite guidée",
+    "tourInvite": "(recommandée pour une première visite)",
     "co2Equivalent": {
       "car_km": "{{value}} km en voiture",
       "streaming_hour_one": "{{value}} heure de streaming vidéo",

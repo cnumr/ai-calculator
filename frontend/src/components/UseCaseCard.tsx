@@ -250,7 +250,7 @@ export function UseCaseCard({
   }
 
   return (
-    <article className={className} aria-busy={pending || undefined}>
+    <article className={className} aria-busy={pending || undefined} data-use-case={useCase.id}>
       {/* Collapsed row: what most users need, the frequency and its impact. */}
       <div className="use-case-card__row">
         <div className="use-case-card__header">
@@ -264,6 +264,7 @@ export function UseCaseCard({
               <button
                 type="button"
                 className="use-case-card__configure"
+                data-tour="configure"
                 aria-expanded={panel === "configure"}
                 aria-controls={panel === "configure" ? configureId : undefined}
                 title={t("calculator.configureToggle")}
@@ -311,7 +312,7 @@ export function UseCaseCard({
 
         {supported && (
           <>
-            <div className="use-case-card__frequency">
+            <div className="use-case-card__frequency" data-tour="frequency">
               <label htmlFor={`${inputIdPrefix}-frequency`} className="visually-hidden">
                 {t("calculator.frequency")}
               </label>
@@ -350,6 +351,7 @@ export function UseCaseCard({
             <button
               type="button"
               className="use-case-card__summary"
+              data-tour="impacts"
               aria-expanded={panel === "details"}
               aria-controls={panel === "details" ? detailsId : undefined}
               title={impactsToggleLabel}
