@@ -192,10 +192,6 @@
       "scope": "The same factor applies to the five criteria (emissions, energy, mineral resources, primary energy and water) and to every provider: the study covers diffusion models in general, Veo 3.1 is only the reference. The profile shows the image model used (e.g. Gemini 2.5 Flash Image), but its impact is not measured directly."
     }
   },
-  "about": {
-    "title": "About",
-    "body": "AI Calculator is a project by Collectif Conception Numérique Responsable (cnumr)."
-  },
   "footer": {
     "greenit": "Green IT association",
     "github": "Source code on GitHub",
