@@ -266,8 +266,9 @@ button {
 
 /* Static prose pages */
 
+/* Wide enough for the methodology tables. */
 .page-prose {
-  max-width: 640px;
+  max-width: 960px;
 }
 
 .page-prose section {
@@ -278,6 +279,15 @@ button {
 .page-prose__meta {
   color: var(--ink-soft);
   font-size: 0.875rem;
+}
+
+/* Wide tables scroll inside the page on narrow screens. */
+.methodology-table-wrap {
+  overflow-x: auto;
+}
+
+.methodology-table__nowrap {
+  white-space: nowrap;
 }
 
 .methodology-table {

@@ -46,11 +46,12 @@ describe("App", () => {
     });
   });
 
-  it("renders the methodology page at /methodologie", () => {
+  it("renders the methodology page at /methodologie", async () => {
     window.history.pushState({}, "", "/methodologie");
     render(<App />);
 
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+    // The page is loaded on demand.
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent(
       /méthodologie|methodology/i,
     );
   });

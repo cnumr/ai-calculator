@@ -147,51 +147,7 @@
     ,"co2EquivalentsHeading": "Individual equivalents",
     "compareOnImpactCo2": "Compare on ImpactCO2.fr"
   },
-  "methodology": {
-    "title": "Methodology",
-    "body": "Impacts are computed from EcoLogits, which models generative AI model inference...",
-    "frequency": {
-      "title": "Usage frequency",
-      "principle": "Each usage's frequency is entered per day, week or month. The calculator converts it into actions per year, based on 218 working days, then into an average per working day: that is what each row's “Impact per working day” uses, so usages compare with each other whatever their unit.",
-      "unit": "Unit",
-      "perYear": "Worked periods per year",
-      "perDay": "Equivalent per working day",
-      "rows": {
-        "day": [
-          "Per day",
-          "218 working days",
-          "n"
-        ],
-        "week": [
-          "Per week",
-          "43.6 weeks (218 ÷ 5 working days)",
-          "n ÷ 5"
-        ],
-        "month": [
-          "Per month",
-          "11 months (one month of leave)",
-          "n × 11 ÷ 218"
-        ]
-      },
-      "example": "Example: one video a month counts as 11 videos a year, about 0.05 per working day."
-    },
-    "images": {
-      "title": "Image generation",
-      "principle": "EcoLogits does not model image generation. The calculator applies the project's method: the impact of an image is derived from that of a short generated video, computed by EcoLogits, divided by a factor that depends on the image size.",
-      "reference": "Reference video: Veo 3.1 (Google), 720p, 8 seconds, with audio, i.e. 27.7 to 60.6 Wh according to EcoLogits.",
-      "size": "Image size",
-      "factor": "Factor applied",
-      "energy": "Energy per image (average)",
-      "divisor": "reference video ÷ {{divisor}}",
-      "energyValue": {
-        "small": "about 1.5 Wh",
-        "large": "about 5 Wh"
-      },
-      "study": "These factors follow the energy per image of the study “The Hidden Cost of an Image: Quantifying the Energy Consumption of AI Image Generation”: about 1.5 Wh for a 1024 × 1024 image, and 5 Wh for a 2048 × 2048 image by extrapolation.",
-      "studyLink": "Read the study (arXiv 2506.17016)",
-      "scope": "The same factor applies to the five criteria (emissions, energy, mineral resources, primary energy and water) and to every provider: the study covers diffusion models in general, Veo 3.1 is only the reference. The profile shows the image model used (e.g. Gemini 2.5 Flash Image), but its impact is not measured directly."
-    }
-  },
+
   "footer": {
     "greenit": "Green IT association",
     "github": "Source code on GitHub",
