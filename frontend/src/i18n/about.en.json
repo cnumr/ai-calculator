@@ -1,0 +1,26 @@
+{
+  "title": "About",
+  "goal": "<strong>Our goal:</strong> to estimate the environmental footprint of generative AI during its use phase (inference), for the common use cases offered by the various service providers (Anthropic, Google, OpenAI, etc.), over a year of use.",
+  "audience": {
+    "intro": "Target audience:",
+    "public": "The general public",
+    "business": "Companies (for awareness-raising purposes)"
+  },
+  "existing": {
+    "intro": "Existing calculators offer a reading that is either:",
+    "technical": "technical (based on the number of tokens processed);",
+    "perRequest": "“per request”, which fails to reflect the volume effect of today's generative AI use, or the potential impact gap between types of use;",
+    "targeted": "dedicated to one specific use."
+  },
+  "aims": {
+    "intro": "To raise awareness, this calculator therefore aims to:",
+    "gaps": "shed light on the impact gaps between types of use (or of request);",
+    "annual": "show the annual impact of a given use, for an individual or a group."
+  },
+  "business": {
+    "intro": "For companies, it also aims to:",
+    "scale": "make the impact tangible across all employees (or a group of employees), to raise awareness (as it stands, the tool is not designed to be used as an “accounting” dashboard);",
+    "code": "put an additional focus on the use of generative AI as a coding assistant."
+  },
+  "credits": "This calculator was designed by the <anchor>Green IT association</anchor>, including:"
+}
