@@ -1,0 +1,4 @@
+date,auteur,modele,tokens,cache,generes,description
+2026-11-25,David Heinzer,Claude Opus 5.5,91893030,89663803,302546,"Travail sans changeset du 8 au 25/11/2026 jusqu'à 17:22 (pages À propos et Méthodologie, specs, docs, pistes abandonnées, registre) : journaux de session moins les changesets"
+2026-11-25,David Heinzer,Claude Haiku 5.5,24205,3765,6643,"Travail sans changeset du 8 au 25/11/2026 jusqu'à 17:22 (pages À propos et Méthodologie, specs, docs, pistes abandonnées, registre) : journaux de session moins les changesets"
+2026-11-25,David Heinzer,Claude Opus 5.5,768690,758959,4079,"Registre des tokens hors changeset et total d'usage de l'IA (suite de la ligne précédente, jusqu'au commit)"
