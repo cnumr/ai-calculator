@@ -15,6 +15,9 @@ import type {
   UseCase,
 } from "../api/client";
 
+/** Headcount shown at first, restored by the reset and by an import without one. */
+export const DEFAULT_HEADCOUNT = 1000;
+
 export interface CardState {
   providerId: string;
   profileId: string;

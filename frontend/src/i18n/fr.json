@@ -88,6 +88,26 @@
       "range": "de {{min}} à {{max}} {{unit}}",
       "workingDays": "Sur 218 jours ouvrés / an"
     },
+    "import": {
+      "button": "Importer",
+      "confirm": "Remplacer votre saisie actuelle par celle du fichier ?",
+      "done_one": "{{count}} cas d'usage importé. Les impacts ont été recalculés.",
+      "done_other": "{{count}} cas d'usage importés. Les impacts ont été recalculés.",
+      "ignored": "Non repris, car absents du calculateur : {{list}}.",
+      "adjusted": "Repris avec un autre modèle, celui du fichier n'étant plus proposé : {{list}}.",
+      "versions": "Ce fichier a été créé avec d'autres versions ({{list}}) : les impacts recalculés peuvent différer de ceux du fichier.",
+      "close": "Fermer le message",
+      "errors": {
+        "unreadable": "Ce fichier n'a pas pu être lu : ce n'est pas un fichier JSON valide.",
+        "tooLarge": "Ce fichier est trop volumineux pour être un export du calculateur.",
+        "notAnExport": "Ce fichier n'est pas un export du calculateur.",
+        "newerFormat": "Ce fichier vient d'une version plus récente du calculateur, que ce site ne sait pas encore lire."
+      }
+    },
+    "export": {
+      "button": "Exporter mes données",
+      "hint": "Exportez vos saisies et leurs impacts au format JSON, par cas d'usage, par personne et pour l'entreprise, avec les versions des sources méthodologiques utilisées pour le calcul. Le fichier est créé par votre navigateur, sans envoi de données à nos serveurs."
+    },
     "headcount": "Nombre de salariés",
     "tier": {
       "eco": "Éco",

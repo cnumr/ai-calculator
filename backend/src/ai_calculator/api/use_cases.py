@@ -8,7 +8,6 @@ from ai_calculator.domain.sources import data_sources
 from ai_calculator.domain.use_cases import Catalog, ResolvedProfile
 from ai_calculator.schemas.use_cases import (
     CatalogProviderOut,
-    DataSourceOut,
     FamilyOut,
     ProfileOut,
     ProfileParameterOut,
@@ -16,6 +15,7 @@ from ai_calculator.schemas.use_cases import (
     SourceOut,
     UseCaseOut,
     UseCasesResponse,
+    to_data_sources_out,
 )
 
 router = APIRouter()
@@ -70,16 +70,7 @@ def _to_use_cases_response(catalog: Catalog) -> UseCasesResponse:
             )
             for uc in catalog.use_cases
         ],
-        data_sources=[
-            DataSourceOut(
-                id=s.id,
-                name=s.name,
-                version=s.version,
-                retrieved_on=s.retrieved_on,
-                url=s.url,
-            )
-            for s in data_sources()
-        ],
+        data_sources=to_data_sources_out(data_sources()),
     )
 
 

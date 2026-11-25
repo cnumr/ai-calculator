@@ -104,9 +104,15 @@ describe("fetchUseCases", () => {
 });
 
 describe("calculate", () => {
-  const ZERO = { min: 0, max: 0 };
-  const impacts = { gwp: { min: 1, max: 2 }, energy: ZERO, adpe: ZERO, pe: null, water: ZERO };
+  const ZERO = { min: 0, max: 0, value: 0 };
+  const impacts = { gwp: { min: 1, max: 2, value: 1.5 }, energy: ZERO, adpe: ZERO, pe: null, water: ZERO };
   const response = {
+    meta: {
+      app_version: "0.4.0",
+      data_sources: [
+        { id: "ecologits", name: "EcoLogits", version: "0.11.3", retrieved_on: null, url: "https://ecologits.ai/" },
+      ],
+    },
     working_days_per_year: 218,
     usages: [
       {
@@ -213,6 +219,12 @@ describe("calculate", () => {
 
     const result = await calculate({ headcount: 1, usages: [] });
 
+    expect(result.meta).toEqual({
+      appVersion: "0.4.0",
+      dataSources: [
+        { id: "ecologits", name: "EcoLogits", version: "0.11.3", retrievedOn: null, url: "https://ecologits.ai/" },
+      ],
+    });
     expect(result.workingDaysPerYear).toBe(218);
     expect(result.usages[0]).toMatchObject({
       useCaseId: "video",

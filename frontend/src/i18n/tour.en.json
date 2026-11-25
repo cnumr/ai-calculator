@@ -34,6 +34,10 @@
       "title": "At the scale of the organisation",
       "body": "Enter the number of employees concerned to extrapolate the annual impact of the whole organisation."
     },
+    "export": {
+      "title": "Keep your data",
+      "body": "\"Export my data\" saves your inputs and their impacts in a JSON file, reusable in another tool. To pick up your scenario later, load this file with \"Import\", at the top of the page."
+    },
     "reset": {
       "title": "Start again",
       "body": "\"Reset\" restores the default values. To understand how impacts are calculated, see the Methodology page.",

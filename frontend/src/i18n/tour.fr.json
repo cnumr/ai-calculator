@@ -34,6 +34,10 @@
       "title": "À l'échelle de l'entreprise",
       "body": "Saisissez le nombre de salariés concernés pour extrapoler l'impact annuel de toute l'organisation."
     },
+    "export": {
+      "title": "Conserver vos données",
+      "body": "« Exporter mes données » enregistre vos saisies et leurs impacts dans un fichier JSON, réutilisable dans un autre outil. Pour reprendre votre scénario plus tard, chargez ce fichier avec « Importer », en haut de page."
+    },
     "reset": {
       "title": "Repartir de zéro",
       "body": "« Réinitialiser » remet les valeurs par défaut. Pour comprendre comment les impacts sont calculés, consultez la page Méthodologie.",

@@ -14,7 +14,7 @@ afterEach(async () => {
   await i18n.changeLanguage("en");
 });
 
-const ZERO_RANGE = { min: 0, max: 0 };
+const ZERO_RANGE = { min: 0, max: 0, value: 0 };
 const ZERO_IMPACTS: Impacts = {
   gwp: ZERO_RANGE,
   energy: ZERO_RANGE,
@@ -26,8 +26,8 @@ const ZERO_IMPACTS: Impacts = {
 // Impacts for the day, as computed by the backend (kg CO2eq, L...).
 const DAILY: Impacts = {
   ...ZERO_IMPACTS,
-  gwp: { min: 0.002, max: 0.004 },
-  water: { min: 0.001, max: 0.002 },
+  gwp: { min: 0.002, max: 0.004, value: 0.003 },
+  water: { min: 0.001, max: 0.002, value: 0.0015 },
 };
 
 const EMAIL: UseCase = {
@@ -355,7 +355,7 @@ describe("UseCaseCard impacts (computed by the backend)", () => {
 
   it("shows not available for criteria the backend does not measure", async () => {
     renderEmail({
-      dailyImpacts: { gwp: { min: 0.37, max: 0.37 }, energy: null, adpe: null, pe: null, water: null },
+      dailyImpacts: { gwp: { min: 0.37, max: 0.37, value: 0.37 }, energy: null, adpe: null, pe: null, water: null },
     });
 
     expect(summaryMetric(/water|eau/i)).toHaveTextContent(/not available|non disponible/i);

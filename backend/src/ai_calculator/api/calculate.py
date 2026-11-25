@@ -1,3 +1,5 @@
+from functools import cache
+
 from fastapi import APIRouter, HTTPException
 
 from ai_calculator.api.catalog import CATALOG
@@ -7,7 +9,9 @@ from ai_calculator.domain.scenario import (
     UsageInput,
     compute_scenario,
 )
+from ai_calculator.domain.sources import app_version, data_sources
 from ai_calculator.schemas.calculate import (
+    CalculationMetaOut,
     CalculateRequest,
     CalculateResponse,
     Co2EquivalentOut,
@@ -16,6 +20,7 @@ from ai_calculator.schemas.calculate import (
     UsageOut,
 )
 from ai_calculator.schemas.impacts import to_impacts_out
+from ai_calculator.schemas.use_cases import to_data_sources_out
 
 router = APIRouter()
 
@@ -33,8 +38,17 @@ def _to_usage_input(usage: UsageIn) -> UsageInput:
     )
 
 
+@cache
+def _meta() -> CalculationMetaOut:
+    """Versions in use: they only change with a new deployment."""
+    return CalculationMetaOut(
+        app_version=app_version(), data_sources=to_data_sources_out(data_sources())
+    )
+
+
 def _to_response(result: ScenarioResult) -> CalculateResponse:
     return CalculateResponse(
+        meta=_meta(),
         working_days_per_year=result.working_days_per_year,
         usages=[
             UsageOut(

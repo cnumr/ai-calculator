@@ -22,6 +22,11 @@ class ImpactRange:
     min: float
     max: float
 
+    @property
+    def value(self) -> float:
+        """Estimated value: the middle of the range, shown with it."""
+        return (self.min + self.max) / 2
+
 
 @dataclass(frozen=True)
 class UnitImpacts:

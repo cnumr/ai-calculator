@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from ai_calculator.domain.sources import DataSource
+
 # bool first: in smart mode Pydantic keeps exact types, so True stays a bool.
 ParameterValueOut = bool | int | float | str
 
@@ -55,6 +57,15 @@ class DataSourceOut(BaseModel):
     version: str | None
     retrieved_on: str | None
     url: str
+
+
+def to_data_sources_out(sources: list[DataSource]) -> list[DataSourceOut]:
+    return [
+        DataSourceOut(
+            id=s.id, name=s.name, version=s.version, retrieved_on=s.retrieved_on, url=s.url
+        )
+        for s in sources
+    ]
 
 
 class FamilyOut(BaseModel):

@@ -66,9 +66,9 @@ const UNIT_GWP_KG: Record<string, number> = {
   "email:openai:eco:": 10,
   "email:google:eco:": 100,
 };
-const ZERO = { min: 0, max: 0 };
+const ZERO = { min: 0, max: 0, value: 0 };
 const gwpKg = (kg: number): Impacts => ({
-  gwp: { min: kg, max: kg },
+  gwp: { min: kg, max: kg, value: kg },
   energy: ZERO,
   adpe: ZERO,
   pe: ZERO,
@@ -104,6 +104,12 @@ function fakeResult(request: CalculateRequest, scale = 1): CalculateResult {
     byProvider.set(u.providerId, (byProvider.get(u.providerId) ?? 0) + u.annualImpacts.gwp!.max),
   );
   return {
+    meta: {
+      appVersion: "0.4.0",
+      dataSources: [
+        { id: "ecologits", name: "EcoLogits", version: "0.11.3", retrievedOn: null, url: "https://ecologits.ai/" },
+      ],
+    },
     workingDaysPerYear: 218,
     usages,
     individualAnnual: gwpKg(total),
@@ -570,7 +576,7 @@ describe("CalculatorPage guided tour", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
     await user.click(button);
-    const dialog = await screen.findByRole("dialog", { name: "1 / 8 Your AI ecosystem" });
+    const dialog = await screen.findByRole("dialog", { name: "1 / 9 Your AI ecosystem" });
     // The tour outlines the real providers.
     expect(document.querySelector('[data-tour="ecosystem"]')).toHaveAttribute("data-tour-active");
 
@@ -598,5 +604,182 @@ describe("CalculatorPage guided tour", () => {
     expect(screen.getByRole("button", { name: "Guided tour" })).not.toHaveClass(
       "calculator-tour-button--invite",
     );
+  });
+});
+
+describe("CalculatorPage export", () => {
+  const exportButton = () => screen.getByRole("button", { name: "Export my data" });
+
+  it("is disabled until a use case has a frequency", async () => {
+    await renderDefault();
+
+    expect(exportButton()).toBeDisabled();
+  });
+
+  it("saves the inputs and the results as a JSON file, without calling the backend", async () => {
+    const files: Blob[] = [];
+    const createObjectURL = vi.fn((blob: Blob) => {
+      files.push(blob);
+      return "blob:export";
+    });
+    // Not implemented by jsdom.
+    Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    await renderLoaded();
+    const calls = mockedCalculate.mock.calls.length;
+
+    fireEvent.click(exportButton());
+
+    await waitFor(() => expect(click).toHaveBeenCalledTimes(1));
+    const link = click.mock.contexts[0] as HTMLAnchorElement;
+    expect(link.download).toMatch(/^ai-calculator-\d{4}-\d{2}-\d{2}\.json$/);
+    const file = JSON.parse(await files[0].text());
+    expect(file).toMatchObject({ format: "ai-calculator-export", app_version: "0.4.0", language: "en" });
+    expect(file.input.headcount).toBe(1000);
+    expect(file.input.usages.map((u: { use_case_id: string }) => u.use_case_id)).toEqual([
+      "video",
+      "email",
+    ]);
+    expect(file.result.individual_annual.gwp.max).toBeCloseTo(22018);
+    expect(file.result.enterprise_annual.gwp.max).toBeCloseTo(22018000);
+    expect(mockedCalculate).toHaveBeenCalledTimes(calls);
+    click.mockRestore();
+  });
+});
+
+describe("CalculatorPage import", () => {
+  const fileInput = () => document.querySelector<HTMLInputElement>('input[type="file"]')!;
+  const exportFile = (overrides: Record<string, unknown> = {}) =>
+    new File(
+      [
+        JSON.stringify({
+          format: "ai-calculator-export",
+          format_version: 1,
+          app_version: __APP_VERSION__,
+          input: {
+            selected_providers: ["openai"],
+            headcount: 20,
+            usages: [
+              {
+                kind: "text",
+                use_case_id: "email",
+                provider_id: "openai",
+                profile_id: "eco",
+                frequency: 2,
+                frequency_unit: "day",
+                parameters: {},
+              },
+            ],
+          },
+          result: { individual_annual: { gwp: { min: 9, max: 9, value: 9 } } },
+          ...overrides,
+        }),
+      ],
+      "ai-calculator-2026-11-25.json",
+      { type: "application/json" },
+    );
+
+  it("opens the file picker from the Import button, placed between the tour and the reset", async () => {
+    await renderDefault();
+    const click = vi.spyOn(fileInput(), "click").mockImplementation(() => {});
+
+    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+
+    expect(click).toHaveBeenCalledTimes(1);
+    const actions = [...document.querySelectorAll(".calculator-hero__actions button")].map(
+      (b) => b.textContent,
+    );
+    expect(actions).toEqual(["Guided tour", "Import", "Reset"]);
+  });
+
+  it("restores the inputs and recalculates them in a single call, ignoring the file's results", async () => {
+    await renderDefault();
+    const calls = mockedCalculate.mock.calls.length;
+
+    await userEvent.upload(fileInput(), exportFile());
+
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("1 use case imported"));
+    // email with openai at 10 kg, twice a day over 218 days, for 20 people.
+    await waitFor(() => expect(individualSummary()).toBe("4.36 t CO2eq"));
+    expect(enterpriseSummary()).toBe("87.2 t CO2eq");
+    expect(mockedCalculate).toHaveBeenCalledTimes(calls + 1);
+    expect(lastRequest()).toEqual({
+      headcount: 20,
+      usages: [
+        {
+          kind: "text",
+          useCaseId: "email",
+          providerId: "openai",
+          profileId: "eco",
+          frequency: 2,
+          frequencyUnit: "day",
+          parameters: {},
+        },
+      ],
+    });
+    expect(screen.getByRole("button", { name: /^openai/i })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^google/i })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("warns when the file was made with other versions", async () => {
+    await renderDefault();
+
+    await userEvent.upload(fileInput(), exportFile({ app_version: "0.0.1" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      `This file was created with other versions (AI Calculator 0.0.1 → ${__APP_VERSION__})`,
+    );
+  });
+
+  it("keeps the current inputs when the file is not an export", async () => {
+    await renderLoaded();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const calls = mockedCalculate.mock.calls.length;
+
+    await userEvent.upload(
+      fileInput(),
+      new File(["{}"], "other.json", { type: "application/json" }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This file is not an export of the calculator.",
+    );
+    expect(individualSummary()).toBe("22.0 t CO2eq");
+    expect(mockedCalculate).toHaveBeenCalledTimes(calls);
+  });
+
+  it("asks before replacing the current inputs, and keeps them when declined", async () => {
+    await renderLoaded();
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    await userEvent.upload(fileInput(), exportFile());
+
+    expect(confirm).toHaveBeenCalledWith("Replace your current inputs with the file's?");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(individualSummary()).toBe("22.0 t CO2eq");
+  });
+
+  it("restores exactly what was exported", async () => {
+    const files: Blob[] = [];
+    Object.assign(URL, {
+      createObjectURL: vi.fn((blob: Blob) => {
+        files.push(blob);
+        return "blob:export";
+      }),
+      revokeObjectURL: vi.fn(),
+    });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    await renderLoaded();
+    const exported = lastRequest();
+    fireEvent.click(screen.getByRole("button", { name: "Export my data" }));
+    await waitFor(() => expect(files).toHaveLength(1));
+    click.mockRestore();
+
+    fireEvent.click(screen.getByRole("button", { name: "Reset" }));
+    await waitFor(() => expect(individualSummary()).toBe("0 kg CO2eq"));
+    await userEvent.upload(fileInput(), new File([await files[0].text()], "export.json"));
+
+    await waitFor(() => expect(individualSummary()).toBe("22.0 t CO2eq"));
+    expect(lastRequest()).toEqual(exported);
   });
 });

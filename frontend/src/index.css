@@ -347,7 +347,9 @@ button {
 
 /* Page actions ("Guided tour", "Reset"): one look for both. */
 .calculator-reset,
-.calculator-tour-button {
+.calculator-tour-button,
+.calculator-import-button,
+.calculator-export__button {
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -360,7 +362,9 @@ button {
 }
 
 .calculator-reset:hover,
-.calculator-tour-button:hover {
+.calculator-tour-button:hover,
+.calculator-import-button:hover,
+.calculator-export__button:hover:not(:disabled) {
   border-color: var(--ink-soft);
 }
 
@@ -492,6 +496,65 @@ button {
 
 .calculator-section {
   margin-bottom: 3rem;
+}
+
+/* Outcome of an import, under the page title. */
+.calculator-import-notice {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--forest);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 0.9rem;
+}
+
+.calculator-import-notice--warning {
+  border-left-color: var(--amber);
+}
+
+.calculator-import-notice--error {
+  border-left-color: var(--red);
+}
+
+.calculator-import-notice__text p {
+  margin: 0;
+}
+
+.calculator-import-notice__text p + p {
+  margin-top: 0.35rem;
+}
+
+.calculator-import-notice__close {
+  flex: none;
+  padding: 0 0.35rem;
+  border: none;
+  background: none;
+  color: var(--ink-soft);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Export of the inputs and results, at the end of the last step. */
+.calculator-export {
+  margin-top: 1.5rem;
+}
+
+.calculator-export__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.calculator-export__hint {
+  margin: 0.5rem 0 0;
+  max-width: 60ch;
+  color: var(--ink-soft);
+  font-size: 0.875rem;
 }
 
 .calculator-section__header {

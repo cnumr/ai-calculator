@@ -1,3 +1,5 @@
+from importlib.metadata import version
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -60,6 +62,32 @@ def test_calculate_returns_usages_totals_breakdown_and_equivalents():
         "smartphone",
         "voiturethermique",
     }
+
+
+def test_calculate_gives_the_estimated_value_of_each_range():
+    body = client.post("/api/calculate", json={"headcount": 10, "usages": [EMAIL]}).json()
+
+    ranges = [
+        *body["usages"][0]["unit_impacts"].values(),
+        *body["usages"][0]["annual_impacts"].values(),
+        *body["individual_annual"].values(),
+        *body["enterprise_annual"].values(),
+        *body["provider_breakdown"][0]["annual_impacts"].values(),
+    ]
+    for impact in filter(None, ranges):
+        assert impact["value"] == pytest.approx((impact["min"] + impact["max"]) / 2)
+
+
+def test_calculate_names_the_versions_behind_its_results():
+    # Kept with the results in an export, and compared when it is imported.
+    response = client.post("/api/calculate", json={"usages": [EMAIL]})
+
+    meta = response.json()["meta"]
+    assert meta["app_version"] == version("ai-calculator-backend")
+    assert {s["id"]: s["version"] for s in meta["data_sources"]}["ecologits"] == version(
+        "ecologits"
+    )
+    assert {s["id"] for s in meta["data_sources"]} == {"ecologits", "impactco2"}
 
 
 def test_calculate_fills_in_video_parameter_defaults():

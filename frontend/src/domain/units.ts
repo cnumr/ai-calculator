@@ -1,3 +1,5 @@
+import type { ImpactRange } from "../api/client";
+
 interface UnitStep {
   unit: string;
   factor: number;
@@ -54,18 +56,35 @@ function pickStep(referenceValue: number, ladder: UnitStep[]): UnitStep {
   return byGrowingUnit[byGrowingUnit.length - 1];
 }
 
+function stepFor(min: number, max: number, baseUnit: string): UnitStep {
+  const ladder = LADDERS[baseUnit];
+  if (!ladder) {
+    return { unit: baseUnit, factor: 1 };
+  }
+  return pickStep(Math.max(Math.abs(min), Math.abs(max)), ladder);
+}
+
 export function scaleRange(
   min: number,
   max: number,
   baseUnit: string,
 ): { min: number; max: number; unit: string } {
-  const ladder = LADDERS[baseUnit];
-  if (!ladder) {
-    return { min, max, unit: baseUnit };
-  }
-  const reference = Math.max(Math.abs(min), Math.abs(max));
-  const step = pickStep(reference, ladder);
+  const step = stepFor(min, max, baseUnit);
   return { min: min * step.factor, max: max * step.factor, unit: step.unit };
+}
+
+/** An impact range and its estimated value, in the unit that reads best. */
+export function scaleImpact(
+  range: ImpactRange,
+  baseUnit: string,
+): ImpactRange & { unit: string } {
+  const step = stepFor(range.min, range.max, baseUnit);
+  return {
+    min: range.min * step.factor,
+    max: range.max * step.factor,
+    value: range.value * step.factor,
+    unit: step.unit,
+  };
 }
 
 /**

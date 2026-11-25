@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatInteger, formatNumber, scaleRange } from "../src/domain/units";
+import { formatInteger, formatNumber, scaleImpact, scaleRange } from "../src/domain/units";
 
 describe("formatNumber", () => {
   it("formats zero as 0", () => {
@@ -97,5 +97,16 @@ describe("scaleRange", () => {
   it("picks the finest unit available when even the smallest still rounds below 1", () => {
     const result = scaleRange(0.0000004, 0.0000004, "kWh");
     expect(result.unit).toBe("Wh");
+  });
+});
+
+describe("scaleImpact", () => {
+  it("scales the estimated value with its range", () => {
+    expect(scaleImpact({ min: 0.001, max: 0.005, value: 0.003 }, "kgCO2eq")).toEqual({
+      min: 1,
+      max: 5,
+      value: 3,
+      unit: "g CO2eq",
+    });
   });
 });
