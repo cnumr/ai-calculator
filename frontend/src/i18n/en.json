@@ -151,6 +151,7 @@
   "footer": {
     "greenit": "Green IT association",
     "github": "Source code on GitHub",
+    "ecoindex": "Ecoindex of this page: see the analysis",
     "sources": "Data sources:",
     "retrievedOn": "retrieved on {{date}}",
     "navLabel": "Site pages"

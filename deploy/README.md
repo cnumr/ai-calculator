@@ -30,6 +30,7 @@ Variables du `.env` :
 | `COMPOSE_PROJECT_NAME` | `ai-calculator-prod` ou `ai-calculator-staging` |
 | `HTTP_PORT` | `8085` ou `8086` |
 | `IMAGE_TAG` | Tag en service : `develop` en staging, `vX.Y.Z` en prod |
+| `ECOINDEX_DOMAIN` | Domaine public du site, pour le badge Ecoindex de chaque page : `ai-calculator.greenit.eco` ou `ia-calculator-staging.greenit.eco`. Vide = pas de badge |
 | `ALERT_WEBHOOK_URL` | Webhook entrant Mattermost. **Secret.** Vide = pas d'alerte |
 | `PREVIOUS_TAG` | Écrit par `update.sh` : version précédente, cible du retour arrière (prod) |
 | `PINNED` | Écrit par `update.sh` : `true` quand la prod est figée à la main |
@@ -112,9 +113,10 @@ for env in staging prod; do
   sudo install -o root -g root -m 755 "$src/update.sh" "$dir/update.sh"
   sudo install -o ai-calculator -g ai-calculator -m 600 "$src/env.example" "$dir/.env"
 done
-# Prod : nom, port, et tag vide (update.sh écrira la dernière release).
+# Prod : nom, port, tag vide (update.sh écrira la dernière release) et domaine du badge Ecoindex.
 sudo sed -i -e 's/^COMPOSE_PROJECT_NAME=.*/COMPOSE_PROJECT_NAME=ai-calculator-prod/' \
-  -e 's/^HTTP_PORT=.*/HTTP_PORT=8085/' -e 's/^IMAGE_TAG=.*/IMAGE_TAG=/' /srv/ai-calculator-prod/.env
+  -e 's/^HTTP_PORT=.*/HTTP_PORT=8085/' -e 's/^IMAGE_TAG=.*/IMAGE_TAG=/' \
+  -e 's/^ECOINDEX_DOMAIN=.*/ECOINDEX_DOMAIN=ai-calculator.greenit.eco/' /srv/ai-calculator-prod/.env
 sudo chown ai-calculator:ai-calculator /srv/ai-calculator-prod/.env
 sudo chmod 600 /srv/ai-calculator-prod/.env
 ```

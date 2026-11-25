@@ -16,7 +16,7 @@ docker compose up --build
 `docker-compose.yml` est la stack de **production** : build multi-stage, pas de hot-reload ni de montage de volumes, un seul service HTTP exposé sur l'hôte.
 
 - Le frontend (`frontend/Dockerfile.prod`) compile le SPA (`npm run build`) et sert les fichiers statiques via Nginx sur http://localhost (port `80`, configurable avec `HTTP_PORT`).
-- Nginx (`frontend/nginx.conf`) proxifie en interne les requêtes `/api/` vers le service `backend` (port `8000`, sur le réseau Docker uniquement).
+- Nginx (`frontend/nginx.conf.template`) proxifie en interne les requêtes `/api/` vers le service `backend` (port `8000`, sur le réseau Docker uniquement).
 - Le backend (`backend/Dockerfile.prod`) ne publie aucun port sur l'hôte : il n'est joignable que depuis le conteneur frontend, jamais directement depuis le navigateur.
 
 ```bash
@@ -91,6 +91,7 @@ Ces variables s'appliquent à `docker-compose.dev.yml` (voir [PRODUCTION.md](PRO
 | ---------------------- | -------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `CORS_ALLOWED_ORIGINS` | backend        | `http://localhost:5173` | Liste d'origines autorisées à appeler l'API (séparées par des virgules). À ajuster si le frontend est servi depuis une autre origine (déploiement, port différent).                                        |
 | `VITE_API_BASE_URL`    | frontend       | `""` (même origine)     | URL de base de l'API consommée par le frontend.                                                                                                                                                            |
+| `ECOINDEX_DOMAIN`      | frontend       | staging (`docker-compose.dev.yml`) | Domaine analysé par Ecoindex : le serveur Vite relaie le badge de chaque page comme nginx en production (`vite.config.ts`). Vide : pas de badge.                                                   |
 | `FRONTEND_PORT`        | docker-compose | `5173`                  | Port hôte sur lequel le frontend est exposé (`docker compose -f docker-compose.dev.yml up`). Utile en cas de conflit de port local, ex : `FRONTEND_PORT=3000 docker compose -f docker-compose.dev.yml up`. |
 
 Si `FRONTEND_PORT` est changé, penser à ajuster en parallèle `CORS_ALLOWED_ORIGINS` côté backend pour que l'origine corresponde toujours au port réellement utilisé.
