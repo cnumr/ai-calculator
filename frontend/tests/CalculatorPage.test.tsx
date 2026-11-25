@@ -294,9 +294,21 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     await renderDefault();
 
     for (const title of [/video generation/i, /writing a short email/i]) {
-      expect(within(card(title)).getByLabelText("Average frequency")).toHaveValue(0);
+      // 0 is a placeholder, so that typing replaces it.
+      const input = within(card(title)).getByLabelText("Average frequency");
+      expect(input).toHaveValue(null);
+      expect(input).toHaveAttribute("placeholder", "0");
       expect(cardGwp(title)).toHaveTextContent("0 kg CO2eq");
     }
+  });
+
+  it("types a frequency without keeping the leading 0", async () => {
+    await renderDefault();
+
+    const input = within(card(/writing a short email/i)).getByLabelText("Average frequency");
+    await userEvent.type(input, "10");
+
+    expect(input).toHaveDisplayValue("10");
   });
 
   it("sends the scenario of the cards and the headcount", async () => {

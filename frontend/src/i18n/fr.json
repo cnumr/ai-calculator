@@ -27,7 +27,7 @@
     "dev_assistance": { "name": "Assistance au développement", "subtitle": "Session agentique" }
   },
   "calculator": {
-    "title": "Calculateur d'impacts",
+    "title": "Calculateur d'impacts de l'IA générative",
     "provider": "Fournisseur",
     "model": "Modèle",
     "outputTokens": "Tokens générés par requête",
@@ -125,7 +125,7 @@
     },
     "criterion": {
       "gwp": "Gaz à effet de serre",
-      "energy": "Énergie",
+      "energy": "Électricité",
       "adpe": "Ressources minérales",
       "pe": "Énergie primaire",
       "water": "Eau"

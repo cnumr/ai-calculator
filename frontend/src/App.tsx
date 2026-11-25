@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { CalculatorPage } from "./pages/CalculatorPage";
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { Footer } from "./components/Footer";
+import greenitLogo from "./assets/greenit-logo.svg";
 
 // Loaded when opened only, with their texts (GreenIT RWEB_0046).
 const MethodologyPage = lazy(() => import("./pages/MethodologyPage"));
@@ -25,7 +26,12 @@ export function App() {
               <NavLink to="/a-propos">{t("nav.about")}</NavLink>
               <NavLink to="/mentions-legales">{t("nav.legal")}</NavLink>
             </div>
-            <LanguageSwitcher />
+            <div className="app-nav__end">
+              <LanguageSwitcher />
+              <a className="app-nav__logo" href="https://greenit.eco/">
+                <img src={greenitLogo} alt={t("footer.greenit")} width={150} height={60} />
+              </a>
+            </div>
           </nav>
         </header>
         <main className="app-main">
