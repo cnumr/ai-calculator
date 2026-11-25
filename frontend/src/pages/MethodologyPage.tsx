@@ -163,6 +163,22 @@ export default function MethodologyPage() {
         </ul>
       </Section>
 
+      <Section id="mix" k="mix">
+        <p>
+          <Linked k="mix.body" href={BASE_EMPREINTE_URL} />
+        </p>
+      </Section>
+
+      <Section id="limites" k="limits">
+        <p>
+          <Linked k="limits.scope" href={ECOLOGITS_METHODOLOGY_URL} />
+        </p>
+        <p>{t("limits.inputs")}</p>
+        <p>
+          <strong>{t("limits.conclusion")}</strong>
+        </p>
+      </Section>
+
       <Section id="synthese" k="summary">
         <div className="methodology-table-wrap">
           <table className="methodology-table">
@@ -241,9 +257,6 @@ export default function MethodologyPage() {
           </li>
           <li>
             <Linked k="sources.impacts" href={ECOLOGITS_IMPACTS_URL} />
-          </li>
-          <li>
-            <Linked k="sources.mix" href={BASE_EMPREINTE_URL} />
           </li>
         </ul>
       </Section>
