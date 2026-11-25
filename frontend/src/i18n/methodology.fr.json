@@ -27,6 +27,16 @@
     "customRange": "la colonne « Fourchette » donne le nombre minimal et maximal de tokens de sortie envisagé pour le cas d'usage, base de la valeur retenue par défaut ;",
     "image": "les cas d'usage de génération d'images : ils transposent les facteurs d'impact d'EcoLogits pour la vidéo, selon une estimation de l'énergie (Wh) par format d'image (voir <anchor>Génération d'images</anchor>)."
   },
+  "mix": {
+    "title": "Mix électrique",
+    "body": "Le mix électrique retenu est le mix mondial, issu de la <anchor>Base Empreinte®</anchor> de l'Ademe."
+  },
+  "limits": {
+    "title": "Limites",
+    "scope": "Le périmètre de calcul se limite au tiers « cloud / centre de données » : il ne prend pas en compte les impacts du réseau ni des équipements utilisateurs (voir la section « Scope and Methodology » de la <anchor>méthodologie EcoLogits</anchor>).",
+    "inputs": "Seuls les tokens de sortie sont pris en compte : les impacts des cas d'usage qui demandent un contexte d'entrée et une analyse plus lourds (par exemple un résumé de réunion) sont donc minorés.",
+    "conclusion": "Les impacts réels sont donc vraisemblablement bien supérieurs à ceux fournis par le calculateur."
+  },
   "summary": {
     "title": "Synthèse des cas d'usage et facteurs d'impact associés",
     "caption": "Cas d'usage, tokens de sortie par action et source du facteur d'impact",
@@ -78,7 +88,6 @@
   "sources": {
     "title": "Sources des données issues d'EcoLogits",
     "methodology": "Méthodologie : <anchor>ecologits.ai/latest/methodology</anchor>",
-    "impacts": "Facteurs d'impact : <anchor>ecologits.ai/latest/tutorial/impacts</anchor>",
-    "mix": "Mix électrique : le calculateur retient le mix mondial, issu de la <anchor>Base Empreinte®</anchor> de l'Ademe."
+    "impacts": "Facteurs d'impact : <anchor>ecologits.ai/latest/tutorial/impacts</anchor>"
   }
 }

@@ -27,6 +27,16 @@
     "customRange": "the “Range” column gives the minimum and maximum number of output tokens considered for the use case, the basis for the default value;",
     "image": "image generation use cases: they transpose the EcoLogits impact factors for video, based on an estimate of the energy (Wh) per image size (see <anchor>Image generation</anchor>)."
   },
+  "mix": {
+    "title": "Electricity mix",
+    "body": "The electricity mix used is the world mix, from ADEME's <anchor>Base Empreinte®</anchor>."
+  },
+  "limits": {
+    "title": "Limitations",
+    "scope": "The calculation covers only the “cloud / data center” tier: it does not include the impacts of the network or of user devices (see the “Scope and Methodology” section of the <anchor>EcoLogits methodology</anchor>).",
+    "inputs": "Only output tokens are counted: the impacts of use cases that need a larger input context and heavier analysis (a meeting summary, for instance) are therefore underestimated.",
+    "conclusion": "Actual impacts are therefore likely well above those given by the calculator."
+  },
   "summary": {
     "title": "Use cases and their impact factors",
     "caption": "Use cases, output tokens per action and impact factor source",
@@ -78,7 +88,6 @@
   "sources": {
     "title": "Sources of the EcoLogits data",
     "methodology": "Methodology: <anchor>ecologits.ai/latest/methodology</anchor>",
-    "impacts": "Impact factors: <anchor>ecologits.ai/latest/tutorial/impacts</anchor>",
-    "mix": "Electricity mix: the calculator uses the world mix, from ADEME's <anchor>Base Empreinte®</anchor>."
+    "impacts": "Impact factors: <anchor>ecologits.ai/latest/tutorial/impacts</anchor>"
   }
 }
