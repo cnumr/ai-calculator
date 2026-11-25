@@ -18,25 +18,26 @@ const DESIGNERS = ["Jérôme Gascoin", "David Heinzer", "Renaud Héluin", "Brice
 const REVIEWERS = ["Laure Alfonsi", "Frédéric Bordage", "Sylvain Chery", "Raphaël Lemaire"];
 
 /**
- * Claude Code use on this project, from the session logs
- * (scripts/claude-usage.py): output tokens of Claude Opus 5.5 (1 046 824) and
- * Haiku 5.5 (33 643). Impacts computed by POST /api/calculate, use case
- * dev_assistance (Anthropic, "powerful" and "eco" profiles) with these output
- * tokens; static figures, to update with the usage.
+ * Claude Code use on this project, from scripts/ai-usage-total.py (changesets,
+ * CHANGELOG.md and docs/ai-usage.csv, all contributors): output tokens of
+ * Claude Opus 5.5 (1 077 546) and Haiku 5.5 (132 643). Impacts computed by
+ * POST /api/calculate, use case dev_assistance (Anthropic, "powerful" and
+ * "eco" profiles) with these output tokens; static figures, to update with
+ * the usage.
  */
 const CLAUDE_USAGE = {
   from: new Date(2026, 10, 8),
   to: new Date(2026, 10, 25),
-  outputTokens: 1_080_467,
-  sessions: 10.8,
+  outputTokens: 1_210_189,
+  sessions: 12.1,
 };
 
 const CLAUDE_IMPACTS = [
-  { criterion: "gwp", min: 1.27, max: 2.41, unit: "kg CO2eq" },
-  { criterion: "energy", min: 3.17, max: 6.14, unit: "kWh" },
-  { criterion: "adpe", min: 3.29, max: 3.58, unit: "mg Sbeq" },
-  { criterion: "pe", min: 31.4, max: 60.2, unit: "MJ" },
-  { criterion: "water", min: 10.3, max: 24.6, unit: "L" },
+  { criterion: "gwp", min: 1.31, max: 2.49, unit: "kg CO2eq" },
+  { criterion: "energy", min: 3.27, max: 6.34, unit: "kWh" },
+  { criterion: "adpe", min: 3.39, max: 3.7, unit: "mg Sbeq" },
+  { criterion: "pe", min: 32.3, max: 62.1, unit: "MJ" },
+  { criterion: "water", min: 10.6, max: 25.4, unit: "L" },
 ] as const;
 
 /** A list of people, under its heading. */

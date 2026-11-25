@@ -32,7 +32,7 @@
     "intro": "Le code du calculateur a été écrit avec l'aide de <anchor>Claude Code</anchor>, l'assistant de développement d'Anthropic, outillé par les ressources de l'association :",
     "mcp": "le serveur MCP GreenIT, qui donne accès aux 115 bonnes pratiques d'écoconception web et au calcul de l'EcoIndex ;",
     "practices": "les bonnes pratiques associées, appliquées à chaque étape : écoconception des fonctionnalités, écriture du code, audit d'écoconception avant chaque mise en production.",
-    "usage": "Du {{from}} au {{to}}, Claude (modèles Opus 5.5 et Haiku 5.5) a généré {{tokens}} tokens, soit l'équivalent de {{sessions}} sessions du cas d'usage « Assistance au développement » (100 000 tokens chacune). D'après ce calculateur, cela représente :",
+    "usage": "Du {{from}} au {{to}}, Claude (modèles Opus 5.5 et Haiku 5.5) a généré {{tokens}} tokens pour l'équipe, soit l'équivalent de {{sessions}} sessions du cas d'usage « Assistance au développement » (100 000 tokens chacune). D'après ce calculateur, cela représente :",
     "limits": "Comme dans le calculateur, seuls les tokens générés sont comptés : les tokens lus en entrée (le contexte du projet, relu à chaque requête) ne le sont pas, ce qui minore ces impacts (voir les <anchor>limites de la méthodologie</anchor>).",
     "history": "Chaque modification du code indique les tokens consommés et les modèles utilisés : voir l'<anchor>historique du projet sur GitHub</anchor>.",
     "range": "{{label}} : {{min}} à {{max}} {{unit}}"

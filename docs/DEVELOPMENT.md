@@ -166,6 +166,14 @@ scripts/claude-usage.py --since 2026-11-09T15:45 --until 2026-11-09T16:30   # he
 # _Réalisé avec Claude Code — Claude Opus 5.5 : ≈ 3,4 M tokens (dont 3,3 M relus en cache, 31 k générés)._
 ```
 
+Un travail réalisé avec un assistant IA **sans changeset** (pages de contenu, documentation, specs, piste abandonnée…) inscrit ses tokens dans le registre [`docs/ai-usage.csv`](ai-usage.csv), une ligne par modèle. Avec Claude Code, `--csv` produit ces lignes :
+
+```bash
+scripts/claude-usage.py --since 2026-11-25T17:20 --csv "Page À propos : contributeurs" >> docs/ai-usage.csv
+```
+
+Les changesets (en attente dans `.changeset/`, puis publiés dans `CHANGELOG.md`) et ce registre forment l'historique de l'usage de l'IA sur le projet, indépendant du poste de chacun. `scripts/ai-usage-total.py` en fait le total par modèle (`--json` pour un calcul d'impacts) : c'est la source des chiffres de la page À propos, à recalculer avec `POST /api/calculate` (cas d'usage `dev_assistance`, fournisseur `anthropic`, profil du modèle, `output_tokens` = tokens générés).
+
 **Automatisation (`.github/workflows/release.yml`)** :
 
 1. À chaque push sur `main`, si des changesets sont en attente, la CI ouvre/actualise une pull request « Version Packages » qui applique le(s) bump(s) et met à jour `CHANGELOG.md`.

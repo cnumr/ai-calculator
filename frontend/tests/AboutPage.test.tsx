@@ -22,8 +22,8 @@ describe("AboutPage", () => {
     expect(screen.getByText("Frédéric Bordage")).toBeInTheDocument();
 
     const section = screen.getByRole("region", { name: "Réalisé avec l'aide de Claude Code" });
-    expect(within(section).getByText(/a généré 1\s080\s467 tokens/)).toBeInTheDocument();
-    expect(within(section).getByText(/^Gaz à effet de serre : 1,27 à 2,41 kg CO2eq$/)).toBeInTheDocument();
+    expect(within(section).getByText(/a généré 1\s210\s189 tokens/)).toBeInTheDocument();
+    expect(within(section).getByText(/^Gaz à effet de serre : 1,31 à 2,49 kg CO2eq$/)).toBeInTheDocument();
     expect(within(section).getByRole("link", { name: "limites de la méthodologie" })).toHaveAttribute(
       "href",
       "/methodologie#limites",
