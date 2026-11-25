@@ -252,6 +252,14 @@ button {
   color: var(--forest);
 }
 
+/* Ecoindex badge, after the site version. */
+.app-footer__ecoindex {
+  display: inline-block;
+  margin-left: 0.75rem;
+  vertical-align: middle;
+  line-height: 0;
+}
+
 .app-footer__nav {
   display: flex;
   flex-wrap: wrap;

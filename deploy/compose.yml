@@ -31,6 +31,9 @@ services:
     image: ghcr.io/cnumr/ai-calculator-frontend:${IMAGE_TAG:?IMAGE_TAG manquant dans .env}
     restart: unless-stopped
     logging: *logging
+    environment:
+      # Domaine public du site, pour le badge Ecoindex du pied de page ; vide : pas de badge.
+      ECOINDEX_DOMAIN: ${ECOINDEX_DOMAIN:-}
     ports:
       # Écoute locale seulement : l'app YunoHost Redirect publie le domaine en HTTPS.
       - "127.0.0.1:${HTTP_PORT:?HTTP_PORT manquant dans .env}:80"
