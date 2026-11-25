@@ -22,5 +22,19 @@
     "scale": "matérialiser l'impact à l'échelle de l'ensemble des collaborateur·ices (ou d'un groupe de collaborateur·ices), dans une optique de sensibilisation (l'outil n'est pas conçu en l'état pour un usage en tant que tableau de bord « comptable ») ;",
     "code": "apporter un focus complémentaire sur l'usage de l'IA générative en tant qu'assistant au développement (code)."
   },
-  "credits": "Ce calculateur a été conçu par l'<anchor>Association Green IT</anchor>, et notamment :"
+  "credits": {
+    "intro": "Ce calculateur a été conçu par l'<anchor>Association Green IT</anchor>, et notamment :",
+    "design": "Conception et réalisation :",
+    "review": "Tests et relectures internes :"
+  },
+  "claude": {
+    "title": "Réalisé avec l'aide de Claude Code",
+    "intro": "Le code du calculateur a été écrit avec l'aide de <anchor>Claude Code</anchor>, l'assistant de développement d'Anthropic, outillé par les ressources de l'association :",
+    "mcp": "le serveur MCP GreenIT, qui donne accès aux 115 bonnes pratiques d'écoconception web et au calcul de l'EcoIndex ;",
+    "practices": "les bonnes pratiques associées, appliquées à chaque étape : écoconception des fonctionnalités, écriture du code, audit d'écoconception avant chaque mise en production.",
+    "usage": "Du {{from}} au {{to}}, Claude (modèles Opus 5.5 et Haiku 5.5) a généré {{tokens}} tokens, soit l'équivalent de {{sessions}} sessions du cas d'usage « Assistance au développement » (100 000 tokens chacune). D'après ce calculateur, cela représente :",
+    "limits": "Comme dans le calculateur, seuls les tokens générés sont comptés : les tokens lus en entrée (le contexte du projet, relu à chaque requête) ne le sont pas, ce qui minore ces impacts (voir les <anchor>limites de la méthodologie</anchor>).",
+    "history": "Chaque modification du code indique les tokens consommés et les modèles utilisés : voir l'<anchor>historique du projet sur GitHub</anchor>.",
+    "range": "{{label}} : {{min}} à {{max}} {{unit}}"
+  }
 }
