@@ -22,6 +22,7 @@ function Page() {
       <label data-tour="only-used">only used</label>
       {/* No annual total yet: that step falls back under the tour button. */}
       <div data-tour="headcount">headcount</div>
+      <button data-tour="export">export</button>
       <button data-tour="reset">reset</button>
     </div>
   );
@@ -50,14 +51,14 @@ describe("GuidedTour", () => {
   it("opens on the first step, named by its progress and title", () => {
     renderTour();
 
-    const dialog = screen.getByRole("dialog", { name: "1 / 8 Votre écosystème IA" });
+    const dialog = screen.getByRole("dialog", { name: "1 / 9 Votre écosystème IA" });
     expect(dialog).toHaveAccessibleDescription(/fournisseurs autorisés/);
     expect(dialog).toHaveFocus();
     expect(outlined()).toEqual(["providers"]);
     expect(screen.queryByRole("button", { name: "Précédent" })).not.toBeInTheDocument();
   });
 
-  it("goes through the 8 steps on the example use case, then finishes", async () => {
+  it("goes through the 9 steps on the example use case, then finishes", async () => {
     const user = userEvent.setup();
     const onClose = renderTour();
     const seen: Array<string | null> = [];
@@ -76,9 +77,10 @@ describe("GuidedTour", () => {
       // Missing target: nothing outlined, the step still shows.
       null,
       "headcount",
+      "export",
       "reset",
     ]);
-    expect(screen.getByRole("dialog")).toHaveAccessibleName("8 / 8 Repartir de zéro");
+    expect(screen.getByRole("dialog")).toHaveAccessibleName("9 / 9 Repartir de zéro");
     expect(screen.getByRole("link", { name: "Voir la méthodologie" })).toHaveAttribute(
       "href",
       "/methodologie",
@@ -95,7 +97,7 @@ describe("GuidedTour", () => {
     await user.click(screen.getByRole("button", { name: "Suivant" }));
     await user.click(screen.getByRole("button", { name: "Précédent" }));
 
-    expect(screen.getByRole("dialog")).toHaveAccessibleName("1 / 8 Votre écosystème IA");
+    expect(screen.getByRole("dialog")).toHaveAccessibleName("1 / 9 Votre écosystème IA");
     expect(outlined()).toEqual(["providers"]);
   });
 
@@ -151,7 +153,7 @@ describe("GuidedTour", () => {
     await i18n.changeLanguage("en");
     renderTour();
 
-    expect(screen.getByRole("dialog")).toHaveAccessibleName("1 / 8 Your AI ecosystem");
+    expect(screen.getByRole("dialog")).toHaveAccessibleName("1 / 9 Your AI ecosystem");
     expect(screen.getByRole("button", { name: "Next" })).toBeInTheDocument();
   });
 });

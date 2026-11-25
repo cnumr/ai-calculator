@@ -7,6 +7,8 @@ export interface ProviderModel {
 export interface ImpactRange {
   min: number;
   max: number;
+  /** Estimated value shown with the range: its middle, given by the backend. */
+  value: number;
 }
 
 export interface Impacts {
@@ -245,7 +247,15 @@ export interface Co2EquivalentQuantity {
   quantity: number;
 }
 
+/** Versions behind a result: kept with it in an export. */
+export interface CalculationMeta {
+  /** Version of the site that computed the result. */
+  appVersion: string;
+  dataSources: DataSource[];
+}
+
 export interface CalculateResult {
+  meta: CalculationMeta;
   workingDaysPerYear: number;
   usages: UsageResult[];
   individualAnnual: Impacts;
@@ -255,6 +265,16 @@ export interface CalculateResult {
 }
 
 interface CalculateResponseBody {
+  meta: {
+    app_version: string;
+    data_sources: Array<{
+      id: string;
+      name: string;
+      version: string | null;
+      retrieved_on: string | null;
+      url: string;
+    }>;
+  };
   working_days_per_year: number;
   usages: Array<{
     use_case_id: string;
@@ -304,6 +324,16 @@ export async function calculate(
   }
   const body: CalculateResponseBody = await response.json();
   return {
+    meta: {
+      appVersion: body.meta.app_version,
+      dataSources: body.meta.data_sources.map((s) => ({
+        id: s.id,
+        name: s.name,
+        version: s.version,
+        retrievedOn: s.retrieved_on,
+        url: s.url,
+      })),
+    },
     workingDaysPerYear: body.working_days_per_year,
     usages: body.usages.map((u) => ({
       useCaseId: u.use_case_id,

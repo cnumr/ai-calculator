@@ -1,4 +1,13 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ChangeEvent,
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   Impacts,
@@ -6,6 +15,7 @@ import {
   UseCasesCatalog,
 } from "../api/client";
 import { loadCatalog as loadSharedCatalog } from "../api/catalogStore";
+import type { ImportErrorCode, ImportedScenario } from "../domain/importFile";
 import { ProviderChips } from "../components/ProviderChips";
 import { UseCaseCard } from "../components/UseCaseCard";
 import { RangeGauge } from "../components/RangeGauge";
@@ -16,6 +26,7 @@ import { ProviderLogo } from "../components/ProviderLogo";
 import { LazyDetails } from "../components/LazyDetails";
 import {
   CardState,
+  DEFAULT_HEADCOUNT,
   buildCalculateRequest,
   isUsageResultCurrent,
 } from "../domain/calculator";
@@ -25,9 +36,6 @@ import { hasSeenTour, markTourSeen } from "../domain/tourInvitation";
 
 // Loaded at the first click on "Guided tour" only (GreenIT RWEB_0046).
 const GuidedTour = lazy(() => import("../components/GuidedTour"));
-
-/** Headcount shown at first and restored by the reset. */
-const DEFAULT_HEADCOUNT = 1000;
 
 const CRITERIA: Array<{ key: keyof Impacts; unit: string }> = [
   { key: "gwp", unit: "kgCO2eq" },
@@ -81,6 +89,63 @@ function createInitialCardStates(useCases: UseCasesCatalog["useCases"]) {
   return states;
 }
 
+type ImportNotice =
+  | { type: "done"; imported: ImportedScenario }
+  | { type: "error"; code: ImportErrorCode };
+
+/** Outcome of an import: what was restored, left out or changed since. */
+function ImportNoticeMessage({
+  notice,
+  onClose,
+}: {
+  notice: ImportNotice;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const names = (ids: string[]) =>
+    ids.map((id) => t(`useCases.${id}.name`, { defaultValue: id })).join(", ");
+  const lines =
+    notice.type === "error"
+      ? [t(`calculator.import.errors.${notice.code}`)]
+      : [
+          t("calculator.import.done", { count: notice.imported.importedUseCaseIds.length }),
+          notice.imported.ignoredUseCaseIds.length > 0 &&
+            t("calculator.import.ignored", { list: names(notice.imported.ignoredUseCaseIds) }),
+          notice.imported.adjustedUseCaseIds.length > 0 &&
+            t("calculator.import.adjusted", { list: names(notice.imported.adjustedUseCaseIds) }),
+          notice.imported.versionChanges.length > 0 &&
+            t("calculator.import.versions", {
+              list: notice.imported.versionChanges
+                .map((c) => `${c.name} ${c.from} → ${c.to}`)
+                .join(", "),
+            }),
+        ].filter((line): line is string => Boolean(line));
+  const warning = notice.type === "done" && lines.length > 1;
+
+  return (
+    <div
+      className={`calculator-import-notice calculator-import-notice--${
+        notice.type === "error" ? "error" : warning ? "warning" : "done"
+      }`}
+      role={notice.type === "error" ? "alert" : "status"}
+    >
+      <div className="calculator-import-notice__text">
+        {lines.map((line) => (
+          <p key={line}>{line}</p>
+        ))}
+      </div>
+      <button
+        type="button"
+        className="calculator-import-notice__close"
+        onClick={onClose}
+        aria-label={t("calculator.import.close")}
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
 function SectionHeader({
   step,
   title,
@@ -117,8 +182,7 @@ function ImpactsGrid({ impacts, title }: { impacts: Impacts; title: string }) {
         ) : (
           <RangeGauge
             key={key}
-            min={value.min}
-            max={value.max}
+            range={value}
             unit={unit}
             label={
               hasIcon ? (
@@ -193,7 +257,7 @@ function ProviderBreakdown({ shares }: { shares: ProviderShare[] }) {
 }
 
 export function CalculatorPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [catalog, setCatalog] = useState<UseCasesCatalog | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [selectedProviders, setSelectedProviders] = useState<Set<string>>(
@@ -215,6 +279,8 @@ export function CalculatorPage() {
   // when off). Kept fixed while on, so that a row does not vanish while its
   // frequency is being edited (e.g. cleared before typing a new value).
   const [shownUseCases, setShownUseCases] = useState<Set<string> | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [importNotice, setImportNotice] = useState<ImportNotice | null>(null);
 
   const request = useMemo(
     () =>
@@ -270,10 +336,70 @@ export function CalculatorPage() {
 
   function resetCalculator() {
     setShownUseCases(null);
+    setImportNotice(null);
     if (!catalog) return;
     setSelectedProviders(new Set(catalog.providers.filter((p) => p.selectedByDefault).map((p) => p.id)));
     setCardStates(createInitialCardStates(catalog.useCases));
     setHeadcount(DEFAULT_HEADCOUNT);
+  }
+
+  // The file holds the result of the current inputs only: not while a
+  // calculation is pending or after it failed.
+  const canExport =
+    result !== null && status === "idle" && request !== null && usedUseCaseIds.length > 0;
+
+  async function exportData() {
+    if (!canExport) return;
+    // Loaded at the first export only (GreenIT RWEB_0046).
+    const { buildExportFile, downloadExportFile } = await import("../domain/exportFile");
+    const now = new Date();
+    downloadExportFile(
+      buildExportFile({
+        request,
+        result,
+        selectedProviders,
+        useCases: catalog?.useCases ?? [],
+        language: i18n.language,
+        exportedAt: now,
+      }),
+      now,
+    );
+  }
+
+  function importFromFile() {
+    importInputRef.current?.click();
+  }
+
+  async function onImportFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    // Lets the same file be chosen again later.
+    event.target.value = "";
+    if (!file || !catalog) return;
+    if (usedUseCaseIds.length > 0 && !window.confirm(t("calculator.import.confirm"))) return;
+    // Loaded at the first import only (GreenIT RWEB_0046).
+    const { ImportFileError, MAX_IMPORT_BYTES, readExportFile } = await import(
+      "../domain/importFile"
+    );
+    try {
+      if (file.size > MAX_IMPORT_BYTES) throw new ImportFileError("tooLarge");
+      const imported = readExportFile(
+        await file.text(),
+        catalog,
+        createInitialCardStates(catalog.useCases),
+        { appVersion: __APP_VERSION__, dataSources: catalog.dataSources ?? [] },
+      );
+      // Applied together: one calculation of the imported scenario.
+      setShownUseCases(null);
+      setSelectedProviders(imported.selectedProviders);
+      setCardStates(imported.cardStates);
+      setHeadcount(imported.headcount);
+      setImportNotice({ type: "done", imported });
+    } catch (error) {
+      setImportNotice({
+        type: "error",
+        code: error instanceof ImportFileError ? error.code : "unreadable",
+      });
+    }
   }
 
   if (loadError) {
@@ -309,6 +435,23 @@ export function CalculatorPage() {
           </button>
           <button
             type="button"
+            className="calculator-import-button"
+            data-tour="import"
+            onClick={importFromFile}
+          >
+            {t("calculator.import.button")}
+          </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".json,application/json"
+            className="visually-hidden"
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={onImportFile}
+          />
+          <button
+            type="button"
             className="calculator-reset"
             data-tour="reset"
             onClick={resetCalculator}
@@ -317,6 +460,9 @@ export function CalculatorPage() {
           </button>
         </div>
       </div>
+      {importNotice && (
+        <ImportNoticeMessage notice={importNotice} onClose={() => setImportNotice(null)} />
+      )}
       {tourOpen && (
         <Suspense fallback={null}>
           <GuidedTour anchor={tourButtonRef} onClose={closeTour} />
@@ -476,6 +622,21 @@ export function CalculatorPage() {
             />
           </div>
         )}
+
+        <div className="calculator-export" data-tour="export">
+          <button
+            type="button"
+            className="calculator-export__button"
+            onClick={exportData}
+            disabled={!canExport}
+            aria-describedby="calculator-export-hint"
+          >
+            {t("calculator.export.button")}
+          </button>
+          <p id="calculator-export-hint" className="calculator-export__hint">
+            {t("calculator.export.hint")}
+          </p>
+        </div>
       </section>
     </div>
   );

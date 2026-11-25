@@ -211,7 +211,7 @@ describe("isUsageResultCurrent", () => {
     frequencyUnit: "week",
     parameters: { resolution: "1080p" },
   };
-  const ZERO = { min: 0, max: 0 };
+  const ZERO = { min: 0, max: 0, value: 0 };
   const impacts = { gwp: ZERO, energy: ZERO, adpe: ZERO, pe: ZERO, water: ZERO };
   const result: UsageResult = {
     useCaseId: "video",

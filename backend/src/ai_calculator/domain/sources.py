@@ -1,5 +1,6 @@
 """Methodological source behind each kind of use case, shown to users."""
 
+import os
 from dataclasses import dataclass
 from importlib.metadata import version
 
@@ -72,3 +73,15 @@ def data_sources() -> list[DataSource]:
             url="https://impactco2.fr/",
         ),
     ]
+
+
+def app_version() -> str:
+    """Version of the site that computes the results.
+
+    Front and back share one version (Changesets, scripts/sync-versions.mjs).
+    Staging images add the commit from APP_BUILD, in the footer's format
+    (frontend/src/appVersion.ts).
+    """
+    build = os.environ.get("APP_BUILD", "").strip()
+    base = version("ai-calculator-backend")
+    return f"{base}+sha.{build}" if build else base

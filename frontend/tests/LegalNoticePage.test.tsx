@@ -67,6 +67,7 @@ describe("LegalNoticePage", () => {
     const privacy = section(/^données personnelles$/i);
     expect(privacy).toHaveTextContent("aucun cookie");
     expect(privacy).toHaveTextContent("ne contacte aucun service tiers");
+    expect(privacy).toHaveTextContent("Le fichier d'export est créé par votre navigateur");
     expect(within(privacy).getByRole("link", { name: "CNIL" })).toHaveAttribute(
       "href",
       "https://www.cnil.fr/",

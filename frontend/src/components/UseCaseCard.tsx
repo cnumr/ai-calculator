@@ -18,7 +18,7 @@ import {
   resolveParameters,
   resolveSelection,
 } from "../domain/calculator";
-import { formatInteger, formatNumber, scaleRange } from "../domain/units";
+import { formatInteger, formatNumber, scaleImpact } from "../domain/units";
 import videoIcon from "../assets/use-cases/video.svg";
 import imageIcon from "../assets/use-cases/image.svg";
 import deepResearchIcon from "../assets/use-cases/deep_research.svg";
@@ -366,7 +366,7 @@ export function UseCaseCard({
               <span className="use-case-card__summary-values">
                 {SUMMARY_CRITERIA.map(({ key, unit }) => {
                   const range = impacts ? impacts[key] : undefined;
-                  const value = range && scaleRange(range.min, range.max, unit);
+                  const value = range && scaleImpact(range, unit);
                   return (
                     <span key={key} className="use-case-card__summary-item">
                       <ImpactIcon
@@ -378,7 +378,7 @@ export function UseCaseCard({
                         {range === undefined
                           ? "…"
                           : value
-                            ? `${formatNumber((value.min + value.max) / 2, locale)} ${value.unit}`
+                            ? `${formatNumber(value.value, locale)} ${value.unit}`
                             : t("calculator.notAvailable")}
                       </span>
                     </span>
@@ -492,8 +492,7 @@ export function UseCaseCard({
                   ) : (
                     <RangeGauge
                       key={key}
-                      min={value.min}
-                      max={value.max}
+                      range={value}
                       unit={unit}
                       label={
                         isImpactCriterion(key) ? (

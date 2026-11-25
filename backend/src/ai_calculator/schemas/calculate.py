@@ -11,7 +11,7 @@ from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 from ai_calculator.domain.scenario import FrequencyUnit
 from ai_calculator.domain.use_cases import MAX_OUTPUT_TOKENS, MIN_OUTPUT_TOKENS
 from ai_calculator.schemas.impacts import ImpactsOut
-from ai_calculator.schemas.use_cases import ParameterValueOut
+from ai_calculator.schemas.use_cases import DataSourceOut, ParameterValueOut
 
 MAX_USAGES = 50
 
@@ -125,7 +125,16 @@ class Co2EquivalentOut(BaseModel):
     quantity: float
 
 
+class CalculationMetaOut(BaseModel):
+    """Versions behind the results: kept with them in an export, and compared
+    with the current ones when the export is imported."""
+
+    app_version: str = Field(description="Version of the site that computed the results.")
+    data_sources: list[DataSourceOut]
+
+
 class CalculateResponse(BaseModel):
+    meta: CalculationMetaOut
     working_days_per_year: int
     usages: list[UsageOut]
     individual_annual: ImpactsOut

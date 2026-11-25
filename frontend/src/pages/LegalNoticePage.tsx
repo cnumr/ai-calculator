@@ -84,6 +84,7 @@ export default function LegalNoticePage() {
       <Section id="privacy">
         <p>{t("privacy.none")}</p>
         <p>{t("privacy.inputs")}</p>
+        <p>{t("privacy.files")}</p>
         <p>{t("privacy.storage")}</p>
         <p>{t("privacy.logs")}</p>
         <Text k="privacy.rights" href={CONTACT_URL} />
