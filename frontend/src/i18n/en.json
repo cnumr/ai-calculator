@@ -97,6 +97,7 @@
       "adjusted": "Restored with another model, as the file's is no longer offered: {{list}}.",
       "versions": "This file was created with other versions ({{list}}): the recalculated impacts may differ from the file's.",
       "close": "Close the message",
+      "tooltip": "Reload an exported file to pick up your scenario: your inputs are restored and the impacts recalculated with the current versions. The file is read by your browser.",
       "errors": {
         "unreadable": "This file could not be read: it is not a valid JSON file.",
         "tooLarge": "This file is too large to be an export of the calculator.",
@@ -105,8 +106,9 @@
       }
     },
     "export": {
-      "button": "Export my data",
-      "hint": "Export your inputs and their impacts in JSON format, per use case, per person and for the company, with the versions of the methodological sources used for the calculation. The file is created by your browser, without sending any data to our servers."
+      "button": "Export",
+      "unavailable": "Available once a use case has a frequency and the calculation is done.",
+      "tooltip": "Export your inputs and their impacts in JSON format, per use case, per person and for the company, with the versions of the methodological sources used for the calculation. The file is created by your browser, without sending any data to our servers."
     },
     "headcount": "Headcount",
     "tier": {
@@ -155,7 +157,9 @@
     "errorCatalogLoad": "Could not load the use case catalogue.",
     "retry": "Retry",
     "reset": "Reset",
+    "resetTooltip": "Restore every default value: providers, frequencies, parameters and headcount.",
     "tour": "Guided tour",
+    "tourTooltip": "Discover the calculator step by step, in a few stages.",
     "tourInvite": "(recommended for a first visit)",
     "co2Equivalent": {
       "car_km": "{{value}} km by car",

@@ -1,5 +1,6 @@
 import {
   ChangeEvent,
+  ReactNode,
   Suspense,
   lazy,
   useCallback,
@@ -10,6 +11,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  CalculationMeta,
   Impacts,
   ProviderShare,
   UseCasesCatalog,
@@ -89,6 +91,30 @@ function createInitialCardStates(useCases: UseCasesCatalog["useCases"]) {
   return states;
 }
 
+/**
+ * A page action and its description, shown as a tooltip on hover and on
+ * keyboard focus. The button names it with aria-describedby, so that screen
+ * readers read it too.
+ */
+function PageAction({
+  id,
+  tooltip,
+  children,
+}: {
+  id: string;
+  tooltip: string;
+  children: ReactNode;
+}) {
+  return (
+    <span className="calculator-action">
+      {children}
+      <span id={`calculator-action-${id}`} role="tooltip" className="calculator-action__tooltip">
+        {tooltip}
+      </span>
+    </span>
+  );
+}
+
 type ImportNotice =
   | { type: "done"; imported: ImportedScenario }
   | { type: "error"; code: ImportErrorCode };
@@ -96,14 +122,18 @@ type ImportNotice =
 /** Outcome of an import: what was restored, left out or changed since. */
 function ImportNoticeMessage({
   notice,
+  meta,
   onClose,
 }: {
   notice: ImportNotice;
+  /** Versions behind the current result, compared with the file's. */
+  meta: CalculationMeta | undefined;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
   const names = (ids: string[]) =>
     ids.map((id) => t(`useCases.${id}.name`, { defaultValue: id })).join(", ");
+  const changes = notice.type === "done" && meta ? notice.imported.versionChanges(meta) : [];
   const lines =
     notice.type === "error"
       ? [t(`calculator.import.errors.${notice.code}`)]
@@ -113,9 +143,9 @@ function ImportNoticeMessage({
             t("calculator.import.ignored", { list: names(notice.imported.ignoredUseCaseIds) }),
           notice.imported.adjustedUseCaseIds.length > 0 &&
             t("calculator.import.adjusted", { list: names(notice.imported.adjustedUseCaseIds) }),
-          notice.imported.versionChanges.length > 0 &&
+          changes.length > 0 &&
             t("calculator.import.versions", {
-              list: notice.imported.versionChanges
+              list: changes
                 .map((c) => `${c.name} ${c.from} → ${c.to}`)
                 .join(", "),
             }),
@@ -386,7 +416,6 @@ export function CalculatorPage() {
         await file.text(),
         catalog,
         createInitialCardStates(catalog.useCases),
-        { appVersion: __APP_VERSION__, dataSources: catalog.dataSources ?? [] },
       );
       // Applied together: one calculation of the imported scenario.
       setShownUseCases(null);
@@ -424,44 +453,81 @@ export function CalculatorPage() {
       <div className="calculator-hero">
         <h1>{t("calculator.title")}</h1>
         <div className="calculator-hero__actions">
-          <button
-            ref={tourButtonRef}
-            type="button"
-            className={`calculator-tour-button${tourInvite ? " calculator-tour-button--invite" : ""}`}
-            onClick={() => setTourOpen(true)}
-          >
-            {t("calculator.tour")}
-            {tourInvite && <span className="visually-hidden"> {t("calculator.tourInvite")}</span>}
-          </button>
-          <button
-            type="button"
-            className="calculator-import-button"
-            data-tour="import"
-            onClick={importFromFile}
-          >
-            {t("calculator.import.button")}
-          </button>
-          <input
-            ref={importInputRef}
-            type="file"
-            accept=".json,application/json"
-            className="visually-hidden"
-            tabIndex={-1}
-            aria-hidden="true"
-            onChange={onImportFile}
-          />
-          <button
-            type="button"
-            className="calculator-reset"
-            data-tour="reset"
-            onClick={resetCalculator}
-          >
-            {t("calculator.reset")}
-          </button>
+          <PageAction id="tour" tooltip={t("calculator.tourTooltip")}>
+            <button
+              ref={tourButtonRef}
+              type="button"
+              className={`calculator-action__button calculator-tour-button${
+                tourInvite ? " calculator-tour-button--invite" : ""
+              }`}
+              onClick={() => setTourOpen(true)}
+              aria-describedby="calculator-action-tour"
+            >
+              {t("calculator.tour")}
+              {tourInvite && <span className="visually-hidden"> {t("calculator.tourInvite")}</span>}
+            </button>
+          </PageAction>
+          {/* Export and Import: outlined together by the guided tour. */}
+          <span className="calculator-hero__data" data-tour="data">
+            <PageAction
+              id="export"
+              tooltip={
+                canExport
+                  ? t("calculator.export.tooltip")
+                  : `${t("calculator.export.tooltip")} ${t("calculator.export.unavailable")}`
+              }
+            >
+              {/* aria-disabled rather than disabled: still focusable, so that its
+                  tooltip says why it is unavailable. */}
+              <button
+                type="button"
+                className="calculator-action__button"
+                onClick={exportData}
+                aria-disabled={!canExport}
+                aria-describedby="calculator-action-export"
+              >
+                {t("calculator.export.button")}
+              </button>
+            </PageAction>
+            <PageAction id="import" tooltip={t("calculator.import.tooltip")}>
+              <button
+                type="button"
+                className="calculator-action__button"
+                onClick={importFromFile}
+                aria-describedby="calculator-action-import"
+              >
+                {t("calculator.import.button")}
+              </button>
+            </PageAction>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".json,application/json"
+              className="visually-hidden"
+              tabIndex={-1}
+              aria-hidden="true"
+              onChange={onImportFile}
+            />
+          </span>
+          <PageAction id="reset" tooltip={t("calculator.resetTooltip")}>
+            <button
+              type="button"
+              className="calculator-action__button"
+              data-tour="reset"
+              onClick={resetCalculator}
+              aria-describedby="calculator-action-reset"
+            >
+              {t("calculator.reset")}
+            </button>
+          </PageAction>
         </div>
       </div>
       {importNotice && (
-        <ImportNoticeMessage notice={importNotice} onClose={() => setImportNotice(null)} />
+        <ImportNoticeMessage
+          notice={importNotice}
+          meta={result?.meta}
+          onClose={() => setImportNotice(null)}
+        />
       )}
       {tourOpen && (
         <Suspense fallback={null}>
@@ -622,21 +688,6 @@ export function CalculatorPage() {
             />
           </div>
         )}
-
-        <div className="calculator-export" data-tour="export">
-          <button
-            type="button"
-            className="calculator-export__button"
-            onClick={exportData}
-            disabled={!canExport}
-            aria-describedby="calculator-export-hint"
-          >
-            {t("calculator.export.button")}
-          </button>
-          <p id="calculator-export-hint" className="calculator-export__hint">
-            {t("calculator.export.hint")}
-          </p>
-        </div>
       </section>
     </div>
   );

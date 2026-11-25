@@ -345,11 +345,14 @@ button {
   gap: 1rem;
 }
 
-/* Page actions ("Guided tour", "Reset"): one look for both. */
-.calculator-reset,
-.calculator-tour-button,
-.calculator-import-button,
-.calculator-export__button {
+/* Page actions (guided tour, export, import, reset): one look for all, and
+   their description as a tooltip, on hover and on keyboard focus. */
+.calculator-action {
+  position: relative;
+  display: inline-flex;
+}
+
+.calculator-action__button {
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -361,14 +364,52 @@ button {
   cursor: pointer;
 }
 
-.calculator-reset:hover,
-.calculator-tour-button:hover,
-.calculator-import-button:hover,
-.calculator-export__button:hover:not(:disabled) {
+.calculator-action__button:hover:not([aria-disabled="true"]) {
   border-color: var(--ink-soft);
 }
 
-.calculator-hero__actions {
+.calculator-action__button[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.calculator-action__tooltip {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 20;
+  width: max-content;
+  max-width: min(20rem, calc(100vw - 2rem));
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: var(--forest-deep);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.15);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease 0.2s, visibility 0s linear 0.35s;
+  pointer-events: none;
+}
+
+.calculator-action:hover .calculator-action__tooltip,
+.calculator-action__button:focus-visible + .calculator-action__tooltip {
+  visibility: visible;
+  opacity: 1;
+  transition-delay: 0.2s, 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calculator-action__tooltip {
+    transition: none;
+  }
+}
+
+.calculator-hero__actions,
+.calculator-hero__data {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -538,23 +579,6 @@ button {
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
-}
-
-/* Export of the inputs and results, at the end of the last step. */
-.calculator-export {
-  margin-top: 1.5rem;
-}
-
-.calculator-export__button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-.calculator-export__hint {
-  margin: 0.5rem 0 0;
-  max-width: 60ch;
-  color: var(--ink-soft);
-  font-size: 0.875rem;
 }
 
 .calculator-section__header {

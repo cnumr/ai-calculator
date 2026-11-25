@@ -35,8 +35,8 @@ export const TOUR_STEPS: TourStep[] = [
   { id: "annualTotal", target: "individual-total" },
   // The bubble goes under the enterprise total, which it talks about.
   { id: "headcount", target: "headcount", below: "enterprise-total" },
-  // Export at the end of the page; the text also points to Import, at the top.
-  { id: "export", target: "export" },
+  // Export and Import, outlined together.
+  { id: "data", target: "data" },
   { id: "reset", target: "reset" },
 ];
 

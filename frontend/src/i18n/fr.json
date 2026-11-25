@@ -97,6 +97,7 @@
       "adjusted": "Repris avec un autre modèle, celui du fichier n'étant plus proposé : {{list}}.",
       "versions": "Ce fichier a été créé avec d'autres versions ({{list}}) : les impacts recalculés peuvent différer de ceux du fichier.",
       "close": "Fermer le message",
+      "tooltip": "Rechargez un fichier exporté pour reprendre votre scénario : vos saisies sont reprises et les impacts recalculés avec les versions actuelles. Le fichier est lu par votre navigateur.",
       "errors": {
         "unreadable": "Ce fichier n'a pas pu être lu : ce n'est pas un fichier JSON valide.",
         "tooLarge": "Ce fichier est trop volumineux pour être un export du calculateur.",
@@ -105,8 +106,9 @@
       }
     },
     "export": {
-      "button": "Exporter mes données",
-      "hint": "Exportez vos saisies et leurs impacts au format JSON, par cas d'usage, par personne et pour l'entreprise, avec les versions des sources méthodologiques utilisées pour le calcul. Le fichier est créé par votre navigateur, sans envoi de données à nos serveurs."
+      "button": "Exporter",
+      "unavailable": "Disponible dès qu'un cas d'usage a une fréquence et que le calcul est terminé.",
+      "tooltip": "Exportez vos saisies et leurs impacts au format JSON, par cas d'usage, par personne et pour l'entreprise, avec les versions des sources méthodologiques utilisées pour le calcul. Le fichier est créé par votre navigateur, sans envoi de données à nos serveurs."
     },
     "headcount": "Nombre de salariés",
     "tier": {
@@ -155,7 +157,9 @@
     "errorCatalogLoad": "Impossible de charger le catalogue de cas d'usage.",
     "retry": "Réessayer",
     "reset": "Réinitialiser",
+    "resetTooltip": "Remettez toutes les valeurs par défaut : fournisseurs, fréquences, paramètres et nombre de salariés.",
     "tour": "Visite guidée",
+    "tourTooltip": "Découvrez le calculateur pas à pas, en quelques étapes.",
     "tourInvite": "(recommandée pour une première visite)",
     "co2Equivalent": {
       "car_km": "{{value}} km en voiture",
