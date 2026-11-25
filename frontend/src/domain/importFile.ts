@@ -9,8 +9,8 @@
  */
 import {
   FREQUENCY_UNITS,
+  type CalculationMeta,
   type CatalogProvider,
-  type DataSource,
   type FrequencyUnit,
   type ParameterValue,
   type UseCase,
@@ -49,12 +49,12 @@ export interface ImportedScenario {
   ignoredUseCaseIds: string[];
   /** Use cases restored with another provider or profile than the file's. */
   adjustedUseCaseIds: string[];
-  versionChanges: VersionChange[];
-}
-
-export interface CurrentVersions {
-  appVersion: string;
-  dataSources: DataSource[];
+  /**
+   * Versions of the file that differ from those which recalculated its
+   * impacts: the `meta` of the calculation that follows the import, the same
+   * source as the export's.
+   */
+  versionChanges: (current: CalculationMeta) => VersionChange[];
 }
 
 type Json = Record<string, unknown>;
@@ -108,7 +108,7 @@ function restoreCard(useCase: UseCase, usage: Json, initial: CardState) {
   return { card, adjusted: !mapping || !profile };
 }
 
-function versionChanges(file: Json, current: CurrentVersions): VersionChange[] {
+function versionChanges(file: Json, current: CalculationMeta): VersionChange[] {
   const changes: VersionChange[] = [];
   const appVersion = asString(file.app_version);
   if (appVersion && appVersion !== current.appVersion) {
@@ -130,7 +130,6 @@ export function readExportFile(
   text: string,
   catalog: { providers: CatalogProvider[]; useCases: UseCase[] },
   initialCardStates: Record<string, CardState>,
-  current: CurrentVersions,
 ): ImportedScenario {
   const file = parse(text);
   const input = file.input as Json;
@@ -176,6 +175,6 @@ export function readExportFile(
     importedUseCaseIds,
     ignoredUseCaseIds,
     adjustedUseCaseIds,
-    versionChanges: versionChanges(file, current),
+    versionChanges: (current) => versionChanges(file, current),
   };
 }

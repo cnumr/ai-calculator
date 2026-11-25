@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { DataSource, UseCase } from "../src/api/client";
+import type { CalculationMeta, DataSource, UseCase } from "../src/api/client";
 import type { CardState } from "../src/domain/calculator";
 import { ImportFileError, readExportFile } from "../src/domain/importFile";
 
@@ -36,7 +36,7 @@ const SOURCES: DataSource[] = [
   { id: "ecologits", name: "EcoLogits", version: "0.11.3", retrievedOn: null, url: "https://ecologits.ai/" },
   { id: "impactco2", name: "ImpactCO2 (ADEME)", version: null, retrievedOn: "2026-11-08", url: "https://impactco2.fr/" },
 ];
-const CURRENT = { appVersion: "0.4.0", dataSources: SOURCES };
+const CURRENT: CalculationMeta = { appVersion: "0.4.0", dataSources: SOURCES };
 
 function exportFile(overrides: Record<string, unknown> = {}, input: Record<string, unknown> = {}) {
   return JSON.stringify({
@@ -71,7 +71,7 @@ function exportFile(overrides: Record<string, unknown> = {}, input: Record<strin
   });
 }
 
-const read = (text: string) => readExportFile(text, CATALOG, INITIAL, CURRENT);
+const read = (text: string) => readExportFile(text, CATALOG, INITIAL);
 
 describe("readExportFile", () => {
   it("restores the providers, the headcount and the inputs of each use case", () => {
@@ -91,7 +91,7 @@ describe("readExportFile", () => {
     expect(imported.importedUseCaseIds).toEqual(["email"]);
     expect(imported.ignoredUseCaseIds).toEqual([]);
     expect(imported.adjustedUseCaseIds).toEqual([]);
-    expect(imported.versionChanges).toEqual([]);
+    expect(imported.versionChanges(CURRENT)).toEqual([]);
   });
 
   it("ignores a use case the catalogue no longer has", () => {
@@ -136,7 +136,7 @@ describe("readExportFile", () => {
     expect([...imported.selectedProviders]).toEqual(["google"]);
   });
 
-  it("lists the versions that differ from the current ones", () => {
+  it("lists the versions that differ from those of the recalculation", () => {
     const imported = read(
       exportFile({
         app_version: "0.3.1",
@@ -147,7 +147,7 @@ describe("readExportFile", () => {
       }),
     );
 
-    expect(imported.versionChanges).toEqual([
+    expect(imported.versionChanges(CURRENT)).toEqual([
       { name: "AI Calculator", from: "0.3.1", to: "0.4.0" },
       { name: "EcoLogits", from: "0.10.0", to: "0.11.3" },
     ]);

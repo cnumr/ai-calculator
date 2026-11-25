@@ -34,9 +34,9 @@
       "title": "À l'échelle de l'entreprise",
       "body": "Saisissez le nombre de salariés concernés pour extrapoler l'impact annuel de toute l'organisation."
     },
-    "export": {
-      "title": "Conserver vos données",
-      "body": "« Exporter mes données » enregistre vos saisies et leurs impacts dans un fichier JSON, réutilisable dans un autre outil. Pour reprendre votre scénario plus tard, chargez ce fichier avec « Importer », en haut de page."
+    "data": {
+      "title": "Exporter et importer vos données",
+      "body": "« Exporter » enregistre vos saisies et leurs impacts dans un fichier JSON, par cas d'usage, par personne et pour l'entreprise : de quoi les conserver ou les exploiter dans un autre outil. « Importer » recharge ce fichier plus tard : vos saisies sont reprises et les impacts recalculés. Le fichier est créé et lu par votre navigateur, il n'est jamais envoyé à nos serveurs."
     },
     "reset": {
       "title": "Repartir de zéro",

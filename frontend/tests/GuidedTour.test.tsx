@@ -22,7 +22,10 @@ function Page() {
       <label data-tour="only-used">only used</label>
       {/* No annual total yet: that step falls back under the tour button. */}
       <div data-tour="headcount">headcount</div>
-      <button data-tour="export">export</button>
+      <span data-tour="data">
+        <button>export</button>
+        <button>import</button>
+      </span>
       <button data-tour="reset">reset</button>
     </div>
   );
@@ -77,7 +80,7 @@ describe("GuidedTour", () => {
       // Missing target: nothing outlined, the step still shows.
       null,
       "headcount",
-      "export",
+      "exportimport",
       "reset",
     ]);
     expect(screen.getByRole("dialog")).toHaveAccessibleName("9 / 9 Repartir de zéro");

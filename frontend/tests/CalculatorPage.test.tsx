@@ -608,12 +608,34 @@ describe("CalculatorPage guided tour", () => {
 });
 
 describe("CalculatorPage export", () => {
-  const exportButton = () => screen.getByRole("button", { name: "Export my data" });
+  const exportButton = () => screen.getByRole("button", { name: "Export" });
 
-  it("is disabled until a use case has a frequency", async () => {
+  it("is unavailable until a use case has a frequency, and its tooltip says why", async () => {
     await renderDefault();
 
-    expect(exportButton()).toBeDisabled();
+    expect(exportButton()).toHaveAttribute("aria-disabled", "true");
+    expect(exportButton()).toHaveAccessibleDescription(/Available once a use case has a frequency/);
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    fireEvent.click(exportButton());
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(click).not.toHaveBeenCalled();
+    click.mockRestore();
+  });
+
+  it("describes each page action, for the tooltip and screen readers", async () => {
+    await renderLoaded();
+
+    expect(exportButton()).toHaveAttribute("aria-disabled", "false");
+    expect(exportButton()).toHaveAccessibleDescription(/^Export your inputs and their impacts in JSON format/);
+    expect(screen.getByRole("button", { name: "Import" })).toHaveAccessibleDescription(
+      /^Reload an exported file/,
+    );
+    expect(screen.getByRole("button", { name: "Reset" })).toHaveAccessibleDescription(
+      /^Restore every default value/,
+    );
+    expect(screen.getByRole("button", { name: /^Guided tour/ })).toHaveAccessibleDescription(
+      /^Discover the calculator/,
+    );
   });
 
   it("saves the inputs and the results as a JSON file, without calling the backend", async () => {
@@ -655,7 +677,7 @@ describe("CalculatorPage import", () => {
         JSON.stringify({
           format: "ai-calculator-export",
           format_version: 1,
-          app_version: __APP_VERSION__,
+          app_version: "0.4.0",
           input: {
             selected_providers: ["openai"],
             headcount: 20,
@@ -679,7 +701,7 @@ describe("CalculatorPage import", () => {
       { type: "application/json" },
     );
 
-  it("opens the file picker from the Import button, placed between the tour and the reset", async () => {
+  it("opens the file picker from the Import button, placed after Export", async () => {
     await renderDefault();
     const click = vi.spyOn(fileInput(), "click").mockImplementation(() => {});
 
@@ -689,7 +711,7 @@ describe("CalculatorPage import", () => {
     const actions = [...document.querySelectorAll(".calculator-hero__actions button")].map(
       (b) => b.textContent,
     );
-    expect(actions).toEqual(["Guided tour", "Import", "Reset"]);
+    expect(actions).toEqual(["Guided tour", "Export", "Import", "Reset"]);
   });
 
   it("restores the inputs and recalculates them in a single call, ignoring the file's results", async () => {
@@ -699,6 +721,7 @@ describe("CalculatorPage import", () => {
     await userEvent.upload(fileInput(), exportFile());
 
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("1 use case imported"));
+    expect(screen.getByRole("status")).not.toHaveTextContent("other versions");
     // email with openai at 10 kg, twice a day over 218 days, for 20 people.
     await waitFor(() => expect(individualSummary()).toBe("4.36 t CO2eq"));
     expect(enterpriseSummary()).toBe("87.2 t CO2eq");
@@ -721,13 +744,19 @@ describe("CalculatorPage import", () => {
     expect(screen.getByRole("button", { name: /^google/i })).toHaveAttribute("aria-pressed", "false");
   });
 
-  it("warns when the file was made with other versions", async () => {
+  it("warns when the file was made with other versions than those of the recalculation", async () => {
     await renderDefault();
 
-    await userEvent.upload(fileInput(), exportFile({ app_version: "0.0.1" }));
+    await userEvent.upload(
+      fileInput(),
+      exportFile({
+        app_version: "0.0.1",
+        data_sources: [{ id: "ecologits", name: "EcoLogits", version: "0.10.0", retrieved_on: null }],
+      }),
+    );
 
     expect(await screen.findByRole("status")).toHaveTextContent(
-      `This file was created with other versions (AI Calculator 0.0.1 → ${__APP_VERSION__})`,
+      "This file was created with other versions (AI Calculator 0.0.1 → 0.4.0, EcoLogits 0.10.0 → 0.11.3)",
     );
   });
 
@@ -771,7 +800,7 @@ describe("CalculatorPage import", () => {
     const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
     await renderLoaded();
     const exported = lastRequest();
-    fireEvent.click(screen.getByRole("button", { name: "Export my data" }));
+    fireEvent.click(screen.getByRole("button", { name: "Export" }));
     await waitFor(() => expect(files).toHaveLength(1));
     click.mockRestore();
 
