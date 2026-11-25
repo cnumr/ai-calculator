@@ -725,6 +725,15 @@ button {
   position: relative;
   height: 10px;
   border-radius: 999px;
+}
+
+/* Pale scale from 0 to max × 1.1, on its own layer: an opacity on the track
+   itself would also fade the min–max band and the tick drawn inside it. */
+.range-gauge__track::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   background: linear-gradient(
     90deg,
     var(--forest) 0%,
@@ -745,7 +754,6 @@ button {
     var(--amber) 55%,
     var(--red) 100%
   );
-  opacity: 1;
 }
 
 .range-gauge__tick {
