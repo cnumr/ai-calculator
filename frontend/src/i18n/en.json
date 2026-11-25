@@ -27,7 +27,7 @@
     "dev_assistance": { "name": "Development assistance", "subtitle": "Agentic session" }
   },
   "calculator": {
-    "title": "Impact calculator",
+    "title": "Generative AI impact calculator",
     "provider": "Provider",
     "model": "Model",
     "outputTokens": "Generated tokens per request",
@@ -125,7 +125,7 @@
     },
     "criterion": {
       "gwp": "Greenhouse gases",
-      "energy": "Energy",
+      "energy": "Electricity",
       "adpe": "Mineral resources",
       "pe": "Primary energy",
       "water": "Water"

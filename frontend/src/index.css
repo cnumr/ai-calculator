@@ -126,6 +126,24 @@ button {
   border-bottom: 1px solid var(--line);
 }
 
+/* Language switcher, then the association's logo, on the right. */
+.app-nav__end {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.app-nav__logo {
+  display: block;
+  line-height: 0;
+}
+
+/* 150 px wide, as on greenit.eco. */
+.app-nav__logo img {
+  width: 150px;
+  height: auto;
+}
+
 .app-nav {
   max-width: 1280px;
   margin: 0 auto;

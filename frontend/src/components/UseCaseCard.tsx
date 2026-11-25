@@ -327,7 +327,10 @@ export function UseCaseCard({
                   id={`${inputIdPrefix}-frequency`}
                   type="number"
                   min={0}
-                  value={frequency}
+                  // 0 shows as a placeholder: typing replaces it instead of
+                  // giving "010" (issue #50). An emptied field counts as 0.
+                  value={frequency === 0 ? "" : frequency}
+                  placeholder="0"
                   onChange={(e) => emit({ frequency: Number(e.target.value) })}
                 />
                 <select
