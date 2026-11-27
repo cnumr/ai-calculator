@@ -1,0 +1,33 @@
+name: Deploy checks
+
+# Contrôle les fichiers de déploiement du VPS (deploy/) : shellcheck, tests de
+# update.sh avec un faux docker, validité du compose. Appelé aussi avant chaque
+# construction d'images de develop (images-develop.yml).
+on:
+  pull_request:
+    paths:
+      - "deploy/**"
+      - ".github/workflows/**"
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Fichiers de déploiement
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: shellcheck
+        run: shellcheck deploy/update.sh deploy/tests/update_test.sh deploy/tests/fake-bin/docker deploy/tests/fake-bin/curl
+
+      - name: Tests de update.sh
+        run: bash deploy/tests/update_test.sh
+
+      - name: Compose valide
+        run: docker compose -f deploy/compose.yml --env-file deploy/env.example config --quiet

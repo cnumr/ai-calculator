@@ -1,5 +1,6 @@
 """Methodological source behind each kind of use case, shown to users."""
 
+import os
 from dataclasses import dataclass
 from importlib.metadata import version
 
@@ -12,7 +13,8 @@ class MethodologicalSource:
     id: str
     # Version of the model/library used, when there is one.
     version: str | None
-    # Page describing the methodology, when there is one.
+    # Page describing the methodology, when there is one: an absolute URL, or
+    # a path of this site (e.g. "/methodologie#images").
     url: str | None
 
 
@@ -25,10 +27,13 @@ _SOURCES_BY_KIND = {
 
 
 def source_for_kind(kind: str) -> MethodologicalSource:
-    """EcoLogits (installed version) for text and video; image values have
-    no published source yet (taken from the POC V1)."""
-    if kind not in _SOURCES_BY_KIND:
-        return MethodologicalSource(id="unsourced", version=None, url=None)
+    """EcoLogits (installed version) for every kind: text and video directly,
+    images transposed from an EcoLogits video as described in the methodology
+    page (anchor #images)."""
+    if kind == "image":
+        return MethodologicalSource(
+            id="image_from_video", version=version("ecologits"), url="/methodologie#images"
+        )
     source_id, url = _SOURCES_BY_KIND[kind]
     return MethodologicalSource(id=source_id, version=version("ecologits"), url=url)
 
@@ -68,3 +73,15 @@ def data_sources() -> list[DataSource]:
             url="https://impactco2.fr/",
         ),
     ]
+
+
+def app_version() -> str:
+    """Version of the site that computes the results.
+
+    Front and back share one version (Changesets, scripts/sync-versions.mjs).
+    Staging images add the commit from APP_BUILD, in the footer's format
+    (frontend/src/appVersion.ts).
+    """
+    build = os.environ.get("APP_BUILD", "").strip()
+    base = version("ai-calculator-backend")
+    return f"{base}+sha.{build}" if build else base

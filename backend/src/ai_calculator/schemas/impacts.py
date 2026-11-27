@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ai_calculator.domain.impacts import ImpactRange, UnitImpacts
 
@@ -6,6 +6,7 @@ from ai_calculator.domain.impacts import ImpactRange, UnitImpacts
 class ImpactRangeOut(BaseModel):
     min: float
     max: float
+    value: float = Field(description="Estimated value: the middle of the range.")
 
 
 class ImpactsOut(BaseModel):
@@ -19,7 +20,7 @@ class ImpactsOut(BaseModel):
 def _to_range_out(range_: ImpactRange | None) -> ImpactRangeOut | None:
     if range_ is None:
         return None
-    return ImpactRangeOut(min=range_.min, max=range_.max)
+    return ImpactRangeOut(min=range_.min, max=range_.max, value=range_.value)
 
 
 def to_impacts_out(impacts: UnitImpacts) -> ImpactsOut:

@@ -2,7 +2,7 @@ import json
 from importlib.metadata import version
 
 from ai_calculator.domain.equivalents import DEFAULT_EQUIVALENTS_PATH
-from ai_calculator.domain.sources import data_sources
+from ai_calculator.domain.sources import app_version, data_sources
 
 
 def test_data_sources_name_ecologits_with_its_installed_version():
@@ -23,3 +23,16 @@ def test_data_sources_name_impactco2_with_its_retrieval_date():
     assert impactco2.version is None
     assert impactco2.retrieved_on == expected["retrievedOn"]
     assert impactco2.url == "https://impactco2.fr/"
+
+
+def test_app_version_is_the_installed_backend_version(monkeypatch):
+    monkeypatch.delenv("APP_BUILD", raising=False)
+
+    assert app_version() == version("ai-calculator-backend")
+
+
+def test_app_version_names_the_commit_of_staging_images(monkeypatch):
+    # Same format as the footer (frontend/src/appVersion.ts).
+    monkeypatch.setenv("APP_BUILD", " 4750895 ")
+
+    assert app_version() == f"{version('ai-calculator-backend')}+sha.4750895"

@@ -2,6 +2,7 @@ import pytest
 
 from ai_calculator.domain.impacts import (
     EcologitsComputationError,
+    ImpactRange,
     ModelNotFoundError,
     compute_unit_impacts,
     compute_video_unit_impacts,
@@ -74,3 +75,9 @@ def test_compute_video_unit_impacts_raises_model_not_found_for_unknown_model():
         compute_video_unit_impacts(
             model_name="google/veo-2", resolution="720p", duration_s=8, with_audio=True
         )
+
+
+def test_impact_range_value_is_the_middle_of_the_range():
+    # The estimated value shown with each range, and kept in an export.
+    assert ImpactRange(min=1.0, max=4.0).value == 2.5
+    assert ImpactRange(min=3.0, max=3.0).value == 3.0

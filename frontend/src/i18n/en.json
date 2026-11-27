@@ -20,10 +20,14 @@
     "doc_small": { "name": "Writing a short document", "subtitle": "Notes and short summaries" },
     "doc_large": { "name": "Writing a long document", "subtitle": "Reports, PDFs, articles" },
     "ai_query": { "name": "Query to an AI assistant", "subtitle": "Chat and assistant" },
-    "email": { "name": "Writing an email", "subtitle": "Gmail, Outlook, calendar" }
+    "email": { "name": "Writing a short email", "subtitle": "Gmail, Outlook, calendar" },
+    "slides": { "name": "Generating a presentation (slides)", "subtitle": "8 to 12 slides, Slides, PowerPoint" },
+    "spreadsheet": { "name": "Generating a spreadsheet", "subtitle": "20 to 100-row table, Sheets, Excel" },
+    "email_long": { "name": "Writing a long email", "subtitle": "Detailed email of 300 to 900 words" },
+    "dev_assistance": { "name": "Development assistance", "subtitle": "Agentic session" }
   },
   "calculator": {
-    "title": "Impact calculator",
+    "title": "Generative AI impact calculator",
     "provider": "Provider",
     "model": "Model",
     "outputTokens": "Generated tokens per request",
@@ -35,8 +39,8 @@
       "description": "Select the allowed LLM providers — they'll be available in the use cases below"
     },
     "sectionUsage": {
-      "title": "Daily usage per user",
-      "description": "Choose the provider and profile, set the daily frequency"
+      "title": "Usage per user",
+      "description": "Choose the provider and profile, set the frequency per day, week or month"
     },
     "sectionEnterprise": {
       "title": "Company-wide impact",
@@ -46,7 +50,29 @@
     "profileSelect": "Profile",
     "profileUnsupported": "Not available for this provider",
     "notAvailable": "Not available",
-    "frequencyPerDay": "Average daily frequency",
+    "configureToggle": "Configure",
+    "impactsToggle": "See more",
+    "impactsToggleOpen": "See less",
+    "customizeTitle": "Customisation",
+    "dailyImpactsTitle": "Impact details per working day",
+    "onlyUsed": "Only my usages ({{count}})",
+    "columnUseCase": "Use case settings",
+    "columnFrequency": "Average\nfrequency",
+    "columnImpact": "Impact per working day",
+    "families": {
+      "writing": "Writing",
+      "analysis": "Analysis and summaries",
+      "office": "Office documents",
+      "visual": "Visual creation",
+      "development": "Development"
+    },
+    "frequency": "Average frequency",
+    "frequencyUnitLabel": "Frequency unit",
+    "frequencyUnit": {
+      "day": "/day",
+      "week": "/week",
+      "month": "/month"
+    },
     "detailsToggle": "Show/hide the impact details for this task",
     "cardImpactSummary": {
       "gwp": "Greenhouse gases",
@@ -62,11 +88,34 @@
       "range": "{{min}} to {{max}} {{unit}}",
       "workingDays": "Over 218 working days / year"
     },
+    "import": {
+      "button": "Import",
+      "confirm": "Replace your current inputs with the file's?",
+      "done_one": "{{count}} use case imported. The impacts have been recalculated.",
+      "done_other": "{{count}} use cases imported. The impacts have been recalculated.",
+      "ignored": "Not restored, as the calculator no longer has them: {{list}}.",
+      "adjusted": "Restored with another model, as the file's is no longer offered: {{list}}.",
+      "versions": "This file was created with other versions ({{list}}): the recalculated impacts may differ from the file's.",
+      "close": "Close the message",
+      "tooltip": "Reload an exported file to pick up your scenario: your inputs are restored and the impacts recalculated with the current versions. The file is read by your browser.",
+      "errors": {
+        "unreadable": "This file could not be read: it is not a valid JSON file.",
+        "tooLarge": "This file is too large to be an export of the calculator.",
+        "notAnExport": "This file is not an export of the calculator.",
+        "newerFormat": "This file comes from a newer version of the calculator, which this site cannot read yet."
+      }
+    },
+    "export": {
+      "button": "Export",
+      "unavailable": "Available once a use case has a frequency and the calculation is done.",
+      "tooltip": "Export your inputs and their impacts in JSON format, per use case, per person and for the company, with the versions of the methodological sources used for the calculation. The file is created by your browser, without sending any data to our servers."
+    },
     "headcount": "Headcount",
     "tier": {
       "eco": "Eco",
       "balanced": "Balanced",
       "powerful": "Powerful",
+      "flagship": "Ultra",
       "research": "Research",
       "image": "Standard",
       "video": "Standard",
@@ -75,19 +124,18 @@
     "calculating": "Calculating…",
     "source": {
       "ecologits_llm": "Source: EcoLogits {{version}}, LLM inference model.",
-      "ecologits_video": "Source: EcoLogits {{version}}, video generation model.",
-      "unsourced": "Indicative value, no published source yet."
+      "image_from_video": "Source: transposed from EcoLogits {{version}} video generation (Veo 3.1), based on the study “The Hidden Cost of an Image”.",
+      "ecologits_video": "Source: EcoLogits {{version}}, video generation model."
     },
     "sourceLink": "Methodology",
     "newTab": "new tab",
     "parameterDefault": "Default value: {{value}}",
-    "perDayShort": "/day",
-    "customize": "Customize: {{values}}",
     "parameter": {
       "output_tokens": "Generated tokens per action",
       "resolution": "Resolution",
       "duration_s": "Duration",
-      "with_audio": "Audio"
+      "with_audio": "Audio",
+      "size": "Size"
     },
     "parameterOption": {
       "output_tokens": "{{value}} generated tokens",
@@ -99,7 +147,7 @@
     },
     "criterion": {
       "gwp": "Greenhouse gases",
-      "energy": "Energy",
+      "energy": "Electricity",
       "adpe": "Mineral resources",
       "pe": "Primary energy",
       "water": "Water"
@@ -109,6 +157,10 @@
     "errorCatalogLoad": "Could not load the use case catalogue.",
     "retry": "Retry",
     "reset": "Reset",
+    "resetTooltip": "Restore every default value: providers, frequencies, parameters and headcount.",
+    "tour": "Guided tour",
+    "tourTooltip": "Discover the calculator step by step, in a few stages.",
+    "tourInvite": "(recommended for a first visit)",
     "co2Equivalent": {
       "car_km": "{{value}} km by car",
       "streaming_hour_one": "{{value}} hour of video streaming",
@@ -119,21 +171,11 @@
     ,"co2EquivalentsHeading": "Individual equivalents",
     "compareOnImpactCo2": "Compare on ImpactCO2.fr"
   },
-  "methodology": {
-    "title": "Methodology",
-    "body": "Impacts are computed from EcoLogits, which models generative AI model inference..."
-  },
-  "about": {
-    "title": "About",
-    "body": "AI Calculator is a project by Collectif Conception Numérique Responsable (cnumr)."
-  },
-  "legal": {
-    "title": "Legal notice",
-    "body": "Publisher: cnumr. Hosting: TBD."
-  },
+
   "footer": {
-    "greenit": "GreenIT.fr association",
+    "greenit": "Green IT association",
     "github": "Source code on GitHub",
+    "ecoindex": "Ecoindex of this page: see the analysis",
     "sources": "Data sources:",
     "retrievedOn": "retrieved on {{date}}",
     "navLabel": "Site pages"

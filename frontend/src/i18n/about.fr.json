@@ -1,0 +1,40 @@
+{
+  "title": "À propos",
+  "goal": "<strong>Notre objectif :</strong> permettre d'estimer l'empreinte environnementale de l'IA générative lors de la phase d'utilisation (inférence), selon les cas d'usage courants proposés par les différents fournisseurs de services (Anthropic, Google, OpenAI, etc.), à l'échelle d'une année d'utilisation.",
+  "audience": {
+    "intro": "Public cible :",
+    "public": "Grand public",
+    "business": "Entreprises (dans une optique de sensibilisation)"
+  },
+  "existing": {
+    "intro": "Les calculateurs existants proposent en effet une lecture soit :",
+    "technical": "technique (basée sur le nombre de tokens exécutés) ;",
+    "perRequest": "« à la requête », ne permettant alors pas de rendre compte de l'effet de volume de l'usage actuel de l'IA générative, ni de l'écart d'impact potentiel suivant le type d'usage ;",
+    "targeted": "dédiée à un usage ciblé."
+  },
+  "aims": {
+    "intro": "Dans une optique de sensibilisation, le calculateur vise donc à :",
+    "gaps": "éclairer les écarts d'impacts selon le type d'usage (ou de requête) effectué ;",
+    "annual": "représenter l'impact annuel pour une utilisation donnée, à l'échelle individuelle ou collective."
+  },
+  "business": {
+    "intro": "Dans le cas d'un usage en entreprise, l'intérêt est également de :",
+    "scale": "matérialiser l'impact à l'échelle de l'ensemble des collaborateur·ices (ou d'un groupe de collaborateur·ices), dans une optique de sensibilisation (l'outil n'est pas conçu en l'état pour un usage en tant que tableau de bord « comptable ») ;",
+    "code": "apporter un focus complémentaire sur l'usage de l'IA générative en tant qu'assistant au développement (code)."
+  },
+  "credits": {
+    "intro": "Ce calculateur a été conçu par l'<anchor>Association Green IT</anchor>, et notamment :",
+    "design": "Conception et réalisation :",
+    "review": "Tests et relectures internes :"
+  },
+  "claude": {
+    "title": "Réalisé avec l'aide de Claude Code",
+    "intro": "Le code du calculateur a été écrit avec l'aide de <anchor>Claude Code</anchor>, l'assistant de développement d'Anthropic, outillé par les ressources de l'association :",
+    "mcp": "le serveur MCP GreenIT, qui donne accès aux 115 bonnes pratiques d'écoconception web et au calcul de l'EcoIndex ;",
+    "practices": "les bonnes pratiques associées, appliquées à chaque étape : écoconception des fonctionnalités, écriture du code, audit d'écoconception avant chaque mise en production.",
+    "usage": "Du {{from}} au {{to}}, Claude (modèles Opus 5.5 et Haiku 5.5) a généré {{tokens}} tokens pour l'équipe, soit l'équivalent de {{sessions}} sessions du cas d'usage « Assistance au développement » (100 000 tokens chacune). D'après ce calculateur, cela représente :",
+    "limits": "Comme dans le calculateur, seuls les tokens générés sont comptés : les tokens lus en entrée (le contexte du projet, relu à chaque requête) ne le sont pas, ce qui minore ces impacts (voir les <anchor>limites de la méthodologie</anchor>).",
+    "history": "Chaque modification du code indique les tokens consommés et les modèles utilisés : voir l'<anchor>historique du projet sur GitHub</anchor>.",
+    "range": "{{label}} : {{min}} à {{max}} {{unit}}"
+  }
+}

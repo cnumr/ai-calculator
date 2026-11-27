@@ -1,0 +1,93 @@
+{
+  "title": "Méthodologie",
+  "useCases": {
+    "title": "Cas d'usage",
+    "body": "Nous avons défini un ensemble de cas d'usage représentatifs d'une utilisation de l'IA générative, en contexte personnel ou professionnel, via les principaux fournisseurs d'outils d'IA générative basés sur des LLM.",
+    "cumulative": "L'intérêt majeur par rapport aux autres calculateurs est de pouvoir additionner ces cas d'usage, pour simuler l'impact cumulé de leur exécution à l'échelle d'une journée ou d'une année, pour une ou plusieurs personnes (par exemple une équipe ou une entreprise)."
+  },
+  "frequency": {
+    "title": "Fréquence d'usage",
+    "principle": "La fréquence de chaque usage se saisit par jour, par semaine ou par mois. Le calculateur la ramène au nombre d'actions par an, sur la base de 218 jours ouvrés, puis à une moyenne par jour ouvré : c'est elle qui sert à l'« Impact par jour ouvré » de chaque ligne, pour comparer les usages entre eux quelle que soit leur unité.",
+    "unit": "Unité",
+    "perYear": "Périodes travaillées par an",
+    "perDay": "Équivalent par jour ouvré",
+    "rows": {
+      "day": ["Par jour", "218 jours ouvrés", "n"],
+      "week": ["Par semaine", "43,6 semaines (218 ÷ 5 jours ouvrés)", "n ÷ 5"],
+      "month": ["Par mois", "11 mois (un mois de congés)", "n × 11 ÷ 218"]
+    },
+    "example": "Exemple : une vidéo par mois compte pour 11 vidéos par an, soit environ 0,05 par jour ouvré."
+  },
+  "factors": {
+    "title": "Facteurs d'impact considérés",
+    "intro": "Nous nous appuyons sur l'<anchor>API EcoLogits</anchor>, en distinguant trois cas :",
+    "direct": "les cas d'usage directement assimilables à un cas d'usage existant dans EcoLogits (source : EcoLogits) ;",
+    "custom": "les cas d'usage reposant sur un nombre spécifique de tokens de sortie textuels (source : EcoLogits, avec un nombre de tokens personnalisé) :",
+    "customTokens": "les tokens de sortie retenus sont précisés dans la colonne dédiée du tableau ci-dessous ;",
+    "customRange": "la colonne « Fourchette » donne le nombre minimal et maximal de tokens de sortie envisagé pour le cas d'usage, base de la valeur retenue par défaut ;",
+    "image": "les cas d'usage de génération d'images : ils transposent les facteurs d'impact d'EcoLogits pour la vidéo, selon une estimation de l'énergie (Wh) par format d'image (voir <anchor>Génération d'images</anchor>)."
+  },
+  "mix": {
+    "title": "Mix électrique",
+    "body": "Le mix électrique retenu est le mix mondial, issu de la <anchor>Base Empreinte®</anchor> de l'Ademe."
+  },
+  "limits": {
+    "title": "Limites",
+    "scope": "Le périmètre de calcul se limite au tiers « cloud / centre de données » : il ne prend pas en compte les impacts du réseau ni des équipements utilisateurs (voir la section « Scope and Methodology » de la <anchor>méthodologie EcoLogits</anchor>).",
+    "inputs": "Seuls les tokens de sortie sont pris en compte : les impacts des cas d'usage qui demandent un contexte d'entrée et une analyse plus lourds (par exemple un résumé de réunion) sont donc minorés.",
+    "conclusion": "Les impacts réels sont donc vraisemblablement bien supérieurs à ceux fournis par le calculateur."
+  },
+  "summary": {
+    "title": "Synthèse des cas d'usage et facteurs d'impact associés",
+    "caption": "Cas d'usage, tokens de sortie par action et source du facteur d'impact",
+    "useCase": "Cas d'usage",
+    "comment": "Commentaire",
+    "tokens": "Tokens de sortie",
+    "range": "Fourchette",
+    "source": "Source du facteur d'impact",
+    "rangeValue": "{{min}} à {{max}}",
+    "notApplicable": "—",
+    "comments": {
+      "doc_small": "Synthèse d'environ 2 pages",
+      "doc_large": "Synthèse d'environ 5 pages",
+      "email": "Environ 100 à 250 mots",
+      "email_long": "Mail détaillé, environ 300 à 900 mots",
+      "deep_research": "Rapport d'environ 5 pages",
+      "meet_summary": "Synthèse de 1 à 2 pages",
+      "ai_query": "Réponse d'environ 200 mots",
+      "slides": "Présentation de 8 à 12 slides : titres, messages clés, puces, notes éventuelles et consignes de mise en forme",
+      "spreadsheet": "Tableau de 20 à 100 lignes avec en-têtes, formules, contrôles, commentaires",
+      "dev_assistance": "Session de développement agentique autonome : 1 à 2 jours de travail de développement assisté"
+    },
+    "sources": {
+      "ecologits": "EcoLogits",
+      "custom": "EcoLogits, nombre de tokens personnalisé",
+      "doc_small": "EcoLogits, nombre de tokens personnalisé (40 % du rapport de 5 pages)",
+      "deep_research": "EcoLogits (rapport de 5 pages)",
+      "meet_summary": "EcoLogits, nombre de tokens personnalisé (50 à 100 % du résumé de 2 pages)",
+      "image": "Vidéo 720p ÷ {{divisor}}, sur la base de Veo 3.1"
+    }
+  },
+  "images": {
+    "title": "Génération d'images",
+    "principle": "EcoLogits ne modélise pas la génération d'images. Les résultats transposent donc les facteurs d'impact d'EcoLogits pour la vidéo, selon une estimation de l'énergie (Wh) par format d'image.",
+    "size": "Résolution de l'image",
+    "energy": "Valeur de référence",
+    "assumptions": "Hypothèses",
+    "rows": {
+      "512": "Modèle de diffusion « courant » (type SDXL ou équivalent), configuration cloud et nombre de pas de diffusion typique. La valeur retenue correspond au bas de la fourchette de 0,086 à 4,08 Wh.",
+      "1024": "Même famille de modèle, résolution doublée : facteur multiplicatif de 5, haut de la fourchette de 1,3 à 4,7 observée dans l'étude pour le passage de 512 à 1024 px.",
+      "2048": "Extrapolation depuis 1024 px : nouveau doublement de la résolution et configurations plus lourdes (plus de pas, modèles transformers). Facteur multiplicatif de 3,33, milieu de fourchette, en conservant les mêmes ratios que pour les cas précédents."
+    },
+    "study": "Source : « The Hidden Cost of an Image: Quantifying the Energy Consumption of AI Image Generation » (<anchor>arXiv 2506.17016</anchor>).",
+    "formats": "Nous retenons les formats 1024 × 1024 et 2048 × 2048.",
+    "reference": "La valeur de référence pour la transposition est la génération d'une vidéo 720p de 8 secondes avec audio par le modèle Veo 3.1 : 44,1 Wh (27,7 à 60,6 Wh) selon le <anchor>calculateur EcoLogits</anchor>, au 30 septembre 2026. Soit, pour une image :",
+    "factor": "<strong>{{size}}</strong> : facteur d'impact {{divisor}} fois inférieur à celui de la génération d'une vidéo 720p par Veo 3.1 ;",
+    "scope": "Le même facteur s'applique aux cinq critères présentés et à tous les fournisseurs. Le profil affiche le modèle d'image utilisé (par exemple Gemini 2.5 Flash Image), mais son impact n'est pas évalué directement."
+  },
+  "sources": {
+    "title": "Sources des données issues d'EcoLogits",
+    "methodology": "Méthodologie : <anchor>ecologits.ai/latest/methodology</anchor>",
+    "impacts": "Facteurs d'impact : <anchor>ecologits.ai/latest/tutorial/impacts</anchor>"
+  }
+}

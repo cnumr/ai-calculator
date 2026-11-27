@@ -7,12 +7,18 @@ ligne à ajouter en fin de changeset (voir AGENTS.md).
 
 Usage :
   scripts/claude-usage.py --since 2026-11-09T15:45 [--until 2026-11-09T16:30]
-Les dates sans fuseau sont en heure locale.
+  scripts/claude-usage.py --since ... --csv "Description du travail"
+Les dates sans fuseau sont en heure locale. Avec --csv, affiche à la place
+les lignes à ajouter à docs/ai-usage.csv, registre des tokens consommés sans
+changeset (voir scripts/ai-usage-total.py).
 """
 
 import argparse
 import collections
+import csv
 import json
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -44,6 +50,7 @@ def main() -> None:
     parser.add_argument("--since", required=True)
     parser.add_argument("--until")
     parser.add_argument("--project", default=str(Path(__file__).resolve().parent.parent))
+    parser.add_argument("--csv", metavar="DESCRIPTION", help="lignes pour docs/ai-usage.csv")
     args = parser.parse_args()
 
     since = to_utc(args.since)
@@ -76,6 +83,16 @@ def main() -> None:
 
     if not usage:
         raise SystemExit("Aucune requête Claude trouvée sur cette période.")
+    if args.csv:
+        author = subprocess.run(
+            ["git", "config", "user.name"], capture_output=True, text=True, cwd=args.project
+        ).stdout.strip()
+        writer = csv.writer(sys.stdout, lineterminator="\n")
+        for model, c in sorted(usage.items(), key=lambda item: -item[1]["total"]):
+            writer.writerow(
+                [until.astimezone().date().isoformat(), author, label(model), c["total"], c["cache"], c["out"], args.csv]
+            )
+        return
     parts = [
         f"{label(model)} : ≈ {human(c['total'])} tokens (dont {human(c['cache'])} relus en cache, {human(c['out'])} générés)"
         for model, c in sorted(usage.items(), key=lambda item: -item[1]["total"])

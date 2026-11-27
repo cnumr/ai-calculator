@@ -1,3 +1,5 @@
+from functools import cache
+
 from fastapi import APIRouter, HTTPException
 
 from ai_calculator.api.catalog import CATALOG
@@ -7,44 +9,54 @@ from ai_calculator.domain.scenario import (
     UsageInput,
     compute_scenario,
 )
+from ai_calculator.domain.sources import app_version, data_sources
 from ai_calculator.schemas.calculate import (
+    CalculationMetaOut,
     CalculateRequest,
     CalculateResponse,
     Co2EquivalentOut,
     ProviderShareOut,
     UsageIn,
     UsageOut,
-    ImageUsageIn,
 )
 from ai_calculator.schemas.impacts import to_impacts_out
+from ai_calculator.schemas.use_cases import to_data_sources_out
 
 router = APIRouter()
 
 
 def _to_usage_input(usage: UsageIn) -> UsageInput:
-    parameters = (
-        {}
-        if isinstance(usage, ImageUsageIn)
-        else usage.parameters.model_dump(exclude_none=True)
-    )
+    parameters = usage.parameters.model_dump(exclude_none=True)
     return UsageInput(
         kind=usage.kind,
         use_case_id=usage.use_case_id,
         provider_id=usage.provider_id,
         profile_id=usage.profile_id,
-        frequency_per_day=usage.frequency_per_day,
+        frequency=usage.frequency,
+        frequency_unit=usage.frequency_unit,
         parameters=parameters,
+    )
+
+
+@cache
+def _meta() -> CalculationMetaOut:
+    """Versions in use: they only change with a new deployment."""
+    return CalculationMetaOut(
+        app_version=app_version(), data_sources=to_data_sources_out(data_sources())
     )
 
 
 def _to_response(result: ScenarioResult) -> CalculateResponse:
     return CalculateResponse(
+        meta=_meta(),
         working_days_per_year=result.working_days_per_year,
         usages=[
             UsageOut(
                 use_case_id=u.use_case_id,
                 provider_id=u.provider_id,
                 profile_id=u.profile_id,
+                frequency=u.frequency,
+                frequency_unit=u.frequency_unit,
                 frequency_per_day=u.frequency_per_day,
                 parameters=u.parameters,
                 unit_impacts=to_impacts_out(u.unit_impacts),

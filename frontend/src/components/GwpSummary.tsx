@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { ImpactRange } from "../api/client";
-import { formatNumber, scaleRange } from "../domain/units";
+import { formatNumber, scaleImpact } from "../domain/units";
 
 interface GwpSummaryProps {
   impact: ImpactRange | null;
@@ -12,14 +12,17 @@ export function GwpSummary({ impact, scope }: GwpSummaryProps) {
   const locale = i18n.language;
   if (!impact) return null;
 
-  const range = scaleRange(impact.min, impact.max, "kgCO2eq");
-  const midpoint = (range.min + range.max) / 2;
+  const range = scaleImpact(impact, "kgCO2eq");
 
   return (
-    <section className="gwp-summary" aria-labelledby={`gwp-summary-${scope}`}>
+    <section
+      className="gwp-summary"
+      aria-labelledby={`gwp-summary-${scope}`}
+      data-tour={`${scope}-total`}
+    >
       <h3 id={`gwp-summary-${scope}`}>{t(`calculator.gwpSummary.${scope}`)}</h3>
       <p className="gwp-summary__value">
-        {formatNumber(midpoint, locale)} <span>{range.unit}</span>
+        {formatNumber(range.value, locale)} <span>{range.unit}</span>
       </p>
       <p className="gwp-summary__range">
         {t("calculator.gwpSummary.range", {

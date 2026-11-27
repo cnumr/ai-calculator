@@ -80,6 +80,22 @@ describe("fetchUseCases", () => {
     expect(legacy).toEqual({ id: "legacy", parameters: [], models: [] });
   });
 
+  it("reads the families and the family of each use case", async () => {
+    stubFetch({
+      providers: [],
+      families: [{ id: "writing" }, { id: "visual" }],
+      use_cases: [
+        { id: "email", kind: "text", family: "writing", providers: [] },
+        { id: "legacy", kind: "text", providers: [] },
+      ],
+    });
+
+    const catalog = await fetchUseCases();
+
+    expect(catalog.families).toEqual(["writing", "visual"]);
+    expect(catalog.useCases.map((uc) => uc.family)).toEqual(["writing", null]);
+  });
+
   it("throws ApiError when the response is not ok", async () => {
     stubFetch({}, false, 500);
 
@@ -88,16 +104,24 @@ describe("fetchUseCases", () => {
 });
 
 describe("calculate", () => {
-  const ZERO = { min: 0, max: 0 };
-  const impacts = { gwp: { min: 1, max: 2 }, energy: ZERO, adpe: ZERO, pe: null, water: ZERO };
+  const ZERO = { min: 0, max: 0, value: 0 };
+  const impacts = { gwp: { min: 1, max: 2, value: 1.5 }, energy: ZERO, adpe: ZERO, pe: null, water: ZERO };
   const response = {
+    meta: {
+      app_version: "0.4.0",
+      data_sources: [
+        { id: "ecologits", name: "EcoLogits", version: "0.11.3", retrieved_on: null, url: "https://ecologits.ai/" },
+      ],
+    },
     working_days_per_year: 218,
     usages: [
       {
         use_case_id: "video",
         provider_id: "google",
         profile_id: "video",
-        frequency_per_day: 1,
+        frequency: 1,
+        frequency_unit: "week",
+        frequency_per_day: 0.2,
         parameters: { resolution: "1080p", duration_s: 8, with_audio: true },
         unit_impacts: impacts,
         daily_impacts: impacts,
@@ -112,7 +136,7 @@ describe("calculate", () => {
     co2_equivalents: [{ id: "car_km", impact_co2_slug: "voiturethermique", quantity: 7.5 }],
   };
 
-  it("posts the scenario in snake_case, with parameters for text and video usages", async () => {
+  it("posts the scenario in snake_case, with the parameters of each usage", async () => {
     const fetchMock = stubFetch(response);
     const controller = new AbortController();
 
@@ -125,7 +149,8 @@ describe("calculate", () => {
             useCaseId: "video",
             providerId: "google",
             profileId: "video",
-            frequencyPerDay: 1,
+            frequency: 1,
+            frequencyUnit: "week",
             parameters: { resolution: "1080p" },
           },
           {
@@ -133,7 +158,8 @@ describe("calculate", () => {
             useCaseId: "email",
             providerId: "openai",
             profileId: "eco",
-            frequencyPerDay: 3,
+            frequency: 3,
+            frequencyUnit: "day",
             parameters: { output_tokens: 500 },
           },
           {
@@ -141,8 +167,9 @@ describe("calculate", () => {
             useCaseId: "image",
             providerId: "google",
             profileId: "image",
-            frequencyPerDay: 2,
-            parameters: { ignored: true },
+            frequency: 2,
+            frequencyUnit: "month",
+            parameters: { size: "2048x2048" },
           },
         ],
       },
@@ -161,7 +188,8 @@ describe("calculate", () => {
           use_case_id: "video",
           provider_id: "google",
           profile_id: "video",
-          frequency_per_day: 1,
+          frequency: 1,
+          frequency_unit: "week",
           parameters: { resolution: "1080p" },
         },
         {
@@ -169,7 +197,8 @@ describe("calculate", () => {
           use_case_id: "email",
           provider_id: "openai",
           profile_id: "eco",
-          frequency_per_day: 3,
+          frequency: 3,
+          frequency_unit: "day",
           parameters: { output_tokens: 500 },
         },
         {
@@ -177,7 +206,9 @@ describe("calculate", () => {
           use_case_id: "image",
           provider_id: "google",
           profile_id: "image",
-          frequency_per_day: 2,
+          frequency: 2,
+          frequency_unit: "month",
+          parameters: { size: "2048x2048" },
         },
       ],
     });
@@ -188,12 +219,20 @@ describe("calculate", () => {
 
     const result = await calculate({ headcount: 1, usages: [] });
 
+    expect(result.meta).toEqual({
+      appVersion: "0.4.0",
+      dataSources: [
+        { id: "ecologits", name: "EcoLogits", version: "0.11.3", retrievedOn: null, url: "https://ecologits.ai/" },
+      ],
+    });
     expect(result.workingDaysPerYear).toBe(218);
     expect(result.usages[0]).toMatchObject({
       useCaseId: "video",
       providerId: "google",
       profileId: "video",
-      frequencyPerDay: 1,
+      frequency: 1,
+      frequencyUnit: "week",
+      frequencyPerDay: 0.2,
       parameters: { resolution: "1080p", duration_s: 8, with_audio: true },
       dailyImpacts: impacts,
     });

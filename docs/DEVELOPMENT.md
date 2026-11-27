@@ -16,7 +16,7 @@ docker compose up --build
 `docker-compose.yml` est la stack de **production** : build multi-stage, pas de hot-reload ni de montage de volumes, un seul service HTTP exposé sur l'hôte.
 
 - Le frontend (`frontend/Dockerfile.prod`) compile le SPA (`npm run build`) et sert les fichiers statiques via Nginx sur http://localhost (port `80`, configurable avec `HTTP_PORT`).
-- Nginx (`frontend/nginx.conf`) proxifie en interne les requêtes `/api/` vers le service `backend` (port `8000`, sur le réseau Docker uniquement).
+- Nginx (`frontend/nginx.conf.template`) proxifie en interne les requêtes `/api/` vers le service `backend` (port `8000`, sur le réseau Docker uniquement).
 - Le backend (`backend/Dockerfile.prod`) ne publie aucun port sur l'hôte : il n'est joignable que depuis le conteneur frontend, jamais directement depuis le navigateur.
 
 ```bash
@@ -91,6 +91,7 @@ Ces variables s'appliquent à `docker-compose.dev.yml` (voir [PRODUCTION.md](PRO
 | ---------------------- | -------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `CORS_ALLOWED_ORIGINS` | backend        | `http://localhost:5173` | Liste d'origines autorisées à appeler l'API (séparées par des virgules). À ajuster si le frontend est servi depuis une autre origine (déploiement, port différent).                                        |
 | `VITE_API_BASE_URL`    | frontend       | `""` (même origine)     | URL de base de l'API consommée par le frontend.                                                                                                                                                            |
+| `ECOINDEX_DOMAIN`      | frontend       | staging (`docker-compose.dev.yml`) | Domaine analysé par Ecoindex : le serveur Vite relaie le badge de chaque page comme nginx en production (`vite.config.ts`). Vide : pas de badge.                                                   |
 | `FRONTEND_PORT`        | docker-compose | `5173`                  | Port hôte sur lequel le frontend est exposé (`docker compose -f docker-compose.dev.yml up`). Utile en cas de conflit de port local, ex : `FRONTEND_PORT=3000 docker compose -f docker-compose.dev.yml up`. |
 
 Si `FRONTEND_PORT` est changé, penser à ajuster en parallèle `CORS_ALLOWED_ORIGINS` côté backend pour que l'origine corresponde toujours au port réellement utilisé.
@@ -138,7 +139,7 @@ docs/       Documentation (ce fichier)
 
 ### Faire évoluer le catalogue
 
-Le catalogue des cas d'usage se modifie dans `backend/src/ai_calculator/data/use_cases.yaml` (commentaires en tête de fichier). Chaque cas d'usage déclare son `kind` (`text`, `video` ou `image`), qui fixe son mode de calcul et ses paramètres réglables. Le fichier est validé au démarrage du back : un modèle inconnu d'EcoLogits, un modèle sans libellé dans `model_labels` ou une valeur par défaut non supportée empêchent le démarrage, avec un message explicite. Un nouveau cas d'usage demande aussi ses libellés FR/EN (`frontend/src/i18n/`) et son picto (`frontend/src/assets/use-cases/`).
+Le catalogue des cas d'usage se modifie dans `backend/src/ai_calculator/data/use_cases.yaml` (commentaires en tête de fichier). Chaque cas d'usage déclare son `kind` (`text`, `video` ou `image`), qui fixe son mode de calcul et ses paramètres réglables. Les modèles des cas d'usage texte sont déclarés une seule fois dans la table `text_models` (fournisseur × profil → modèle EcoLogits, profils `eco`, `balanced`, `powerful`, `flagship` et `research`) : un cas d'usage texte n'indique que ses `output_tokens`, son fournisseur par défaut et son profil recommandé, et propose tous les modèles de la table. Changer un modèle dans la table le change pour tous les cas d'usage texte. Les profils d'image déclarent `image_from_video` : la vidéo de référence (modèle EcoLogits, résolution, durée, audio), le facteur de division par taille d'image (`size_divisors`) et la taille par défaut, décrits dans la page Méthodologie. Le fichier est validé au démarrage du back : un modèle inconnu d'EcoLogits, un modèle sans libellé dans `model_labels`, une valeur par défaut non supportée, ou un fournisseur par défaut ou un profil recommandé non proposés empêchent le démarrage, avec un message explicite. Chaque cas d'usage déclare aussi sa `family` (rédaction, analyse, bureautique, création visuelle, développement), parmi les `families` déclarées en tête du fichier, dans l'ordre d'affichage : le calculateur liste les cas d'usage sous un intertitre par famille. Un nouveau cas d'usage demande aussi ses libellés FR/EN (`frontend/src/i18n/`) et son picto (`frontend/src/assets/use-cases/`) ; une nouvelle famille, son libellé FR/EN (`calculator.families`).
 
 ## Processus de release
 
@@ -165,6 +166,14 @@ Si le changement a été réalisé avec un assistant IA, terminer le changeset p
 scripts/claude-usage.py --since 2026-11-09T15:45 --until 2026-11-09T16:30   # heure locale
 # _Réalisé avec Claude Code — Claude Opus 5.5 : ≈ 3,4 M tokens (dont 3,3 M relus en cache, 31 k générés)._
 ```
+
+Un travail réalisé avec un assistant IA **sans changeset** (pages de contenu, documentation, specs, piste abandonnée…) inscrit ses tokens dans le registre [`docs/ai-usage.csv`](ai-usage.csv), une ligne par modèle. Avec Claude Code, `--csv` produit ces lignes :
+
+```bash
+scripts/claude-usage.py --since 2026-11-25T17:20 --csv "Page À propos : contributeurs" >> docs/ai-usage.csv
+```
+
+Les changesets (en attente dans `.changeset/`, puis publiés dans `CHANGELOG.md`) et ce registre forment l'historique de l'usage de l'IA sur le projet, indépendant du poste de chacun. `scripts/ai-usage-total.py` en fait le total par modèle (`--json` pour un calcul d'impacts) : c'est la source des chiffres de la page À propos, à recalculer avec `POST /api/calculate` (cas d'usage `dev_assistance`, fournisseur `anthropic`, profil du modèle, `output_tokens` = tokens générés).
 
 **Automatisation (`.github/workflows/release.yml`)** :
 

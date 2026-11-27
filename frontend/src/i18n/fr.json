@@ -20,10 +20,14 @@
     "doc_small": { "name": "Rédaction d'un document court", "subtitle": "Notes et synthèses courtes" },
     "doc_large": { "name": "Rédaction d'un document long", "subtitle": "Rapports, PDF, articles" },
     "ai_query": { "name": "Question à un assistant IA", "subtitle": "Chat et assistant" },
-    "email": { "name": "Rédaction d'un email", "subtitle": "Gmail, Outlook, agenda" }
+    "email": { "name": "Rédaction d'un mail court", "subtitle": "Gmail, Outlook, agenda" },
+    "slides": { "name": "Générer une présentation (slides)", "subtitle": "8 à 12 slides, Slides, PowerPoint" },
+    "spreadsheet": { "name": "Génération d'une feuille de calcul", "subtitle": "Tableau de 20 à 100 lignes, Sheets, Excel" },
+    "email_long": { "name": "Rédaction d'un mail long", "subtitle": "Mail détaillé de 300 à 900 mots" },
+    "dev_assistance": { "name": "Assistance au développement", "subtitle": "Session agentique" }
   },
   "calculator": {
-    "title": "Calculateur d'impacts",
+    "title": "Calculateur d'impacts de l'IA générative",
     "provider": "Fournisseur",
     "model": "Modèle",
     "outputTokens": "Tokens générés par requête",
@@ -35,8 +39,8 @@
       "description": "Sélectionnez les fournisseurs LLM autorisés — ils seront disponibles dans les cas d'usage ci-dessous"
     },
     "sectionUsage": {
-      "title": "Usages quotidiens par utilisateur",
-      "description": "Choisissez le fournisseur et le profil, indiquez la fréquence quotidienne"
+      "title": "Usages par utilisateur",
+      "description": "Choisissez le fournisseur et le profil, indiquez la fréquence par jour, semaine ou mois"
     },
     "sectionEnterprise": {
       "title": "Impact à l'échelle de l'entreprise",
@@ -46,7 +50,29 @@
     "profileSelect": "Profil",
     "profileUnsupported": "Non disponible pour ce fournisseur",
     "notAvailable": "Non disponible",
-    "frequencyPerDay": "Fréquence quotidienne moyenne",
+    "configureToggle": "Configurer",
+    "impactsToggle": "Voir plus",
+    "impactsToggleOpen": "Voir moins",
+    "customizeTitle": "Personnalisation",
+    "dailyImpactsTitle": "Détail des impacts par jour ouvré",
+    "onlyUsed": "Seulement mes usages ({{count}})",
+    "columnUseCase": "Paramètres du cas d'usage",
+    "columnFrequency": "Fréquence\nmoyenne",
+    "columnImpact": "Impact par jour ouvré",
+    "families": {
+      "writing": "Rédaction",
+      "analysis": "Analyse et synthèse",
+      "office": "Production bureautique",
+      "visual": "Création visuelle",
+      "development": "Développement"
+    },
+    "frequency": "Fréquence moyenne",
+    "frequencyUnitLabel": "Unité de la fréquence",
+    "frequencyUnit": {
+      "day": "/jour",
+      "week": "/semaine",
+      "month": "/mois"
+    },
     "detailsToggle": "Voir/Masquer le détail de vos impacts pour cette tâche",
     "cardImpactSummary": {
       "gwp": "Gaz à effet de serre",
@@ -62,11 +88,34 @@
       "range": "de {{min}} à {{max}} {{unit}}",
       "workingDays": "Sur 218 jours ouvrés / an"
     },
+    "import": {
+      "button": "Importer",
+      "confirm": "Remplacer votre saisie actuelle par celle du fichier ?",
+      "done_one": "{{count}} cas d'usage importé. Les impacts ont été recalculés.",
+      "done_other": "{{count}} cas d'usage importés. Les impacts ont été recalculés.",
+      "ignored": "Non repris, car absents du calculateur : {{list}}.",
+      "adjusted": "Repris avec un autre modèle, celui du fichier n'étant plus proposé : {{list}}.",
+      "versions": "Ce fichier a été créé avec d'autres versions ({{list}}) : les impacts recalculés peuvent différer de ceux du fichier.",
+      "close": "Fermer le message",
+      "tooltip": "Rechargez un fichier exporté pour reprendre votre scénario : vos saisies sont reprises et les impacts recalculés avec les versions actuelles. Le fichier est lu par votre navigateur.",
+      "errors": {
+        "unreadable": "Ce fichier n'a pas pu être lu : ce n'est pas un fichier JSON valide.",
+        "tooLarge": "Ce fichier est trop volumineux pour être un export du calculateur.",
+        "notAnExport": "Ce fichier n'est pas un export du calculateur.",
+        "newerFormat": "Ce fichier vient d'une version plus récente du calculateur, que ce site ne sait pas encore lire."
+      }
+    },
+    "export": {
+      "button": "Exporter",
+      "unavailable": "Disponible dès qu'un cas d'usage a une fréquence et que le calcul est terminé.",
+      "tooltip": "Exportez vos saisies et leurs impacts au format JSON, par cas d'usage, par personne et pour l'entreprise, avec les versions des sources méthodologiques utilisées pour le calcul. Le fichier est créé par votre navigateur, sans envoi de données à nos serveurs."
+    },
     "headcount": "Nombre de salariés",
     "tier": {
       "eco": "Éco",
       "balanced": "Équilibré",
       "powerful": "Puissant",
+      "flagship": "Ultra",
       "research": "Recherche",
       "image": "Standard",
       "video": "Standard",
@@ -76,18 +125,17 @@
     "source": {
       "ecologits_llm": "Source : EcoLogits {{version}}, modélisation de l'inférence des LLM.",
       "ecologits_video": "Source : EcoLogits {{version}}, modélisation de la génération vidéo.",
-      "unsourced": "Valeur indicative, sans source publiée à ce jour."
+      "image_from_video": "Source : transposition depuis la génération vidéo EcoLogits {{version}} (Veo 3.1), d'après l'étude « The Hidden Cost of an Image »."
     },
     "sourceLink": "Méthodologie",
     "newTab": "nouvel onglet",
     "parameterDefault": "Valeur par défaut : {{value}}",
-    "perDayShort": "/jour",
-    "customize": "Personnaliser : {{values}}",
     "parameter": {
       "output_tokens": "Tokens générés par action",
       "resolution": "Résolution",
       "duration_s": "Durée",
-      "with_audio": "Audio"
+      "with_audio": "Audio",
+      "size": "Taille"
     },
     "parameterOption": {
       "output_tokens": "{{value}} tokens générés",
@@ -99,7 +147,7 @@
     },
     "criterion": {
       "gwp": "Gaz à effet de serre",
-      "energy": "Énergie",
+      "energy": "Électricité",
       "adpe": "Ressources minérales",
       "pe": "Énergie primaire",
       "water": "Eau"
@@ -109,6 +157,10 @@
     "errorCatalogLoad": "Impossible de charger le catalogue de cas d'usage.",
     "retry": "Réessayer",
     "reset": "Réinitialiser",
+    "resetTooltip": "Remettez toutes les valeurs par défaut : fournisseurs, fréquences, paramètres et nombre de salariés.",
+    "tour": "Visite guidée",
+    "tourTooltip": "Découvrez le calculateur pas à pas, en quelques étapes.",
+    "tourInvite": "(recommandée pour une première visite)",
     "co2Equivalent": {
       "car_km": "{{value}} km en voiture",
       "streaming_hour_one": "{{value}} heure de streaming vidéo",
@@ -119,21 +171,11 @@
     ,"co2EquivalentsHeading": "Équivalences individuelles",
     "compareOnImpactCo2": "Comparer sur ImpactCO2.fr"
   },
-  "methodology": {
-    "title": "Méthodologie",
-    "body": "Les impacts sont calculés à partir d'EcoLogits, qui modélise l'inférence des modèles d'IA générative..."
-  },
-  "about": {
-    "title": "À propos",
-    "body": "AI Calculator est un projet du Collectif Conception Numérique Responsable (cnumr)."
-  },
-  "legal": {
-    "title": "Mentions légales",
-    "body": "Éditeur : cnumr. Hébergement : à préciser."
-  },
+
   "footer": {
-    "greenit": "Association GreenIT.fr",
+    "greenit": "Association Green IT",
     "github": "Code source sur GitHub",
+    "ecoindex": "Ecoindex de cette page : voir l'analyse",
     "sources": "Sources de données :",
     "retrievedOn": "relevé du {{date}}",
     "navLabel": "Pages du site"

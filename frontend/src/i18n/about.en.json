@@ -1,0 +1,40 @@
+{
+  "title": "About",
+  "goal": "<strong>Our goal:</strong> to estimate the environmental footprint of generative AI during its use phase (inference), for the common use cases offered by the various service providers (Anthropic, Google, OpenAI, etc.), over a year of use.",
+  "audience": {
+    "intro": "Target audience:",
+    "public": "The general public",
+    "business": "Companies (for awareness-raising purposes)"
+  },
+  "existing": {
+    "intro": "Existing calculators offer a reading that is either:",
+    "technical": "technical (based on the number of tokens processed);",
+    "perRequest": "“per request”, which fails to reflect the volume effect of today's generative AI use, or the potential impact gap between types of use;",
+    "targeted": "dedicated to one specific use."
+  },
+  "aims": {
+    "intro": "To raise awareness, this calculator therefore aims to:",
+    "gaps": "shed light on the impact gaps between types of use (or of request);",
+    "annual": "show the annual impact of a given use, for an individual or a group."
+  },
+  "business": {
+    "intro": "For companies, it also aims to:",
+    "scale": "make the impact tangible across all employees (or a group of employees), to raise awareness (as it stands, the tool is not designed to be used as an “accounting” dashboard);",
+    "code": "put an additional focus on the use of generative AI as a coding assistant."
+  },
+  "credits": {
+    "intro": "This calculator was designed by the <anchor>Green IT association</anchor>, including:",
+    "design": "Design and development:",
+    "review": "Internal testing and proofreading:"
+  },
+  "claude": {
+    "title": "Built with the help of Claude Code",
+    "intro": "The calculator's code was written with the help of <anchor>Claude Code</anchor>, Anthropic's development assistant, equipped with the association's resources:",
+    "mcp": "the GreenIT MCP server, which gives access to the 115 web eco-design best practices and to EcoIndex calculation;",
+    "practices": "the related best practices, applied at every step: eco-design of features, code writing, eco-design audit before each release.",
+    "usage": "From {{from}} to {{to}}, Claude (Opus 5.5 and Haiku 5.5 models) generated {{tokens}} tokens for the team, the equivalent of {{sessions}} sessions of the “Development assistance” use case (100,000 tokens each). According to this calculator, that amounts to:",
+    "limits": "As in the calculator, only generated tokens are counted: tokens read as input (the project context, read again at each request) are not, which underestimates these impacts (see the <anchor>methodology's limitations</anchor>).",
+    "history": "Each code change states the tokens consumed and the models used: see the <anchor>project history on GitHub</anchor>.",
+    "range": "{{label}}: {{min}} to {{max}} {{unit}}"
+  }
+}

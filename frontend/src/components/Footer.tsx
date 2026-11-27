@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { DataSource } from "../api/client";
 import { loadCatalog } from "../api/catalogStore";
 
-const GREENIT_URL = "https://www.greenit.fr/";
+const GREENIT_URL = "https://greenit.eco/";
 const GITHUB_URL = "https://github.com/cnumr/ai-calculator";
 
 function ExternalLink({ href, children }: { href: string; children: string }) {
@@ -23,9 +23,36 @@ function ExternalLink({ href, children }: { href: string; children: string }) {
 }
 
 /**
- * Site footer: project links, site version and the version of the external
- * data sources. Text links only (no image, no third party). The sources come
- * from the catalogue already loaded for the calculator: no extra request.
+ * Ecoindex badge of the current page, relayed by our nginx (see
+ * nginx.conf.template): no third-party request from the browser. Hidden when
+ * the server has no badge for it (no ECOINDEX_DOMAIN, unknown page, or the dev
+ * server without ECOINDEX_DOMAIN).
+ */
+function EcoindexBadge() {
+  const { t } = useTranslation();
+  const { pathname } = useLocation();
+  const [failedPath, setFailedPath] = useState<string | null>(null);
+  if (failedPath === pathname) return null;
+  // Not encoded: nginx matches the path as is (map $arg_path).
+  const query = `?path=${pathname}`;
+  return (
+    <a className="app-footer__ecoindex" href={`/ecoindex${query}`} target="_blank" rel="noreferrer">
+      <img
+        src={`/ecoindex-badge.svg${query}`}
+        alt={`${t("footer.ecoindex")} (${t("calculator.newTab")})`}
+        width={108}
+        height={32}
+        loading="lazy"
+        onError={() => setFailedPath(pathname)}
+      />
+    </a>
+  );
+}
+
+/**
+ * Site footer: project links, site version, Ecoindex badge and the version of
+ * the external data sources. The sources come from the catalogue already
+ * loaded for the calculator: no extra request.
  */
 export function Footer() {
   const { t, i18n } = useTranslation();
@@ -55,6 +82,7 @@ export function Footer() {
         <div className="app-footer__about">
           <p className="app-footer__title">
             AI Calculator · <span className="app-footer__version">v{__APP_VERSION__}</span>
+            <EcoindexBadge />
           </p>
           <p>
             <ExternalLink href={GREENIT_URL}>{t("footer.greenit")}</ExternalLink>

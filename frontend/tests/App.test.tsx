@@ -20,11 +20,11 @@ vi.mock("../src/api/client", async () => {
                 {
                   id: "eco",
                   impacts: {
-                    gwp: { min: 0, max: 0 },
-                    energy: { min: 0, max: 0 },
-                    adpe: { min: 0, max: 0 },
-                    pe: { min: 0, max: 0 },
-                    water: { min: 0, max: 0 },
+                    gwp: { min: 0, max: 0, value: 0 },
+                    energy: { min: 0, max: 0, value: 0 },
+                    adpe: { min: 0, max: 0, value: 0 },
+                    pe: { min: 0, max: 0, value: 0 },
+                    water: { min: 0, max: 0, value: 0 },
                   },
                 },
               ],
@@ -46,11 +46,12 @@ describe("App", () => {
     });
   });
 
-  it("renders the methodology page at /methodologie", () => {
+  it("renders the methodology page at /methodologie", async () => {
     window.history.pushState({}, "", "/methodologie");
     render(<App />);
 
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+    // The page is loaded on demand.
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent(
       /méthodologie|methodology/i,
     );
   });

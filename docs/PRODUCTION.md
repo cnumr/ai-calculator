@@ -12,6 +12,8 @@ navigateur ── :80 ──> frontend (Nginx)
                          └── /api/*  ──(réseau docker interne)──> backend:8000
 ```
 
+Pour estimer la charge supportée sur un petit serveur (TPS, mémoire), voir [LOAD_TEST.md](LOAD_TEST.md).
+
 ## Prérequis
 
 - Docker + Docker Compose (v2, `docker compose`)
@@ -83,21 +85,25 @@ scripts/verify-compression.sh                       # http://localhost:${HTTP_PO
 scripts/verify-compression.sh https://mon-domaine   # ou une autre URL de base
 ```
 
-Le script `scripts/verify-cache.sh` vérifie les en-têtes de cache navigateur (écoconception, GreenIT RWEB_0075), définis dans `frontend/nginx.conf` :
+Le script `scripts/verify-cache.sh` vérifie les en-têtes de cache navigateur (écoconception, GreenIT RWEB_0075), définis dans `frontend/nginx.conf.template` :
 
 - les fichiers du build (`/assets/`), dont le nom contient un hash de leur contenu, sont gardés un an sans revérification (`Cache-Control: public, max-age=31536000, immutable`) ; un asset absent renvoie 404 ;
 - `index.html`, servi pour toutes les routes de l'application, est revérifié à chaque visite (`Cache-Control: no-cache`) : nginx répond 304 sans le corps s'il n'a pas changé, et une nouvelle version est prise en compte immédiatement.
+- le catalogue de l'API (`GET /api/use-cases`, GreenIT RWEB_0021) est gardé 5 minutes (`Cache-Control: public, max-age=300`), puis revalidé par son `ETag` : le backend répond 304 sans le contenu tant qu'il n'a pas été redéployé.
 
 ```bash
 scripts/verify-cache.sh                       # http://localhost:${HTTP_PORT:-80}
 scripts/verify-cache.sh https://mon-domaine   # ou une autre URL de base
 ```
 
+Le badge Ecoindex du pied de page est propre à chaque page : `/ecoindex-badge.svg?path=/a-propos` (lien `/ecoindex?path=/a-propos`) porte sur `https://<ECOINDEX_DOMAIN>/a-propos`. Il est relayé par nginx : le navigateur des visiteurs ne contacte pas ecoindex.fr. nginx récupère chaque badge au plus une fois par jour, sans transmettre d'en-tête du visiteur, le garde en cache (`/var/cache/nginx/ecoindex`) et sert la dernière version si ecoindex.fr est injoignable. Seules les pages du site sont acceptées (`map` en tête de `nginx.conf.template`, à compléter pour une nouvelle page) ; un autre chemin, ou l'absence de `ECOINDEX_DOMAIN`, répond 404 et le pied de page n'affiche pas de badge.
+
 ## Variables d'environnement
 
 | Variable    | Service  | Défaut | Rôle                                                              |
 | ----------- | -------- | ------ | ----------------------------------------------------------------- |
 | `HTTP_PORT` | frontend | `80`   | Port hôte sur lequel le frontend (donc l'application) est exposé. |
+| `ECOINDEX_DOMAIN` | frontend | vide | Domaine public du site (par exemple `ai-calculator.greenit.eco`), pour le badge Ecoindex de chaque page. Vide : pas de badge. |
 
 `CORS_ALLOWED_ORIGINS` et `VITE_API_BASE_URL` ne s'appliquent pas ici : en production, le frontend et l'API sont servis depuis la même origine (proxy Nginx), donc aucune configuration CORS n'est nécessaire côté backend.
 
@@ -105,3 +111,27 @@ scripts/verify-cache.sh https://mon-domaine   # ou une autre URL de base
 
 - Pas de HTTPS/TLS intégré : à placer derrière un reverse proxy externe (ex. Traefik, Caddy, load balancer) si l'application est exposée publiquement.
 - Pas de volumes persistants : le backend est stateless, rien à sauvegarder côté données applicatives.
+
+## Déploiement continu sur le VPS GreenIT
+
+Sur le VPS de l'association GreenIT, l'application n'est pas construite sur place :
+- GitHub Actions publie les images sur `ghcr.io/cnumr/ai-calculator-{backend,frontend}` ;
+- le serveur les tire toutes les 5 minutes (`deploy/update.sh`, lancé par un timer systemd) ;
+- une app YunoHost Redirect publie chaque environnement en HTTPS.
+
+```mermaid
+flowchart LR
+  D[push develop] --> G[(ghcr.io)]
+  R[release vX.Y.Z] --> G
+  G -->|toutes les 5 min| S[staging :8086]
+  G -->|toutes les 5 min| P[prod :8085]
+```
+
+| Environnement | Suit | Domaine |
+|---|---|---|
+| staging | `develop` | `ia-calculator-staging.greenit.eco` (public) |
+| prod | dernière GitHub Release | `ia-calculator.greenit.eco` (public) |
+
+En cas d'échec, la prod revient à la version précédente et une alerte part sur Mattermost.
+
+Installation, exploitation, retour arrière et désinstallation : [deploy/README.md](../deploy/README.md). L'installation décrite plus haut (build local avec `docker-compose.yml`) reste valable pour les autres serveurs.

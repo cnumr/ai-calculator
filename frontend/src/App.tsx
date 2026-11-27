@@ -1,11 +1,15 @@
+import { Suspense, lazy } from "react";
 import { BrowserRouter, NavLink, Route, Routes } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { CalculatorPage } from "./pages/CalculatorPage";
-import { MethodologyPage } from "./pages/MethodologyPage";
-import { AboutPage } from "./pages/AboutPage";
-import { LegalNoticePage } from "./pages/LegalNoticePage";
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { Footer } from "./components/Footer";
+import greenitLogo from "./assets/greenit-logo.svg";
+
+// Loaded when opened only, with their texts (GreenIT RWEB_0046).
+const MethodologyPage = lazy(() => import("./pages/MethodologyPage"));
+const AboutPage = lazy(() => import("./pages/AboutPage"));
+const LegalNoticePage = lazy(() => import("./pages/LegalNoticePage"));
 
 export function App() {
   const { t } = useTranslation();
@@ -22,15 +26,41 @@ export function App() {
               <NavLink to="/a-propos">{t("nav.about")}</NavLink>
               <NavLink to="/mentions-legales">{t("nav.legal")}</NavLink>
             </div>
-            <LanguageSwitcher />
+            <div className="app-nav__end">
+              <LanguageSwitcher />
+              <a className="app-nav__logo" href="https://greenit.eco/">
+                <img src={greenitLogo} alt={t("footer.greenit")} width={150} height={60} />
+              </a>
+            </div>
           </nav>
         </header>
         <main className="app-main">
           <Routes>
             <Route path="/" element={<CalculatorPage />} />
-            <Route path="/methodologie" element={<MethodologyPage />} />
-            <Route path="/a-propos" element={<AboutPage />} />
-            <Route path="/mentions-legales" element={<LegalNoticePage />} />
+            <Route
+              path="/methodologie"
+              element={
+                <Suspense fallback={null}>
+                  <MethodologyPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/a-propos"
+              element={
+                <Suspense fallback={null}>
+                  <AboutPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/mentions-legales"
+              element={
+                <Suspense fallback={null}>
+                  <LegalNoticePage />
+                </Suspense>
+              }
+            />
           </Routes>
         </main>
         <Footer />

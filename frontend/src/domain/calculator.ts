@@ -5,6 +5,7 @@
  */
 import type {
   CalculateRequest,
+  FrequencyUnit,
   ParameterValue,
   Profile,
   ProfileParameter,
@@ -14,10 +15,15 @@ import type {
   UseCase,
 } from "../api/client";
 
+/** Headcount shown at first, restored by the reset and by an import without one. */
+export const DEFAULT_HEADCOUNT = 1000;
+
 export interface CardState {
   providerId: string;
   profileId: string;
-  frequencyPerDay: number;
+  /** Average actions per `frequencyUnit` (converted by the backend). */
+  frequency: number;
+  frequencyUnit: FrequencyUnit;
   /**
    * Parameter values chosen by the user (e.g. video resolution). Kept when
    * switching profile, so a choice comes back with a model that supports it.
@@ -109,11 +115,10 @@ export function buildCalculateRequest(
       useCaseId: useCase.id,
       providerId: mapping.providerId,
       profileId: profile.id,
-      frequencyPerDay: Math.max(0, state.frequencyPerDay || 0),
+      frequency: Math.max(0, state.frequency || 0),
+      frequencyUnit: state.frequencyUnit,
     };
-    if (useCase.kind !== "image") {
-      usage.parameters = resolveParameters(profile, state.parameters);
-    }
+    usage.parameters = resolveParameters(profile, state.parameters);
     usages.push(usage);
   }
   return {
@@ -133,7 +138,8 @@ export function isUsageResultCurrent(
     result.useCaseId === request.useCaseId &&
     result.providerId === request.providerId &&
     result.profileId === request.profileId &&
-    result.frequencyPerDay === request.frequencyPerDay &&
+    result.frequency === request.frequency &&
+    result.frequencyUnit === request.frequencyUnit &&
     Object.entries(parameters).every(([id, value]) => result.parameters[id] === value)
   );
 }
