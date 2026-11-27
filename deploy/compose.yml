@@ -32,8 +32,9 @@ services:
     restart: unless-stopped
     logging: *logging
     environment:
-      # Domaine public du site, pour le badge Ecoindex du pied de page ; vide : pas de badge.
-      ECOINDEX_DOMAIN: ${ECOINDEX_DOMAIN:-}
+      # Domaine public du site, pour le badge Ecoindex du pied de page : la prod
+      # quand la variable n'est pas définie ; définie vide : pas de badge.
+      ECOINDEX_DOMAIN: ${ECOINDEX_DOMAIN-ai-calculator.greenit.eco}
     ports:
       # Écoute locale seulement : l'app YunoHost Redirect publie le domaine en HTTPS.
       - "127.0.0.1:${HTTP_PORT:?HTTP_PORT manquant dans .env}:80"

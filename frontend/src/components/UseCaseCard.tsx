@@ -167,7 +167,8 @@ export function UseCaseCard({
     });
     if (parameter.options === null) {
       // Free integer (e.g. generated tokens): keep what the user types, even
-      // while it is invalid; the calculation falls back to the default.
+      // while it is invalid. The calculation brings a value beyond the bounds
+      // back to the nearest one, and an empty field to the default.
       const hintId = `${fieldId}-hint`;
       return (
         <div key={parameter.id} className="use-case-card__field">
@@ -191,6 +192,10 @@ export function UseCaseCard({
             {t("calculator.parameterDefault", {
               value: optionLabel(parameter.id, parameter.defaultValue),
             })}
+            {parameter.max !== null &&
+              ` · ${t("calculator.parameterMaximum", {
+                value: optionLabel(parameter.id, parameter.max),
+              })}`}
           </p>
         </div>
       );

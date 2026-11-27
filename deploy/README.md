@@ -30,7 +30,7 @@ Variables du `.env` :
 | `COMPOSE_PROJECT_NAME` | `ai-calculator-prod` ou `ai-calculator-staging` |
 | `HTTP_PORT` | `8085` ou `8086` |
 | `IMAGE_TAG` | Tag en service : `develop` en staging, `vX.Y.Z` en prod |
-| `ECOINDEX_DOMAIN` | Domaine public du site, pour le badge Ecoindex de chaque page : `ai-calculator.greenit.eco` ou `ia-calculator-staging.greenit.eco`. Vide = pas de badge |
+| `ECOINDEX_DOMAIN` | Domaine public du site, pour le badge Ecoindex de chaque page : `ai-calculator.greenit.eco` (valeur par défaut, si la variable est absente) ou `ia-calculator-staging.greenit.eco`. Définie vide = pas de badge |
 | `ALERT_WEBHOOK_URL` | Webhook entrant Mattermost. **Secret.** Vide = pas d'alerte |
 | `PREVIOUS_TAG` | Écrit par `update.sh` : version précédente, cible du retour arrière (prod) |
 | `PINNED` | Écrit par `update.sh` : `true` quand la prod est figée à la main |
