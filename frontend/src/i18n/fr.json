@@ -129,7 +129,13 @@
     },
     "sourceLink": "Méthodologie",
     "newTab": "nouvel onglet",
+    "gauge": {
+      "estimate": "Estimation : {{value}}, entre {{min}} et {{max}}",
+      "low": "Estimation basse",
+      "high": "Estimation haute"
+    },
     "parameterDefault": "Valeur par défaut : {{value}}",
+    "parameterMaximum": "maximum : {{value}}",
     "parameter": {
       "output_tokens": "Tokens générés par action",
       "resolution": "Résolution",

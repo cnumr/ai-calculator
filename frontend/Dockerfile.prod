@@ -22,7 +22,8 @@ FROM nginx:1.27-alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 # Modèle traité au démarrage par l'image nginx (envsubst), vers conf.d.
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
-# Domaine public du site, pour le badge Ecoindex du pied de page ; vide : pas de badge.
-ENV ECOINDEX_DOMAIN=""
+# Domaine public du site, pour le badge Ecoindex du pied de page : la prod par
+# défaut. Le staging le remplace par le sien ; vide : pas de badge.
+ENV ECOINDEX_DOMAIN="ai-calculator.greenit.eco"
 
 EXPOSE 80

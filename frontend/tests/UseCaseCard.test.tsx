@@ -349,8 +349,9 @@ describe("UseCaseCard impacts (computed by the backend)", () => {
 
     await openDetails();
 
-    expect(screen.getByText(/min 2\.00 g CO2eq/)).toBeInTheDocument();
-    expect(screen.getByText(/max 4\.00 g CO2eq/)).toBeInTheDocument();
+    expect(
+      screen.getByText("Estimate: 3.00 g CO2eq, between 2.00 and 4.00 g CO2eq"),
+    ).toBeInTheDocument();
   });
 
   it("shows not available for criteria the backend does not measure", async () => {
@@ -363,7 +364,7 @@ describe("UseCaseCard impacts (computed by the backend)", () => {
     await openDetails();
     const details = document.querySelector<HTMLElement>(".use-case-card__impacts")!;
     expect(within(details).getAllByText(/non disponible|not available/i)).toHaveLength(4);
-    expect(screen.getByText(/min 370 g CO2eq/)).toBeInTheDocument();
+    expect(screen.getByText(/^Estimation : 370 g CO2eq|^Estimate: 370 g CO2eq/)).toBeInTheDocument();
   });
 
   it("renders the impact details only once their panel is opened", async () => {
@@ -696,13 +697,20 @@ describe("UseCaseCard model parameters", () => {
     await openConfigure(user);
     const tokens = screen.getByLabelText("Tokens générés par action");
     expect(tokens).toHaveValue(1000);
-    expect(tokens).toHaveAccessibleDescription(/Valeur par défaut : 1.000 tokens générés/);
+    expect(tokens).toHaveAccessibleDescription(
+      /Valeur par défaut : 1.000 tokens générés · maximum : 10.000.000 tokens générés/,
+    );
 
     await user.clear(tokens);
     await user.type(tokens, "250");
 
     expect(onChange).toHaveBeenLastCalledWith({ output_tokens: 250 });
     expect(tokensLine().textContent).toBe("250 tokens générés");
+
+    // Beyond the maximum, the maximum is used (not the default).
+    await user.clear(tokens);
+    await user.type(tokens, "25000000");
+    expect(tokensLine().textContent).toBe("10\u202f000\u202f000 tokens générés");
   });
 
   it("orders the configuration: subtitle, provider and profile, then customisation", async () => {

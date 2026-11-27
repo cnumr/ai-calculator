@@ -60,35 +60,35 @@ export function resolveSelection(
   return { offeredProviders, mapping, profile };
 }
 
-function isAllowed(
+/**
+ * The value a parameter really takes: the user's choice when the profile
+ * offers it, otherwise the profile default. A free integer (e.g. generated
+ * tokens) beyond its bounds is brought back to the nearest one: typing more
+ * than the maximum means "as much as possible", not the default.
+ */
+function resolveValue(
   parameter: ProfileParameter,
   value: ParameterValue | undefined,
-): value is ParameterValue {
-  if (value === undefined) return false;
-  if (parameter.options !== null) return parameter.options.includes(value);
-  // Free integer, e.g. generated tokens being typed ("" while empty).
-  return (
-    typeof value === "number" &&
-    Number.isInteger(value) &&
-    (parameter.min === null || value >= parameter.min) &&
-    (parameter.max === null || value <= parameter.max)
-  );
+): ParameterValue {
+  if (value === undefined) return parameter.defaultValue;
+  if (parameter.options !== null) {
+    return parameter.options.includes(value) ? value : parameter.defaultValue;
+  }
+  // Free integer being typed: "" while empty, a decimal while incomplete.
+  if (typeof value !== "number" || !Number.isInteger(value)) return parameter.defaultValue;
+  if (parameter.max !== null && value > parameter.max) return parameter.max;
+  if (parameter.min !== null && value < parameter.min) return parameter.min;
+  return value;
 }
 
-/**
- * Effective parameter values of a profile: the user's choice when the
- * profile offers it, otherwise the profile default.
- */
+/** Effective parameter values of a profile (see resolveValue). */
 export function resolveParameters(
   profile: Profile,
   chosen: Record<string, ParameterValue>,
 ): Record<string, ParameterValue> {
   const values: Record<string, ParameterValue> = {};
   for (const parameter of profile.parameters ?? []) {
-    const choice = chosen[parameter.id];
-    values[parameter.id] = isAllowed(parameter, choice)
-      ? choice
-      : parameter.defaultValue;
+    values[parameter.id] = resolveValue(parameter, chosen[parameter.id]);
   }
   return values;
 }
