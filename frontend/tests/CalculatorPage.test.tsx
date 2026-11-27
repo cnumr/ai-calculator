@@ -317,6 +317,20 @@ describe("CalculatorPage calculation (POST /api/calculate)", () => {
     expect(input).toHaveDisplayValue("10");
   });
 
+  it("types a headcount without keeping a leading 0 once the field is emptied (issue #60)", async () => {
+    await renderDefault();
+
+    const input = screen.getByLabelText(/headcount/i);
+    await userEvent.clear(input);
+    expect(input).toHaveDisplayValue("");
+    // An emptied field counts as 1 person for the calculation.
+    await waitFor(() => expect(lastRequest().headcount).toBe(1));
+
+    await userEvent.type(input, "500");
+    expect(input).toHaveDisplayValue("500");
+    await waitFor(() => expect(lastRequest().headcount).toBe(500));
+  });
+
   it("sends the scenario of the cards and the headcount", async () => {
     await renderDefault();
 

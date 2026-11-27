@@ -671,7 +671,10 @@ export function CalculatorPage() {
             id="calculator-headcount"
             type="number"
             min={1}
-            value={headcount}
+            // An emptied field stays empty: typing does not give "0500" (issue
+            // #60, as the frequency in issue #50). It counts as 1 person.
+            value={headcount === 0 ? "" : headcount}
+            placeholder="1"
             onChange={(e) => setHeadcount(Number(e.target.value))}
           />
         </div>
