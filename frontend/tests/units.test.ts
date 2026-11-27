@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatInteger, formatNumber, scaleImpact, scaleRange } from "../src/domain/units";
+import { formatInteger, formatNumber, niceCeiling, scaleImpact, scaleRange } from "../src/domain/units";
 
 describe("formatNumber", () => {
   it("formats zero as 0", () => {
@@ -108,5 +108,21 @@ describe("scaleImpact", () => {
       value: 3,
       unit: "g CO2eq",
     });
+  });
+});
+
+describe("niceCeiling", () => {
+  it.each([
+    [2.49, 2.5],
+    [3.7, 5],
+    [0.0037, 0.005],
+    [1, 1],
+    [1.01, 2],
+    [7, 10],
+    [25.4, 50],
+    [1800, 2000],
+    [0, 0],
+  ])("rounds %j up to the round number %j", (value, expected) => {
+    expect(niceCeiling(value)).toBeCloseTo(expected, 12);
   });
 });

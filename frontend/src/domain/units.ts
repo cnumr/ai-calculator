@@ -110,3 +110,15 @@ export function formatInteger(value: number, locale: string): string {
     value,
   );
 }
+
+/**
+ * The smallest round number (1, 2, 2.5 or 5 × 10^n) at or above `value`:
+ * the end of a gauge's absolute scale, e.g. 2.49 -> 2.5, 3.7 -> 5.
+ */
+export function niceCeiling(value: number): number {
+  if (value <= 0) return 0;
+  const power = 10 ** Math.floor(Math.log10(value));
+  // Tolerance for floating-point error (e.g. 0.0050000000000000001).
+  const step = [1, 2, 2.5, 5, 10].find((candidate) => candidate * power >= value * (1 - 1e-12));
+  return (step ?? 10) * power;
+}
