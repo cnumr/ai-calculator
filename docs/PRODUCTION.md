@@ -96,14 +96,14 @@ scripts/verify-cache.sh                       # http://localhost:${HTTP_PORT:-80
 scripts/verify-cache.sh https://mon-domaine   # ou une autre URL de base
 ```
 
-Le badge Ecoindex du pied de page est propre à chaque page : `/ecoindex-badge.svg?path=/a-propos` (lien `/ecoindex?path=/a-propos`) porte sur `https://<ECOINDEX_DOMAIN>/a-propos`. Il est relayé par nginx : le navigateur des visiteurs ne contacte pas ecoindex.fr. nginx récupère chaque badge au plus une fois par jour, sans transmettre d'en-tête du visiteur, le garde en cache (`/var/cache/nginx/ecoindex`) et sert la dernière version si ecoindex.fr est injoignable. Seules les pages du site sont acceptées (`map` en tête de `nginx.conf.template`, à compléter pour une nouvelle page) ; un autre chemin, ou l'absence de `ECOINDEX_DOMAIN`, répond 404 et le pied de page n'affiche pas de badge.
+Le badge Ecoindex du pied de page est propre à chaque page : `/ecoindex-badge.svg?path=/a-propos` (lien `/ecoindex?path=/a-propos`) porte sur `https://<ECOINDEX_DOMAIN>/a-propos`. Il est relayé par nginx : le navigateur des visiteurs ne contacte pas ecoindex.fr. nginx récupère chaque badge au plus une fois par jour, sans transmettre d'en-tête du visiteur, le garde en cache (`/var/cache/nginx/ecoindex`) et sert la dernière version si ecoindex.fr est injoignable. Seules les pages du site sont acceptées (`map` en tête de `nginx.conf.template`, à compléter pour une nouvelle page) ; un autre chemin, ou un `ECOINDEX_DOMAIN` vide, répond 404 et le pied de page n'affiche pas de badge.
 
 ## Variables d'environnement
 
 | Variable    | Service  | Défaut | Rôle                                                              |
 | ----------- | -------- | ------ | ----------------------------------------------------------------- |
 | `HTTP_PORT` | frontend | `80`   | Port hôte sur lequel le frontend (donc l'application) est exposé. |
-| `ECOINDEX_DOMAIN` | frontend | vide | Domaine public du site (par exemple `ai-calculator.greenit.eco`), pour le badge Ecoindex de chaque page. Vide : pas de badge. |
+| `ECOINDEX_DOMAIN` | frontend | `ai-calculator.greenit.eco` | Domaine public du site, pour le badge Ecoindex de chaque page : la prod quand la variable n'est pas définie. Définie vide (`ECOINDEX_DOMAIN=`) : pas de badge, par exemple pour un autre serveur. |
 
 `CORS_ALLOWED_ORIGINS` et `VITE_API_BASE_URL` ne s'appliquent pas ici : en production, le frontend et l'API sont servis depuis la même origine (proxy Nginx), donc aucune configuration CORS n'est nécessaire côté backend.
 
