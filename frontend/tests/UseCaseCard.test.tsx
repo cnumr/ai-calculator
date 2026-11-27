@@ -696,13 +696,20 @@ describe("UseCaseCard model parameters", () => {
     await openConfigure(user);
     const tokens = screen.getByLabelText("Tokens générés par action");
     expect(tokens).toHaveValue(1000);
-    expect(tokens).toHaveAccessibleDescription(/Valeur par défaut : 1.000 tokens générés/);
+    expect(tokens).toHaveAccessibleDescription(
+      /Valeur par défaut : 1.000 tokens générés · maximum : 10.000.000 tokens générés/,
+    );
 
     await user.clear(tokens);
     await user.type(tokens, "250");
 
     expect(onChange).toHaveBeenLastCalledWith({ output_tokens: 250 });
     expect(tokensLine().textContent).toBe("250 tokens générés");
+
+    // Beyond the maximum, the maximum is used (not the default).
+    await user.clear(tokens);
+    await user.type(tokens, "25000000");
+    expect(tokensLine().textContent).toBe("10\u202f000\u202f000 tokens générés");
   });
 
   it("orders the configuration: subtitle, provider and profile, then customisation", async () => {

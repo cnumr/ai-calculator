@@ -111,8 +111,17 @@ describe("resolveParameters with a free integer", () => {
     expect(resolveParameters(TOKENS, { output_tokens: 750 })).toEqual({ output_tokens: 750 });
   });
 
-  it.each([[""], [0], [1001], [12.5], ["750"]])(
-    "falls back to the default for %j (empty, out of range or not an integer)",
+  it.each([
+    [1001, 1000],
+    [5_000_000_000, 1000],
+    [0, 1],
+    [-20, 1],
+  ])("brings %j back within the bounds, to %j", (value, bound) => {
+    expect(resolveParameters(TOKENS, { output_tokens: value })).toEqual({ output_tokens: bound });
+  });
+
+  it.each([[""], [12.5], ["750"]])(
+    "falls back to the default for %j (empty or not an integer)",
     (value) => {
       expect(resolveParameters(TOKENS, { output_tokens: value })).toEqual({ output_tokens: 300 });
     },

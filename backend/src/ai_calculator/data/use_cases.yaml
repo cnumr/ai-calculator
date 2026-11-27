@@ -83,7 +83,8 @@ families:
 # and which parameters POST /api/calculate accepts for it:
 #   text  -> EcoLogits LLM; offers every model of text_models above, and
 #            output_tokens is the default tokens per action (users can
-#            change it)
+#            change it, up to max_output_tokens: 10 million when omitted,
+#            1 billion at most)
 #   video -> EcoLogits video (ecologits_video), resolution / duration / audio
 #   image -> transposed from a reference video (image_from_video), size
 use_cases:
@@ -237,3 +238,5 @@ use_cases:
     default_provider: anthropic
     recommended_tier: balanced
     output_tokens: 100000
+    # Agentic sessions can generate far more than the default 10 million.
+    max_output_tokens: 1000000000

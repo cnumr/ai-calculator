@@ -220,3 +220,18 @@ def test_calculate_uses_the_chosen_output_tokens():
     assert default["parameters"] == {"output_tokens": 300}
     assert custom["parameters"] == {"output_tokens": 3000}
     assert custom["unit_impacts"]["gwp"]["max"] > default["unit_impacts"]["gwp"]["max"]
+
+
+def test_calculate_accepts_a_billion_tokens_for_development_assistance_only():
+    dev = {
+        "kind": "text",
+        "use_case_id": "dev_assistance",
+        "provider_id": "anthropic",
+        "profile_id": "balanced",
+        "frequency": 1,
+        "parameters": {"output_tokens": 1_000_000_000},
+    }
+    assert client.post("/api/calculate", json={"usages": [dev]}).status_code == 200
+
+    email = {**EMAIL, "parameters": {"output_tokens": 1_000_000_000}}
+    assert client.post("/api/calculate", json={"usages": [email]}).status_code == 422

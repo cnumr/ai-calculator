@@ -130,6 +130,7 @@
     "sourceLink": "Methodology",
     "newTab": "new tab",
     "parameterDefault": "Default value: {{value}}",
+    "parameterMaximum": "maximum: {{value}}",
     "parameter": {
       "output_tokens": "Generated tokens per action",
       "resolution": "Resolution",

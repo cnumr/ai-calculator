@@ -406,6 +406,33 @@ def test_text_use_cases_without_providers_offer_every_model_of_the_shared_table(
             assert profile.parameters[0].default == 300
 
 
+def test_text_use_cases_can_raise_their_maximum_of_output_tokens(tmp_path):
+    yaml_text = TEXT_MODELS_YAML.replace(
+        "    output_tokens: 300\n", "    output_tokens: 300\n    max_output_tokens: 1000000000\n"
+    )
+    email = _load(tmp_path, yaml_text).use_cases[0]
+
+    for mapping in email.providers:
+        for profile in mapping.profiles:
+            assert profile.parameters[0].maximum == 1_000_000_000
+    profile = email.providers[0].profiles[0]
+    assert profile.resolve_values({"output_tokens": 1_000_000_000}) == {
+        "output_tokens": 1_000_000_000
+    }
+    with pytest.raises(ParameterError):
+        profile.resolve_values({"output_tokens": 1_000_000_001})
+
+
+@pytest.mark.parametrize("maximum", ["200", "2000000000"])
+def test_load_catalog_raises_on_a_maximum_of_output_tokens_out_of_range(tmp_path, maximum):
+    # Below the default tokens, or above what the API accepts.
+    yaml_text = TEXT_MODELS_YAML.replace(
+        "    output_tokens: 300\n", f"    output_tokens: 300\n    max_output_tokens: {maximum}\n"
+    )
+    with pytest.raises(UseCasesConfigError, match="max_output_tokens"):
+        _load(tmp_path, yaml_text)
+
+
 def test_text_use_case_without_providers_needs_the_shared_table(tmp_path):
     yaml_text = TEXT_MODELS_YAML.split("text_models:")[0] + "use_cases:" + (
         TEXT_MODELS_YAML.split("use_cases:")[1]
@@ -422,6 +449,18 @@ def test_load_catalog_raises_when_the_default_provider_is_not_offered(tmp_path):
 def test_load_catalog_raises_when_the_recommended_tier_is_not_offered(tmp_path):
     with pytest.raises(UseCasesConfigError, match="recommended_tier 'powerful'"):
         _load(tmp_path, TEXT_MODELS_YAML.replace("recommended_tier: balanced", "recommended_tier: powerful"))
+
+
+def test_real_config_lets_development_assistance_go_up_to_a_billion_tokens():
+    # Agentic sessions: far more tokens than the 10 million of other use cases.
+    maxima = {
+        uc.id: uc.providers[0].profiles[0].parameters[0].maximum
+        for uc in load_catalog().use_cases
+        if uc.kind == "text"
+    }
+
+    assert maxima.pop("dev_assistance") == 1_000_000_000
+    assert set(maxima.values()) == {10_000_000}
 
 
 def test_real_config_offers_the_methodology_use_cases_with_the_balanced_profile():

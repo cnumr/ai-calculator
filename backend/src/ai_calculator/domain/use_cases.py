@@ -48,9 +48,12 @@ class CatalogProvider:
     selected_by_default: bool
 
 
-# Bounds of the generated tokens a user can set for a text action.
+# Bounds of the generated tokens a user can set for a text action. A use
+# case may raise its maximum (max_output_tokens), up to MAX_OUTPUT_TOKENS:
+# e.g. development assistance, whose agentic sessions generate far more.
 MIN_OUTPUT_TOKENS = 1
-MAX_OUTPUT_TOKENS = 10_000_000
+DEFAULT_MAX_OUTPUT_TOKENS = 10_000_000
+MAX_OUTPUT_TOKENS = 1_000_000_000
 
 
 @dataclass(frozen=True)
@@ -258,14 +261,23 @@ def _text_calculation(profile: dict, context: str) -> TextCalculation:
 def _text_parameters(profile: dict, context: str) -> list[ProfileParameter]:
     # The catalogue's tokens per action are the default; users can change them.
     output_tokens = int(_require(profile, "output_tokens", context))
-    if not MIN_OUTPUT_TOKENS <= output_tokens <= MAX_OUTPUT_TOKENS:
-        raise UseCasesConfigError(f"{context}: output_tokens {output_tokens} is out of range")
+    maximum = int(profile.get("max_output_tokens", DEFAULT_MAX_OUTPUT_TOKENS))
+    if not MIN_OUTPUT_TOKENS <= maximum <= MAX_OUTPUT_TOKENS:
+        raise UseCasesConfigError(
+            f"{context}: max_output_tokens {maximum} is out of range "
+            f"({MIN_OUTPUT_TOKENS}-{MAX_OUTPUT_TOKENS})"
+        )
+    if not MIN_OUTPUT_TOKENS <= output_tokens <= maximum:
+        raise UseCasesConfigError(
+            f"{context}: output_tokens {output_tokens} is out of range, or above "
+            f"max_output_tokens ({maximum})"
+        )
     return [
         ProfileParameter(
             id="output_tokens",
             default=output_tokens,
             minimum=MIN_OUTPUT_TOKENS,
-            maximum=MAX_OUTPUT_TOKENS,
+            maximum=maximum,
         )
     ]
 
@@ -442,13 +454,13 @@ def _text_provider_mappings(
         raise UseCasesConfigError(
             f"{context}: needs either 'providers' or a text_models table"
         )
-    output_tokens = _require(uc, "output_tokens", context)
+    tokens = {"output_tokens": _require(uc, "output_tokens", context)}
+    if "max_output_tokens" in uc:
+        tokens["max_output_tokens"] = uc["max_output_tokens"]
     return [
         {
             "provider_id": provider_id,
-            "profiles": [
-                {**profile, "output_tokens": output_tokens} for profile in profiles
-            ],
+            "profiles": [{**profile, **tokens} for profile in profiles],
         }
         for provider_id, profiles in text_models.items()
     ]
