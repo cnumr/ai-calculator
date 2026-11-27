@@ -789,14 +789,27 @@ button {
   height: 1.2rem;
 }
 
-.range-gauge__value {
+/* "low < value < high", centred on the tick. */
+.range-gauge__estimate {
   position: absolute;
   bottom: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
   white-space: nowrap;
   font-family: var(--font-mono);
+}
+
+.range-gauge__value {
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--forest-deep);
+}
+
+.range-gauge__bound,
+.range-gauge__sep {
+  font-size: 0.7rem;
+  color: var(--ink-soft);
 }
 
 .range-gauge__label {
@@ -853,7 +866,8 @@ button {
   transform: translateX(-50%);
 }
 
-.range-gauge__bounds {
+/* Absolute scale: 0 on the left, a round number on the right. */
+.range-gauge__scale {
   display: flex;
   justify-content: space-between;
   font-family: var(--font-mono);

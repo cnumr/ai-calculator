@@ -349,8 +349,9 @@ describe("UseCaseCard impacts (computed by the backend)", () => {
 
     await openDetails();
 
-    expect(screen.getByText(/min 2\.00 g CO2eq/)).toBeInTheDocument();
-    expect(screen.getByText(/max 4\.00 g CO2eq/)).toBeInTheDocument();
+    expect(
+      screen.getByText("Estimate: 3.00 g CO2eq, between 2.00 and 4.00 g CO2eq"),
+    ).toBeInTheDocument();
   });
 
   it("shows not available for criteria the backend does not measure", async () => {
@@ -363,7 +364,7 @@ describe("UseCaseCard impacts (computed by the backend)", () => {
     await openDetails();
     const details = document.querySelector<HTMLElement>(".use-case-card__impacts")!;
     expect(within(details).getAllByText(/non disponible|not available/i)).toHaveLength(4);
-    expect(screen.getByText(/min 370 g CO2eq/)).toBeInTheDocument();
+    expect(screen.getByText(/^Estimation : 370 g CO2eq|^Estimate: 370 g CO2eq/)).toBeInTheDocument();
   });
 
   it("renders the impact details only once their panel is opened", async () => {
